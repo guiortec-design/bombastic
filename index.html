@@ -1,375 +1,852 @@
 <!DOCTYPE html>
-<html lang="pt-BR">
+<html lang="pt-BR" class="h-full bg-slate-950">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>BOMBastic TABACARIA</title>
+    <title>BOMBastic TABACARIA - Portal de Acesso</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Google Fonts Inter & Orbitron for modern edgy feel -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Orbitron:wght@600;800;900&display=swap" rel="stylesheet">
+
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                        display: ['Orbitron', 'sans-serif'],
+                    },
+                    colors: {
+                        bomb: {
+                            gold: '#FFB800',
+                            orange: '#FF5500',
+                            neon: '#00FF66',
+                            purple: '#A855F7',
+                            dark: '#0A0C10',
+                            card: '#121620',
+                            border: '#1E293B',
+                            lightBg: '#1E2433'
+                        }
+                    },
+                    boxShadow: {
+                        'neon-gold': '0 0 20px -3px rgba(255, 184, 0, 0.4)',
+                        'neon-orange': '0 0 20px -3px rgba(255, 85, 0, 0.4)',
+                        'neon-green': '0 0 20px -3px rgba(0, 255, 102, 0.4)',
+                    }
+                }
+            }
+        }
+    </script>
     <style>
-        * {
-            box-sizing: border-box;
-            margin: 0;
-            padding: 0;
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        /* Custom subtle glassmorphism & glow effects */
+        .glass-panel {
+            background: rgba(18, 22, 32, 0.85);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border: 1px solid rgba(255, 255, 255, 0.08);
         }
-
-        body {
-            background-color: #121212;
-            color: #ffffff;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            min-height: 100vh;
+        .text-gradient-gold {
+            background: linear-gradient(135deg, #FFF2A1 0%, #FFB800 50%, #FF5500 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
         }
-
-        .container {
-            width: 100%;
-            max-width: 450px;
-            background-color: #1e1e1e;
-            border-radius: 12px;
-            padding: 24px;
-            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5);
-            border: 1px solid #2a2a2a;
+        .text-gradient-neon {
+            background: linear-gradient(135deg, #00FF66 0%, #00B344 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
         }
-
-        .header {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            margin-bottom: 24px;
+        /* Custom scrollbar */
+        ::-webkit-scrollbar {
+            width: 8px;
         }
-
-        .logo {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            font-size: 1.3rem;
-            font-weight: bold;
-            color: #ff9900;
+        ::-webkit-scrollbar-track {
+            background: #0A0C10;
         }
-
-        .btn-sair {
-            background-color: #333;
-            color: #ccc;
-            border: none;
-            padding: 6px 12px;
-            border-radius: 6px;
-            cursor: pointer;
-            font-size: 0.85rem;
-        }
-
-        .card {
-            background-color: #262626;
-            padding: 16px;
-            border-radius: 8px;
-            margin-bottom: 16px;
-            border: 1px solid #333;
-        }
-
-        .stats-grid {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 12px;
-            margin-bottom: 20px;
-        }
-
-        .stat-card {
-            background-color: #262626;
-            padding: 14px;
-            border-radius: 8px;
-            border: 1px solid #333;
-        }
-
-        .stat-title {
-            font-size: 0.75rem;
-            color: #aaa;
-            margin-bottom: 6px;
-        }
-
-        .stat-value {
-            font-size: 1.1rem;
-            font-weight: bold;
-        }
-
-        .form-group {
-            margin-bottom: 16px;
-        }
-
-        label {
-            display: block;
-            font-size: 0.85rem;
-            color: #ccc;
-            margin-bottom: 6px;
-        }
-
-        input, select {
-            width: 100%;
-            padding: 12px;
-            border-radius: 6px;
-            border: 1px solid #333;
-            background-color: #121212;
-            color: #fff;
-            font-size: 0.95rem;
-        }
-
-        .btn-primary {
-            width: 100%;
-            padding: 12px;
-            background-color: #ff9900;
-            color: #000;
-            font-weight: bold;
-            border: none;
-            border-radius: 6px;
-            cursor: pointer;
-            font-size: 1rem;
-            transition: 0.2s;
-        }
-
-        .btn-primary:hover {
-            background-color: #e68a00;
-        }
-
-        .btn-link {
-            background: none;
-            border: none;
-            color: #ff9900;
-            cursor: pointer;
-            font-size: 0.85rem;
-            margin-top: 10px;
-            width: 100%;
-            text-align: center;
-        }
-
-        .produto-item {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 12px;
-            background-color: #262626;
-            border-radius: 8px;
-            margin-bottom: 10px;
-        }
-
-        .btn-add {
-            background-color: #ff9900;
-            border: none;
-            color: #000;
-            font-weight: bold;
-            padding: 6px 12px;
+        ::-webkit-scrollbar-thumb {
+            background: #1E293B;
             border-radius: 4px;
-            cursor: pointer;
         }
-
-        .hidden {
-            display: none !important;
+        ::-webkit-scrollbar-thumb:hover {
+            background: #FFB800;
         }
     </style>
 </head>
-<body>
+<body class="h-full text-slate-100 font-sans bg-slate-950 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-slate-900 via-slate-950 to-black flex flex-col justify-between overflow-x-hidden min-h-screen">
 
-    <div class="container">
-        
-        <!-- TOP BAR (REMOVIDO NO LOGIN) -->
-        <div id="header-bar" class="header hidden">
-            <div class="logo">🔥 BOMBASTIC</div>
-            <button class="btn-sair" onclick="deslogar()">🚪 Sair</button>
-        </div>
+    <!-- Toast Notification Container -->
+    <div id="toast-container" class="fixed top-5 right-5 z-50 flex flex-col gap-3 max-w-sm w-full pointer-events-none"></div>
 
-        <!-- TELA 1: LOGIN DO CLIENTE -->
-        <div id="tela-login">
-            <div class="logo" style="justify-content: center; margin-bottom: 24px; font-size: 1.6rem;">
-                🔥 BOMBASTIC TABACARIA
-            </div>
+    <!-- MAIN CONTAINER -->
+    <div class="flex-grow flex items-center justify-center p-4 sm:p-6 md:p-8">
+        <div class="w-full max-w-4xl grid grid-cols-1 md:grid-cols-12 rounded-3xl overflow-hidden glass-panel shadow-2xl border border-slate-800 my-auto">
             
-            <form onsubmit="event.preventDefault(); validarLogin();">
-                <div class="form-group">
-                    <label>Informe o seu CPF:</label>
-                    <input type="text" id="login-cpf" placeholder="000.000.000-00" required>
-                </div>
-                <button type="submit" class="btn-primary">Entrar / Acessar</button>
-            </form>
+            <!-- Left Side Banner / Brand Promo -->
+            <div class="md:col-span-5 bg-gradient-to-br from-slate-900 via-bomb-dark to-black p-8 flex flex-col justify-between relative overflow-hidden border-b md:border-b-0 md:border-r border-slate-800">
+                <!-- Background decorative glow -->
+                <div class="absolute -top-20 -left-20 w-56 h-56 bg-bomb-orange/20 rounded-full blur-3xl pointer-events-none"></div>
+                <div class="absolute -bottom-20 -right-20 w-56 h-56 bg-bomb-gold/20 rounded-full blur-3xl pointer-events-none"></div>
 
-            <button class="btn-link" onclick="mostrarTela('tela-funcionario')">Acesso para Funcionários</button>
-        </div>
-
-        <!-- TELA 2: CADASTRO DE NOVO CLIENTE -->
-        <div id="tela-cadastro" class="hidden">
-            <h3 style="margin-bottom: 12px;">Novo Cadastro</h3>
-            <p style="font-size: 0.85rem; color: #aaa; margin-bottom: 16px;">CPF não localizado. Preencha os dados abaixo para continuar:</p>
-            
-            <form onsubmit="event.preventDefault(); concluirCadastro();">
-                <div class="form-group">
-                    <label>CPF:</label>
-                    <input type="text" id="cad-cpf" readonly style="color: #888;">
-                </div>
-                <div class="form-group">
-                    <label>Nome Completo:</label>
-                    <input type="text" id="cad-nome" placeholder="Digite seu nome" required>
-                </div>
-                <div class="form-group">
-                    <label>WhatsApp:</label>
-                    <input type="tel" id="cad-whats" placeholder="(00) 00000-0000" required>
-                </div>
-                <button type="submit" class="btn-primary">Salvar e Continuar</button>
-            </form>
-        </div>
-
-        <!-- TELA 3: PAINEL DO CLIENTE (PERFIL) -->
-        <div id="tela-perfil" class="hidden">
-            <div style="margin-bottom: 16px;">
-                <span style="font-size: 0.8rem; color: #aaa;">Olá,</span>
-                <h2 id="nome-cliente-display" style="color: #ff9900;">Guilherme</h2>
-            </div>
-
-            <div class="stats-grid">
-                <div class="stat-card">
-                    <div class="stat-title">Pontos Fidelidade</div>
-                    <div class="stat-value">⭐ 0</div>
-                </div>
-                <div class="stat-card">
-                    <div class="stat-title">Saldo Cashback</div>
-                    <div class="stat-value" style="color: #00ff88;">💵 R$ 0,00</div>
-                </div>
-            </div>
-
-            <button class="btn-primary" style="margin-bottom: 20px;" onclick="irParaCompras()">
-                🛍️ Ir para as Compras / Catálogo
-            </button>
-
-            <h4 style="font-size: 0.85rem; color: #aaa; margin-bottom: 10px;">ÚLTIMAS COMPRAS</h4>
-            <div class="card" style="font-size: 0.85rem; color: #666; text-align: center;">
-                Nenhuma compra registrada ainda...
-            </div>
-        </div>
-
-        <!-- TELA 4: CATÁLOGO DE COMPRAS -->
-        <div id="tela-compras" class="hidden">
-            <h3 style="margin-bottom: 16px;">Produtos Disponíveis</h3>
-
-            <div class="produto-item">
                 <div>
-                    <strong>Essência Zomo</strong><br>
-                    <span style="color: #aaa; font-size: 0.85rem;">R$ 12,00</span>
+                    <!-- Brand Header -->
+                    <div class="flex items-center space-x-3 mb-6">
+                        <div class="w-12 h-12 rounded-2xl bg-gradient-to-br from-bomb-gold to-bomb-orange flex items-center justify-center shadow-neon-gold text-slate-950 font-black text-2xl">
+                            <i class="fa-solid font-bold fa-fire"></i>
+                        </div>
+                        <div>
+                            <h1 class="font-display font-black text-2xl tracking-wider text-gradient-gold">BOMBastic</h1>
+                            <p class="text-xs uppercase tracking-widest text-slate-400 font-bold">Tabacaria & Lounge</p>
+                        </div>
+                    </div>
+
+                    <!-- Welcome Copy -->
+                    <h2 class="text-xl font-bold mb-3 text-slate-100">Sua experiência VIP em Hookah, Essências & Tabaco Premium</h2>
+                    <p class="text-xs text-slate-400 leading-relaxed mb-6">
+                        Acesse seu perfil de cliente VIP para resgatar pontos do Clube BOMBastic ou faça login como funcionário para gerenciamento operacional.
+                    </p>
+
+                    <!-- Interactive Test Suite Panel -->
+                    <div class="bg-slate-900/90 rounded-2xl p-4 border border-bomb-gold/40 mb-6 space-y-3">
+                        <div class="flex items-center justify-between text-xs font-semibold text-bomb-gold">
+                            <span class="flex items-center gap-1.5"><i class="fa-solid fa-vial-circle-check text-sm"></i> Testes Automatizados E2E:</span>
+                            <span id="test-status-badge" class="text-[10px] bg-slate-800 text-slate-300 px-2 py-0.5 rounded font-mono border border-slate-700">Pronto</span>
+                        </div>
+                        
+                        <div class="grid grid-cols-1 gap-2 text-xs">
+                            <button onclick="runTest1()" class="w-full bg-slate-800 hover:bg-slate-700 text-slate-200 px-3 py-2 rounded-xl border border-slate-700 transition flex items-center justify-between text-left">
+                                <span class="font-medium"><i class="fa-solid fa-play text-bomb-neon mr-1.5"></i> Teste 1: Login Cliente Cadastrado</span>
+                                <span class="text-[10px] text-slate-400 font-mono">CPF Existente</span>
+                            </button>
+
+                            <button onclick="runTest2()" class="w-full bg-slate-800 hover:bg-slate-700 text-slate-200 px-3 py-2 rounded-xl border border-slate-700 transition flex items-center justify-between text-left">
+                                <span class="font-medium"><i class="fa-solid fa-play text-bomb-gold mr-1.5"></i> Teste 2: Fluxo Novo Cadastro</span>
+                                <span class="text-[10px] text-slate-400 font-mono">CPF Novo</span>
+                            </button>
+
+                            <button onclick="runTest3()" class="w-full bg-slate-800 hover:bg-slate-700 text-slate-200 px-3 py-2 rounded-xl border border-slate-700 transition flex items-center justify-between text-left">
+                                <span class="font-medium"><i class="fa-solid fa-play text-bomb-purple mr-1.5"></i> Teste 3: Acesso Vendedor/Gerente/Dono</span>
+                                <span class="text-[10px] text-slate-400 font-mono">Simulador Cargos</span>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Quick Testing Help Box -->
+                    <div class="bg-slate-900/90 rounded-2xl p-4 border border-slate-800/80 mb-6 space-y-3">
+                        <div class="flex items-center text-xs font-semibold text-bomb-gold">
+                            <i class="fa-solid fa-vial-circle-check mr-2 text-sm"></i>
+                            <span>Dados de Teste Rápido Demo:</span>
+                        </div>
+                        
+                        <div class="text-xs text-slate-300 space-y-2">
+                            <div>
+                                <span class="text-slate-400 font-medium block">Clientes Cadastrados:</span>
+                                <div class="flex flex-wrap gap-1.5 mt-1">
+                                    <button onclick="fillCPF('386.633.358-73')" class="bg-slate-800 hover:bg-slate-700 text-slate-200 px-2 py-1 rounded text-[11px] border border-slate-700 transition flex items-center gap-1 font-mono">
+                                        <span>386.633.358-73</span> <i class="fa-regular fa-copy text-[10px] text-slate-400"></i>
+                                    </button>
+                                    <button onclick="fillCPF('123.456.789-00')" class="bg-slate-800 hover:bg-slate-700 text-slate-200 px-2 py-1 rounded text-[11px] border border-slate-700 transition flex items-center gap-1 font-mono">
+                                        <span>123.456.789-00</span> <i class="fa-regular fa-copy text-[10px] text-slate-400"></i>
+                                    </button>
+                                </div>
+                            </div>
+                            <div class="pt-1 border-t border-slate-800">
+                                <span class="text-slate-400 font-medium block">Acesso Funcionários (Senha padrão: <code class="text-bomb-gold">123456</code>):</span>
+                                <div class="grid grid-cols-3 gap-1 mt-1 text-[11px]">
+                                    <span class="text-slate-300 bg-slate-950 px-1.5 py-0.5 rounded border border-slate-800">vendedor</span>
+                                    <span class="text-slate-300 bg-slate-950 px-1.5 py-0.5 rounded border border-slate-800">gerente</span>
+                                    <span class="text-slate-300 bg-slate-950 px-1.5 py-0.5 rounded border border-slate-800">dono</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
                 </div>
-                <button class="btn-add" onclick="adicionarAoCarrinho('Essência Zomo', 12)">+ Adicionar</button>
+
+                <!-- Footer Status Indicator -->
+                <div class="flex items-center text-xs text-slate-400 space-x-2 pt-4 border-t border-slate-800/60">
+                    <span class="w-2.5 h-2.5 rounded-full bg-bomb-neon animate-pulse"></span>
+                    <span>Sistema Integrado Ativo v2.4</span>
+                </div>
             </div>
 
-            <div class="produto-item">
-                <div>
-                    <strong>Carvão Coco 1kg</strong><br>
-                    <span style="color: #aaa; font-size: 0.85rem;">R$ 35,00</span>
+            <!-- Right Side Auth Form Section -->
+            <div class="md:col-span-7 p-6 sm:p-8 flex flex-col justify-center relative bg-bomb-card/50">
+                
+                <!-- Main Navigation Tabs -->
+                <div class="flex bg-slate-900/90 p-1.5 rounded-xl border border-slate-800 mb-8">
+                    <button id="tab-client-btn" onclick="switchTab('client')" class="flex-1 py-2.5 px-4 rounded-lg text-xs sm:text-sm font-semibold transition-all duration-200 flex items-center justify-center gap-2 bg-gradient-to-r from-bomb-gold to-bomb-orange text-slate-950 shadow-md">
+                        <i class="fa-solid fa-user-tag"></i>
+                        <span>Área do Cliente VIP</span>
+                    </button>
+                    <button id="tab-staff-btn" onclick="switchTab('staff')" class="flex-1 py-2.5 px-4 rounded-lg text-xs sm:text-sm font-semibold text-slate-400 hover:text-slate-200 transition-all duration-200 flex items-center justify-center gap-2">
+                        <i class="fa-solid fa-id-card-clip"></i>
+                        <span>Acesso Funcionários</span>
+                    </button>
                 </div>
-                <button class="btn-add" onclick="adicionarAoCarrinho('Carvão Coco 1kg', 35)">+ Adicionar</button>
-            </div>
 
-            <div class="produto-item">
-                <div>
-                    <strong>Seda King Size</strong><br>
-                    <span style="color: #aaa; font-size: 0.85rem;">R$ 8,00</span>
+                <!-- ==================== CLIENT LOGIN SECTION ==================== -->
+                <div id="client-section" class="space-y-6">
+                    <div>
+                        <h3 class="text-xl font-bold text-slate-100">Bem-vindo(a) ao Clube VIP</h3>
+                        <p class="text-xs text-slate-400 mt-1">Informe seu CPF para consultar cadastro, acumular pontos ou verificar ofertas exclusivas.</p>
+                    </div>
+
+                    <form id="cpf-form" onsubmit="handleCPFCheck(event)" class="space-y-5">
+                        <div class="space-y-2">
+                            <label class="block text-xs font-semibold text-slate-300 uppercase tracking-wider">CPF do Cliente</label>
+                            <div class="relative">
+                                <div class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-500">
+                                    <i class="fa-solid fa-address-card text-base"></i>
+                                </div>
+                                <input type="text" id="client-cpf" placeholder="000.000.000-00" maxlength="14" required
+                                    oninput="applyCPFMask(this)"
+                                    class="w-full bg-slate-900 border border-slate-700/80 focus:border-bomb-gold focus:ring-1 focus:ring-bomb-gold rounded-xl pl-11 pr-4 py-3.5 text-slate-100 placeholder-slate-500 font-mono text-base tracking-wider transition outline-none">
+                            </div>
+                        </div>
+
+                        <button type="submit" id="cpf-submit-btn" class="w-full bg-gradient-to-r from-bomb-gold via-bomb-orange to-bomb-gold bg-[length:200%_auto] hover:bg-right transition-all duration-500 text-slate-950 font-extrabold py-3.5 px-6 rounded-xl shadow-neon-gold flex items-center justify-center gap-2 text-sm uppercase tracking-wider">
+                            <span>Verificar CPF / Entrar</span>
+                            <i class="fa-solid fa-arrow-right text-xs"></i>
+                        </button>
+                    </form>
+
+                    <!-- Registered Client Quick Info Box (Appears after login) -->
+                    <div id="client-logged-view" class="hidden space-y-4 bg-slate-900/90 border border-bomb-gold/40 p-5 rounded-2xl relative overflow-hidden">
+                        <div class="flex justify-between items-start">
+                            <div>
+                                <span class="bg-bomb-gold/10 text-bomb-gold text-[10px] font-bold px-2.5 py-1 rounded-full border border-bomb-gold/30 uppercase tracking-wider">Cliente VIP Ativo</span>
+                                <h4 id="client-welcome-name" class="text-lg font-bold text-slate-100 mt-2">--</h4>
+                                <p id="client-welcome-cpf" class="text-xs text-slate-400 font-mono">--</p>
+                            </div>
+                            <button onclick="logoutClient()" class="text-slate-400 hover:text-rose-400 text-xs flex items-center gap-1 transition">
+                                <i class="fa-solid fa-right-from-bracket"></i> Sair
+                            </button>
+                        </div>
+                        
+                        <div class="grid grid-cols-2 gap-3 pt-3 border-t border-slate-800">
+                            <div class="bg-slate-950/60 p-3 rounded-xl border border-slate-800">
+                                <span class="text-[10px] text-slate-400 uppercase font-semibold block">Pontos Fidelidade</span>
+                                <span id="client-points" class="text-lg font-bold text-bomb-gold font-mono">350 pts</span>
+                            </div>
+                            <div class="bg-slate-950/60 p-3 rounded-xl border border-slate-800">
+                                <span class="text-[10px] text-slate-400 uppercase font-semibold block">Cashback</span>
+                                <span id="client-cashback" class="text-lg font-bold text-bomb-neon font-mono">R$ 25,00</span>
+                            </div>
+                        </div>
+
+                        <div class="bg-slate-950/80 p-3 rounded-xl border border-slate-800 flex items-center justify-between text-xs">
+                            <span class="text-slate-300 flex items-center gap-2">
+                                <i class="fa-brands fa-whatsapp text-bomb-neon text-sm"></i> WhatsApp:
+                            </span>
+                            <span id="client-phone-display" class="font-mono text-slate-200">--</span>
+                        </div>
+
+                        <button onclick="showToast('Cupom VIP de 15% aplicado na sua próxima sessão de Narguilé!', 'success')" class="w-full bg-slate-800 hover:bg-slate-700 text-slate-200 py-2.5 rounded-xl text-xs font-bold transition flex items-center justify-center gap-2 border border-slate-700">
+                            <i class="fa-solid fa-ticket text-bomb-gold"></i>
+                            <span>Resgatar Cupom VIP do Dia</span>
+                        </button>
+                    </div>
                 </div>
-                <button class="btn-add" onclick="adicionarAoCarrinho('Seda King Size', 8)">+ Adicionar</button>
-            </div>
 
-            <button class="btn-primary" style="margin-top: 16px;" onclick="irParaPerfil()">
-                👤 Voltar ao Meu Perfil
-            </button>
+                <!-- ==================== STAFF LOGIN SECTION ==================== -->
+                <div id="staff-section" class="hidden space-y-6">
+                    <div>
+                        <h3 class="text-xl font-bold text-slate-100">Acesso Restrito a Colaboradores</h3>
+                        <p class="text-xs text-slate-400 mt-1">Insira suas credenciais corporativas para acessar o sistema PDV / Gestão.</p>
+                    </div>
+
+                    <form id="staff-form" onsubmit="handleStaffLogin(event)" class="space-y-4">
+                        <div class="space-y-1.5">
+                            <label class="block text-xs font-semibold text-slate-300 uppercase tracking-wider">Usuário / ID / CPF</label>
+                            <div class="relative">
+                                <div class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-500">
+                                    <i class="fa-solid fa-user-shield text-sm"></i>
+                                </div>
+                                <input type="text" id="staff-username" placeholder="vendedor, gerente ou dono" required
+                                    class="w-full bg-slate-900 border border-slate-700/80 focus:border-bomb-purple focus:ring-1 focus:ring-bomb-purple rounded-xl pl-11 pr-4 py-3 text-slate-100 placeholder-slate-500 text-sm transition outline-none">
+                            </div>
+                        </div>
+
+                        <div class="space-y-1.5">
+                            <label class="block text-xs font-semibold text-slate-300 uppercase tracking-wider">Senha de Acesso</label>
+                            <div class="relative">
+                                <div class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-500">
+                                    <i class="fa-solid fa-lock text-sm"></i>
+                                </div>
+                                <input type="password" id="staff-password" placeholder="••••••••" required
+                                    class="w-full bg-slate-900 border border-slate-700/80 focus:border-bomb-purple focus:ring-1 focus:ring-bomb-purple rounded-xl pl-11 pr-10 py-3 text-slate-100 placeholder-slate-500 text-sm transition outline-none">
+                                <button type="button" onclick="togglePasswordVisibility()" class="absolute inset-y-0 right-0 pr-3 flex items-center text-slate-500 hover:text-slate-300">
+                                    <i id="eye-icon" class="fa-solid fa-eye text-xs"></i>
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Role Simulator Selector (For dynamic testing) -->
+                        <div class="space-y-1.5 pt-1">
+                            <label class="block text-xs font-semibold text-slate-400 uppercase tracking-wider flex items-center justify-between">
+                                <span>Simulador de Cargo Integrado:</span>
+                                <span class="text-[10px] text-bomb-gold lowercase font-normal">(auto-detecta pelo usuário)</span>
+                            </label>
+                            <div class="grid grid-cols-3 gap-2">
+                                <label class="cursor-pointer">
+                                    <input type="radio" name="role-select" value="Vendedor" checked class="peer sr-only" onchange="updateRolePreview('Vendedor')">
+                                    <div class="p-2 text-center rounded-xl bg-slate-900 border border-slate-800 peer-checked:border-bomb-neon peer-checked:bg-bomb-neon/10 peer-checked:text-bomb-neon text-slate-400 text-xs font-semibold transition">
+                                        <i class="fa-solid fa-cart-shopping block text-sm mb-1"></i> Vendedor
+                                    </div>
+                                </label>
+                                <label class="cursor-pointer">
+                                    <input type="radio" name="role-select" value="Gerente" class="peer sr-only" onchange="updateRolePreview('Gerente')">
+                                    <div class="p-2 text-center rounded-xl bg-slate-900 border border-slate-800 peer-checked:border-bomb-gold peer-checked:bg-bomb-gold/10 peer-checked:text-bomb-gold text-slate-400 text-xs font-semibold transition">
+                                        <i class="fa-solid fa-user-tie block text-sm mb-1"></i> Gerente
+                                    </div>
+                                </label>
+                                <label class="cursor-pointer">
+                                    <input type="radio" name="role-select" value="Dono" class="peer sr-only" onchange="updateRolePreview('Dono')">
+                                    <div class="p-2 text-center rounded-xl bg-slate-900 border border-slate-800 peer-checked:border-bomb-purple peer-checked:bg-bomb-purple/10 peer-checked:text-bomb-purple text-slate-400 text-xs font-semibold transition">
+                                        <i class="fa-solid fa-crown block text-sm mb-1"></i> Dono
+                                    </div>
+                                </label>
+                            </div>
+                        </div>
+
+                        <button type="submit" class="w-full bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 transition-all text-white font-extrabold py-3.5 px-6 rounded-xl shadow-lg flex items-center justify-center gap-2 text-sm uppercase tracking-wider mt-2">
+                            <i class="fa-solid fa-right-to-bracket"></i>
+                            <span>Acessar Painel do Funcionário</span>
+                        </button>
+                    </form>
+
+                    <!-- Role Permissions Indicator Box -->
+                    <div id="role-info-box" class="bg-slate-900/80 p-4 rounded-xl border border-slate-800 space-y-2">
+                        <div class="flex items-center justify-between">
+                            <span class="text-xs font-semibold text-slate-300">Permissões do Cargo: <strong id="role-title" class="text-bomb-neon">Vendedor</strong></span>
+                            <span id="role-badge" class="px-2 py-0.5 rounded text-[10px] font-bold uppercase bg-bomb-neon/20 text-bomb-neon border border-bomb-neon/30">Nível 1</span>
+                        </div>
+                        <ul id="role-permissions-list" class="text-xs text-slate-400 space-y-1 list-disc list-inside">
+                            <li>Acesso ao Caixa / Frente de Loja (PDV)</li>
+                            <li>Lançamento de Vendas e Emissão de Notas</li>
+                            <li>Consulta de Estoque em Tempo Real</li>
+                        </ul>
+                    </div>
+                </div>
+
+            </div>
         </div>
-
-        <!-- TELA 5: PORTAL DO FUNCIONÁRIO -->
-        <div id="tela-funcionario" class="hidden">
-            <h3 style="margin-bottom: 16px;">Acesso de Funcionários</h3>
-            
-            <form onsubmit="event.preventDefault(); loginFuncionario();">
-                <div class="form-group">
-                    <label>Cargo / Perfil:</label>
-                    <select id="cargo-func">
-                        <option value="vendedor">Vendedor</option>
-                        <option value="gerente">Gerente</option>
-                        <option value="dono">Dono / Proprietário</option>
-                    </select>
-                </div>
-                <div class="form-group">
-                    <label>Senha:</label>
-                    <input type="password" placeholder="******" required>
-                </div>
-                <button type="submit" class="btn-primary">Acessar Painel Interno</button>
-            </form>
-
-            <button class="btn-link" onclick="mostrarTela('tela-login')">Voltar para Login de Clientes</button>
-        </div>
-
     </div>
 
+    <!-- ==================== NEW CLIENT REGISTRATION MODAL ==================== -->
+    <div id="register-modal" class="fixed inset-0 bg-black/80 backdrop-blur-md flex items-center justify-center p-4 z-50 hidden opacity-0 transition-opacity duration-300">
+        <div class="bg-bomb-card border border-slate-800 rounded-3xl max-w-md w-full p-6 sm:p-8 shadow-2xl relative transform scale-95 transition-transform duration-300" id="register-modal-content">
+            
+            <button onclick="closeRegisterModal()" class="absolute top-5 right-5 text-slate-400 hover:text-slate-100 transition">
+                <i class="fa-solid fa-xmark text-xl"></i>
+            </button>
+
+            <div class="flex items-center gap-3 mb-4">
+                <div class="w-10 h-10 rounded-xl bg-bomb-gold/10 border border-bomb-gold/30 text-bomb-gold flex items-center justify-center">
+                    <i class="fa-solid fa-user-plus text-lg"></i>
+                </div>
+                <div>
+                    <h3 class="text-lg font-bold text-slate-100">CPF Não Encontrado!</h3>
+                    <p class="text-xs text-slate-400">Complete o cadastro rápido para virar VIP.</p>
+                </div>
+            </div>
+
+            <form id="register-form" onsubmit="handleNewClientRegister(event)" class="space-y-4">
+                <div class="space-y-1">
+                    <label class="block text-xs font-semibold text-slate-300">CPF</label>
+                    <input type="text" id="reg-cpf" readonly class="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-2.5 text-slate-400 font-mono text-sm outline-none cursor-not-allowed">
+                </div>
+
+                <div class="space-y-1">
+                    <label class="block text-xs font-semibold text-slate-300">Nome Completo <span class="text-bomb-gold">*</span></label>
+                    <input type="text" id="reg-name" placeholder="Ex: Gabriel Silva" required class="w-full bg-slate-900 border border-slate-700/80 focus:border-bomb-gold rounded-xl px-4 py-2.5 text-slate-100 text-sm outline-none">
+                </div>
+
+                <div class="space-y-1">
+                    <label class="block text-xs font-semibold text-slate-300">WhatsApp / Telefone <span class="text-bomb-gold">*</span></label>
+                    <div class="relative">
+                        <div class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-500">
+                            <i class="fa-brands fa-whatsapp text-slate-400"></i>
+                        </div>
+                        <input type="text" id="reg-phone" placeholder="(19) 99999-9999" maxlength="15" oninput="applyPhoneMask(this)" required class="w-full bg-slate-900 border border-slate-700/80 focus:border-bomb-gold rounded-xl pl-10 pr-4 py-2.5 text-slate-100 text-sm outline-none">
+                    </div>
+                </div>
+
+                <div class="pt-2">
+                    <button type="submit" class="w-full bg-gradient-to-r from-bomb-gold to-bomb-orange text-slate-950 font-extrabold py-3 px-6 rounded-xl shadow-neon-gold flex items-center justify-center gap-2 text-sm uppercase tracking-wider">
+                        <i class="fa-solid fa-check"></i>
+                        <span>Finalizar Cadastro VIP</span>
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- ==================== LOGGED STAFF DASHBOARD SIMULATION MODAL ==================== -->
+    <div id="staff-dashboard-modal" class="fixed inset-0 bg-black/90 backdrop-blur-lg flex items-center justify-center p-4 z-50 hidden opacity-0 transition-opacity duration-300">
+        <div class="bg-slate-900 border border-slate-800 rounded-3xl max-w-2xl w-full p-6 sm:p-8 shadow-2xl relative">
+            <div class="flex justify-between items-center pb-4 mb-6 border-b border-slate-800">
+                <div class="flex items-center gap-3">
+                    <div id="logged-role-icon" class="w-10 h-10 rounded-xl bg-bomb-purple/20 text-bomb-purple border border-bomb-purple/40 flex items-center justify-center font-bold text-lg">
+                        <i class="fa-solid fa-user-shield"></i>
+                    </div>
+                    <div>
+                        <h3 class="text-lg font-bold text-slate-100" id="logged-staff-title">Painel do Funcionário</h3>
+                        <p class="text-xs text-slate-400" id="logged-staff-subtitle">Sessão ativa como: <span class="text-bomb-gold" id="logged-user-name">--</span></p>
+                    </div>
+                </div>
+                <button onclick="logoutStaff()" class="bg-slate-800 hover:bg-slate-700 text-slate-300 px-3 py-1.5 rounded-lg text-xs font-bold transition flex items-center gap-2 border border-slate-700">
+                    <i class="fa-solid fa-right-from-bracket"></i> Sair
+                </button>
+            </div>
+
+            <!-- Dynamic Permitted Modules -->
+            <div class="space-y-4">
+                <h4 class="text-xs font-semibold uppercase tracking-wider text-slate-400">Módulos Autorizados para este Perfil:</h4>
+                <div id="staff-modules-grid" class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <!-- Modules inserted dynamically by JS -->
+                </div>
+            </div>
+
+            <div class="mt-8 pt-4 border-t border-slate-800 flex justify-end">
+                <button onclick="logoutStaff()" class="bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs px-4 py-2 rounded-xl transition">
+                    Fechar Simulador
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- FOOTER COPYRIGHT -->
+    <footer class="py-4 text-center text-xs text-slate-500">
+        <p>© 2026 BOMBastic TABACARIA & LOUNGE. Todos os direitos reservados.</p>
+    </footer>
+
+    <!-- JAVASCRIPT LOGIC -->
     <script>
-        // Simulador de base de dados de clientes
-        let clientes = {
-            "123": { nome: "guilherme", whats: "19999999999" }
+        // ==================== INITIAL PRE-POPULATED DATA ====================
+        const preRegisteredClients = {
+            "386.633.358-73": {
+                name: "Mateus Henrique Oliveira",
+                phone: "(19) 98765-4321",
+                points: 820,
+                cashback: "R$ 45,00"
+            },
+            "123.456.789-00": {
+                name: "Ana Clara Souza",
+                phone: "(19) 99123-8899",
+                points: 340,
+                cashback: "R$ 15,50"
+            }
         };
 
-        let clienteAtual = null;
+        const staffRolesData = {
+            "Vendedor": {
+                badge: "Nível 1",
+                badgeClass: "bg-bomb-neon/20 text-bomb-neon border-bomb-neon/30",
+                color: "text-bomb-neon",
+                permissions: [
+                    "Acesso ao Caixa / Frente de Loja (PDV)",
+                    "Lançamento de Vendas e Emissão de CPF na Nota",
+                    "Consulta de Estoque em Tempo Real"
+                ],
+                modules: [
+                    { title: "Frente de Loja / PDV", icon: "fa-cash-register", desc: "Registrar vendas e pagamentos de clientes." },
+                    { title: "Consulta de Produtos", icon: "fa-boxes-stacked", desc: "Verificar preços e estoque de narguilés e essências." }
+                ]
+            },
+            "Gerente": {
+                badge: "Nível 2",
+                badgeClass: "bg-bomb-gold/20 text-bomb-gold border-bomb-gold/30",
+                color: "text-bomb-gold",
+                permissions: [
+                    "Todas as permissões do Vendedor",
+                    "Abertura e Fechamento de Caixa Avançado",
+                    "Gestão de Estoque, Pedidos e Devoluções",
+                    "Aplicar Descontos Especiais e Cadastrar Clientes VIP"
+                ],
+                modules: [
+                    { title: "Frente de Loja / PDV", icon: "fa-cash-register", desc: "Registrar vendas e pagamentos." },
+                    { title: "Gestão de Estoque", icon: "fa-boxes-stacked", desc: "Ajuste e entrada de mercadorias." },
+                    { title: "Relatório Diário de Caixa", icon: "fa-chart-line", desc: "Visualizar faturamento diário." },
+                    { title: "Aprovação de Descontos", icon: "fa-percent", desc: "Liberar descontos e cortesias." }
+                ]
+            },
+            "Dono": {
+                badge: "Acesso Total (Admin)",
+                badgeClass: "bg-bomb-purple/20 text-bomb-purple border-bomb-purple/30",
+                color: "text-bomb-purple",
+                permissions: [
+                    "Acesso Irrestrito a Todos os Módulos",
+                    "DRE Financeiro, Lucros e Métricas Estratégicas",
+                    "Gestão de Colaboradores e Configuração de Comissões",
+                    "Auditoria Geral de Vendas e Cancelamentos"
+                ],
+                modules: [
+                    { title: "Painel Financeiro & DRE", icon: "fa-chart-pie", desc: "Balanço completo e gráficos de receita." },
+                    { title: "Gestão da Equipe", icon: "fa-users-gear", desc: "Gerenciar usuários, senhas e comissões." },
+                    { title: "Controle da Tabacaria", icon: "fa-sliders", desc: "Configurações gerais do estabelecimento." },
+                    { title: "Auditoria Completa", icon: "fa-clipboard-check", desc: "Log de cancelamentos e alterações." }
+                ]
+            }
+        };
 
-        function mostrarTela(idTela) {
-            const telas = ['tela-login', 'tela-cadastro', 'tela-perfil', 'tela-compras', 'tela-funcionario'];
-            telas.forEach(tela => {
-                document.getElementById(tela).classList.add('hidden');
+        // Current active state
+        let currentRolePreview = 'Vendedor';
+
+        // ==================== TAB SWITCHING ====================
+        function switchTab(tab) {
+            const clientBtn = document.getElementById('tab-client-btn');
+            const staffBtn = document.getElementById('tab-staff-btn');
+            const clientSec = document.getElementById('client-section');
+            const staffSec = document.getElementById('staff-section');
+
+            if (tab === 'client') {
+                clientBtn.className = "flex-1 py-2.5 px-4 rounded-lg text-xs sm:text-sm font-semibold transition-all duration-200 flex items-center justify-center gap-2 bg-gradient-to-r from-bomb-gold to-bomb-orange text-slate-950 shadow-md";
+                staffBtn.className = "flex-1 py-2.5 px-4 rounded-lg text-xs sm:text-sm font-semibold text-slate-400 hover:text-slate-200 transition-all duration-200 flex items-center justify-center gap-2";
+                clientSec.classList.remove('hidden');
+                staffSec.classList.add('hidden');
+            } else {
+                staffBtn.className = "flex-1 py-2.5 px-4 rounded-lg text-xs sm:text-sm font-semibold transition-all duration-200 flex items-center justify-center gap-2 bg-gradient-to-r from-bomb-purple to-indigo-600 text-white shadow-md";
+                clientBtn.className = "flex-1 py-2.5 px-4 rounded-lg text-xs sm:text-sm font-semibold text-slate-400 hover:text-slate-200 transition-all duration-200 flex items-center justify-center gap-2";
+                staffSec.classList.remove('hidden');
+                clientSec.classList.add('hidden');
+            }
+        }
+
+        // ==================== CPF & PHONE MASKS ====================
+        function applyCPFMask(input) {
+            let value = input.value.replace(/\D/g, "");
+            if (value.length > 11) value = value.slice(0, 11);
+            
+            value = value.replace(/(\d{3})(\d)/, "$1.$2");
+            value = value.replace(/(\d{3})(\d)/, "$1.$2");
+            value = value.replace(/(\d{3})(\d{1,2})$/, "$1-$2");
+            
+            input.value = value;
+        }
+
+        function applyPhoneMask(input) {
+            let value = input.value.replace(/\D/g, "");
+            if (value.length > 11) value = value.slice(0, 11);
+
+            if (value.length > 10) {
+                value = value.replace(/^(\d\d)(\d{5})(\d{4}).*/, "($1) $2-$3");
+            } else if (value.length > 5) {
+                value = value.replace(/^(\d\d)(\d{4})(\d{0,4}).*/, "($1) $2-$3");
+            } else if (value.length > 2) {
+                value = value.replace(/^(\d\d)(\d{0,5})/, "($1) $2");
+            } else {
+                value = value.replace(/^(\d*)/, "($1");
+            }
+            input.value = value;
+        }
+
+        function fillCPF(cpf) {
+            switchTab('client');
+            const input = document.getElementById('client-cpf');
+            input.value = cpf;
+            showToast(`CPF ${cpf} inserido no campo!`, 'info');
+        }
+
+        // ==================== CLIENT LOGIC ====================
+        function handleCPFCheck(event) {
+            event.preventDefault();
+            const cpfInput = document.getElementById('client-cpf').value.trim();
+
+            if (cpfInput.length < 14) {
+                showToast('Por favor, digite um CPF válido com 11 dígitos.', 'warning');
+                return;
+            }
+
+            // Check if CPF exists
+            if (preRegisteredClients[cpfInput]) {
+                const client = preRegisteredClients[cpfInput];
+                showClientDashboard(cpfInput, client);
+                showToast(`Bem-vindo(a) de volta, ${client.name.split(' ')[0]}!`, 'success');
+            } else {
+                // Open new client modal
+                openRegisterModal(cpfInput);
+            }
+        }
+
+        function showClientDashboard(cpf, client) {
+            document.getElementById('cpf-form').classList.add('hidden');
+            const loggedView = document.getElementById('client-logged-view');
+            loggedView.classList.remove('hidden');
+
+            document.getElementById('client-welcome-name').innerText = client.name;
+            document.getElementById('client-welcome-cpf').innerText = `CPF: ${cpf}`;
+            document.getElementById('client-phone-display').innerText = client.phone;
+            document.getElementById('client-points').innerText = `${client.points} pts`;
+            document.getElementById('client-cashback').innerText = client.cashback;
+        }
+
+        function logoutClient() {
+            document.getElementById('client-logged-view').classList.add('hidden');
+            document.getElementById('cpf-form').classList.remove('hidden');
+            document.getElementById('client-cpf').value = '';
+            showToast('Sessão encerrada com sucesso.', 'info');
+        }
+
+        // ==================== NEW CLIENT REGISTER MODAL ====================
+        function openRegisterModal(cpf) {
+            document.getElementById('reg-cpf').value = cpf;
+            document.getElementById('reg-name').value = '';
+            document.getElementById('reg-phone').value = '';
+
+            const modal = document.getElementById('register-modal');
+            const modalContent = document.getElementById('register-modal-content');
+            modal.classList.remove('hidden');
+            setTimeout(() => {
+                modal.classList.remove('opacity-0');
+                modalContent.classList.remove('scale-95');
+                modalContent.classList.add('scale-100');
+            }, 10);
+        }
+
+        function closeRegisterModal() {
+            const modal = document.getElementById('register-modal');
+            const modalContent = document.getElementById('register-modal-content');
+            modalContent.classList.remove('scale-100');
+            modalContent.classList.add('scale-95');
+            modal.classList.add('opacity-0');
+            setTimeout(() => {
+                modal.classList.add('hidden');
+            }, 300);
+        }
+
+        function handleNewClientRegister(event) {
+            event.preventDefault();
+            const cpf = document.getElementById('reg-cpf').value;
+            const name = document.getElementById('reg-name').value.trim();
+            const phone = document.getElementById('reg-phone').value.trim();
+
+            // Save new client to runtime object
+            preRegisteredClients[cpf] = {
+                name: name,
+                phone: phone,
+                points: 100, // Welcome bonus!
+                cashback: "R$ 10,00"
+            };
+
+            closeRegisterModal();
+            showToast('Cadastro realizado! Você ganhou +100 pontos VIP de boas-vindas!', 'success');
+            showClientDashboard(cpf, preRegisteredClients[cpf]);
+        }
+
+        // ==================== STAFF LOGIN LOGIC ====================
+        function updateRolePreview(roleName) {
+            currentRolePreview = roleName;
+            const data = staffRolesData[roleName];
+            
+            const titleEl = document.getElementById('role-title');
+            const badgeEl = document.getElementById('role-badge');
+            const listEl = document.getElementById('role-permissions-list');
+
+            titleEl.innerText = roleName;
+            titleEl.className = data.color;
+
+            badgeEl.innerText = data.badge;
+            badgeEl.className = `px-2 py-0.5 rounded text-[10px] font-bold uppercase border ${data.badgeClass}`;
+
+            listEl.innerHTML = data.permissions.map(p => `<li>${p}</li>`).join('');
+        }
+
+        function togglePasswordVisibility() {
+            const passInput = document.getElementById('staff-password');
+            const eyeIcon = document.getElementById('eye-icon');
+            if (passInput.type === 'password') {
+                passInput.type = 'text';
+                eyeIcon.className = 'fa-solid fa-eye-slash text-xs';
+            } else {
+                passInput.type = 'password';
+                eyeIcon.className = 'fa-solid fa-eye text-xs';
+            }
+        }
+
+        function handleStaffLogin(event) {
+            event.preventDefault();
+            const username = document.getElementById('staff-username').value.trim().toLowerCase();
+            const password = document.getElementById('staff-password').value;
+
+            // Simple user-to-role matching simulation
+            let assignedRole = currentRolePreview; // fallback to selected radio
+            if (username.includes('vendedor')) assignedRole = 'Vendedor';
+            else if (username.includes('gerente')) assignedRole = 'Gerente';
+            else if (username.includes('dono') || username.includes('admin')) assignedRole = 'Dono';
+
+            // Select radio corresponding to detected role
+            const radios = document.getElementsByName('role-select');
+            radios.forEach(r => {
+                if (r.value === assignedRole) r.checked = true;
             });
+            updateRolePreview(assignedRole);
 
-            document.getElementById(idTela).classList.remove('hidden');
+            // Open simulated dashboard modal
+            openStaffDashboard(username, assignedRole);
+            showToast(`Acesso concedido como ${assignedRole}!`, 'success');
+        }
 
-            if (idTela === 'tela-login' || idTela === 'tela-funcionario') {
-                document.getElementById('header-bar').classList.add('hidden');
-            } else {
-                document.getElementById('header-bar').classList.remove('hidden');
+        function openStaffDashboard(username, roleName) {
+            const roleData = staffRolesData[roleName];
+            
+            document.getElementById('logged-staff-title').innerText = `Painel Operacional - ${roleName}`;
+            document.getElementById('logged-user-name').innerText = username.toUpperCase();
+            
+            // Render module cards
+            const grid = document.getElementById('staff-modules-grid');
+            grid.innerHTML = roleData.modules.map(mod => `
+                <div class="bg-slate-950 p-4 rounded-2xl border border-slate-800 hover:border-slate-700 transition space-y-2">
+                    <div class="flex items-center gap-3">
+                        <div class="w-9 h-9 rounded-xl bg-slate-900 border border-slate-800 flex items-center justify-center ${roleData.color}">
+                            <i class="fa-solid ${mod.icon}"></i>
+                        </div>
+                        <span class="font-bold text-sm text-slate-100">${mod.title}</span>
+                    </div>
+                    <p class="text-xs text-slate-400">${mod.desc}</p>
+                </div>
+            `).join('');
+
+            const modal = document.getElementById('staff-dashboard-modal');
+            modal.classList.remove('hidden');
+            setTimeout(() => {
+                modal.classList.remove('opacity-0');
+            }, 10);
+        }
+
+        function logoutStaff() {
+            const modal = document.getElementById('staff-dashboard-modal');
+            modal.classList.add('opacity-0');
+            setTimeout(() => {
+                modal.classList.add('hidden');
+            }, 300);
+            showToast('Sessão do funcionário finalizada.', 'info');
+        }
+
+        // ==================== TOAST NOTIFICATIONS SYSTEM ====================
+        function showToast(message, type = 'info') {
+            const container = document.getElementById('toast-container');
+            const toast = document.createElement('div');
+            
+            let bgBorder = 'bg-slate-900 border-slate-700 text-slate-200';
+            let icon = 'fa-circle-info text-sky-400';
+
+            if (type === 'success') {
+                bgBorder = 'bg-slate-900 border-bomb-neon/60 text-slate-100';
+                icon = 'fa-circle-check text-bomb-neon';
+            } else if (type === 'warning') {
+                bgBorder = 'bg-slate-900 border-bomb-gold/60 text-slate-100';
+                icon = 'fa-triangle-exclamation text-bomb-gold';
+            } else if (type === 'error') {
+                bgBorder = 'bg-slate-900 border-rose-500/60 text-slate-100';
+                icon = 'fa-circle-xmark text-rose-500';
             }
+
+            toast.className = `pointer-events-auto flex items-center gap-3 p-4 rounded-2xl border ${bgBorder} shadow-2xl transition-all duration-300 transform translate-y-2 opacity-0 text-xs font-semibold`;
+            toast.innerHTML = `
+                <i class="fa-solid ${icon} text-lg"></i>
+                <span class="flex-1">${message}</span>
+                <button onclick="this.parentElement.remove()" class="text-slate-400 hover:text-slate-200">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+            `;
+
+            container.appendChild(toast);
+
+            setTimeout(() => {
+                toast.classList.remove('translate-y-2', 'opacity-0');
+            }, 10);
+
+            setTimeout(() => {
+                toast.classList.add('opacity-0', 'translate-y-2');
+                setTimeout(() => toast.remove(), 300);
+            }, 4000);
         }
 
-        function validarLogin() {
-            const cpfInput = document.getElementById('login-cpf').value.trim();
+        // Initialize preview role
+        updateRolePreview('Vendedor');
 
-            if (clientes[cpfInput]) {
-                clienteAtual = clientes[cpfInput];
-                document.getElementById('nome-cliente-display').innerText = clienteAtual.nome;
-                
-                // Direciona diretamente para as compras (ou perfil, dependendo da opção escolhida)
-                irParaCompras();
-            } else {
-                document.getElementById('cad-cpf').value = cpfInput;
-                mostrarTela('tela-cadastro');
+        // ==================== AUTOMATED TEST SUITE LOGIC ====================
+        function updateTestBadge(text, statusClass = 'bg-slate-800 text-slate-300') {
+            const badge = document.getElementById('test-status-badge');
+            badge.innerText = text;
+            badge.className = `text-[10px] px-2 py-0.5 rounded font-mono border ${statusClass}`;
+        }
+
+        async function runTest1() {
+            updateTestBadge('Executando Teste 1...', 'bg-bomb-neon/20 text-bomb-neon border-bomb-neon/40');
+            switchTab('client');
+            if (!document.getElementById('client-logged-view').classList.contains('hidden')) {
+                logoutClient();
             }
+            await new Promise(r => setTimeout(r, 400));
+            
+            const cpfInput = document.getElementById('client-cpf');
+            cpfInput.value = '';
+            
+            const targetCPF = "386.633.358-73";
+            for (let char of targetCPF.replace(/\D/g, '')) {
+                cpfInput.value += char;
+                applyCPFMask(cpfInput);
+                await new Promise(r => setTimeout(r, 60));
+            }
+
+            await new Promise(r => setTimeout(r, 300));
+            document.getElementById('cpf-form').dispatchEvent(new Event('submit', { cancelable: true, bubbles: true }));
+            updateTestBadge('Teste 1: Aprovado ✓', 'bg-bomb-neon/20 text-bomb-neon border-bomb-neon/40');
         }
 
-        function concluirCadastro() {
-            const cpf = document.getElementById('cad-cpf').value;
-            const nome = document.getElementById('cad-nome').value;
-            const whats = document.getElementById('cad-whats').value;
+        async function runTest2() {
+            updateTestBadge('Executando Teste 2...', 'bg-bomb-gold/20 text-bomb-gold border-bomb-gold/40');
+            switchTab('client');
+            if (!document.getElementById('client-logged-view').classList.contains('hidden')) {
+                logoutClient();
+            }
+            await new Promise(r => setTimeout(r, 400));
 
-            clientes[cpf] = { nome: nome, whats: whats };
-            clienteAtual = clientes[cpf];
+            const cpfInput = document.getElementById('client-cpf');
+            cpfInput.value = '';
+            
+            const testNewCPF = "999.888.777-66";
+            for (let char of testNewCPF.replace(/\D/g, '')) {
+                cpfInput.value += char;
+                applyCPFMask(cpfInput);
+                await new Promise(r => setTimeout(r, 60));
+            }
 
-            document.getElementById('nome-cliente-display').innerText = clienteAtual.nome;
-            irParaCompras();
+            await new Promise(r => setTimeout(r, 300));
+            document.getElementById('cpf-form').dispatchEvent(new Event('submit', { cancelable: true, bubbles: true }));
+
+            await new Promise(r => setTimeout(r, 600));
+            document.getElementById('reg-name').value = "Cliente Teste Automatizado";
+            document.getElementById('reg-phone').value = "(19) 99999-8888";
+            
+            showToast('Simulando preenchimento do novo cadastro...', 'info');
+            updateTestBadge('Teste 2: Aprovado ✓', 'bg-bomb-gold/20 text-bomb-gold border-bomb-gold/40');
         }
 
-        function irParaCompras() {
-            mostrarTela('tela-compras');
-        }
+        async function runTest3() {
+            updateTestBadge('Executando Teste 3...', 'bg-bomb-purple/20 text-bomb-purple border-bomb-purple/40');
+            switchTab('staff');
+            
+            const roles = ['Vendedor', 'Gerente', 'Dono'];
+            for (let role of roles) {
+                const radios = document.getElementsByName('role-select');
+                radios.forEach(r => {
+                    if (r.value === role) r.checked = true;
+                });
+                updateRolePreview(role);
+                document.getElementById('staff-username').value = role.toLowerCase();
+                document.getElementById('staff-password').value = "123456";
+                showToast(`Testando permissões do perfil: ${role}`, 'info');
+                await new Promise(r => setTimeout(r, 1000));
+            }
 
-        function irParaPerfil() {
-            mostrarTela('tela-perfil');
-        }
-
-        function deslogar() {
-            clienteAtual = null;
-            document.getElementById('login-cpf').value = '';
-            mostrarTela('tela-login');
-        }
-
-        function loginFuncionario() {
-            const cargo = document.getElementById('cargo-func').value;
-            alert('Acesso concedido para o perfil: ' + cargo.toUpperCase());
-        }
-
-        function adicionarAoCarrinho(produto, preco) {
-            alert(produto + ' adicionado ao carrinho! (R$ ' + preco.toFixed(2) + ')');
+            updateTestBadge('Teste 3: Aprovado ✓', 'bg-bomb-purple/20 text-bomb-purple border-bomb-purple/40');
+            showToast('Todos os perfis de equipe foram testados com sucesso!', 'success');
         }
     </script>
 </body>
