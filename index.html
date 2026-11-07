@@ -1,0 +1,438 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>BOMBastic TABACARIA</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body class="bg-zinc-950 text-zinc-100 min-h-screen font-sans flex justify-center items-center p-0 sm:p-4">
+
+  <!-- CONTAINER PRINCIPAL (Simulação Mobile/Web App) -->
+  <div id="app" class="w-full max-w-md min-h-screen sm:min-h-[844px] bg-zinc-900 shadow-2xl overflow-hidden flex flex-col relative sm:rounded-3xl border border-zinc-800">
+
+    <!-- HEADER GLOBAL -->
+    <header class="bg-zinc-950 border-b border-amber-500/20 p-4 flex justify-between items-center">
+      <div class="flex items-center space-x-2">
+        <i class="fa-solid fa-fire text-amber-500 text-2xl"></i>
+        <h1 class="text-xl font-extrabold tracking-wider text-amber-500 uppercase">BOMBastic</h1>
+      </div>
+      <button id="logoutBtn" onclick="logout()" class="hidden text-xs bg-zinc-800 hover:bg-zinc-700 text-zinc-300 py-1.5 px-3 rounded-lg border border-zinc-700">
+        <i class="fa-solid fa-right-from-bracket mr-1"></i> Sair
+      </button>
+    </header>
+
+    <!-- ÁREA DE CONTEÚDO DINÂMICO -->
+    <main class="flex-1 p-4 overflow-y-auto">
+
+      <!-- 1. TELA INICIAL / LOGIN -->
+      <section id="screen-auth" class="space-y-6 py-4">
+        <div class="text-center space-y-2">
+          <h2 class="text-2xl font-bold text-white">Bem-vindo à Tabacaria</h2>
+          <p class="text-sm text-zinc-400">Selecione como deseja acessar a plataforma</p>
+        </div>
+
+        <!-- ABA DE ALTERNÂNCIA (CLIENTE / FUNCIONÁRIO) -->
+        <div class="flex bg-zinc-950 p-1 rounded-xl border border-zinc-800">
+          <button id="tab-client-btn" onclick="switchTab('client')" class="flex-1 py-2 text-sm font-semibold rounded-lg bg-amber-500 text-zinc-950 transition-all">
+            Área do Cliente
+          </button>
+          <button id="tab-staff-btn" onclick="switchTab('staff')" class="flex-1 py-2 text-sm font-semibold text-zinc-400 rounded-lg transition-all">
+            Funcionário
+          </button>
+        </div>
+
+        <!-- FORMULÁRIO CLIENTE -->
+        <form id="form-client" onsubmit="handleClientLogin(event)" class="space-y-4">
+          <div>
+            <label class="block text-xs font-semibold text-zinc-400 mb-1">Informe seu CPF</label>
+            <input type="text" id="client-cpf" placeholder="000.000.000-00" required class="w-full bg-zinc-950 border border-zinc-800 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-amber-500">
+          </div>
+          <button type="submit" class="w-full bg-amber-500 hover:bg-amber-400 text-zinc-950 font-bold py-3 rounded-xl transition-colors">
+            Acessar Conta
+          </button>
+        </form>
+
+        <!-- FORMULÁRIO FUNCIONÁRIO -->
+        <form id="form-staff" onsubmit="handleStaffLogin(event)" class="space-y-4 hidden">
+          <div>
+            <label class="block text-xs font-semibold text-zinc-400 mb-1">E-mail ou CPF do Colaborador</label>
+            <input type="text" id="staff-user" placeholder="E-mail ou CPF" required class="w-full bg-zinc-950 border border-zinc-800 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-amber-500">
+          </div>
+          <div>
+            <label class="block text-xs font-semibold text-zinc-400 mb-1">Senha de Acesso</label>
+            <input type="password" id="staff-password" placeholder="••••••••" required class="w-full bg-zinc-950 border border-zinc-800 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-amber-500">
+          </div>
+          <button type="submit" class="w-full bg-amber-500 hover:bg-amber-400 text-zinc-950 font-bold py-3 rounded-xl transition-colors">
+            Entrar no Portal
+          </button>
+          <div class="text-xs text-zinc-500 text-center pt-2">
+            Tipos de acesso: Vendedor | Gerente | Dono
+          </div>
+        </form>
+      </section>
+
+      <!-- 2. TELA DE CADASTRO DE CLIENTE (SE NÃO ENCONTRADO) -->
+      <section id="screen-register" class="hidden space-y-6 py-4">
+        <div class="bg-amber-500/10 border border-amber-500/30 rounded-xl p-4 text-center">
+          <i class="fa-solid fa-circle-exclamation text-amber-500 text-2xl mb-2"></i>
+          <h3 class="text-lg font-bold text-amber-400">CPF não encontrado</h3>
+          <p class="text-xs text-zinc-300 mt-1">Você ainda não tem um cadastro na BOMBastic Tabacaria. Preencha os dados abaixo para continuar.</p>
+        </div>
+
+        <form onsubmit="handleRegister(event)" class="space-y-4">
+          <div>
+            <label class="block text-xs font-semibold text-zinc-400 mb-1">CPF</label>
+            <input type="text" id="reg-cpf" readonly class="w-full bg-zinc-950/60 border border-zinc-800 rounded-xl px-4 py-3 text-zinc-400 focus:outline-none cursor-not-allowed">
+          </div>
+          <div>
+            <label class="block text-xs font-semibold text-zinc-400 mb-1">Nome Completo</label>
+            <input type="text" id="reg-name" placeholder="Digite seu nome" required class="w-full bg-zinc-950 border border-zinc-800 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-amber-500">
+          </div>
+          <div>
+            <label class="block text-xs font-semibold text-zinc-400 mb-1">WhatsApp</label>
+            <input type="tel" id="reg-phone" placeholder="(00) 00000-0000" required class="w-full bg-zinc-950 border border-zinc-800 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-amber-500">
+          </div>
+          <button type="submit" class="w-full bg-amber-500 hover:bg-amber-400 text-zinc-950 font-bold py-3 rounded-xl transition-colors">
+            Finalizar Cadastro
+          </button>
+        </form>
+      </section>
+
+      <!-- 3. DASHBOARD CLIENTE -->
+      <section id="screen-client-dashboard" class="hidden space-y-6">
+        <div class="bg-gradient-to-r from-zinc-950 to-zinc-900 border border-zinc-800 p-5 rounded-2xl">
+          <p class="text-xs text-zinc-400">Olá,</p>
+          <h2 id="client-welcome-name" class="text-xl font-bold text-amber-400 mb-4">Cliente</h2>
+          
+          <div class="grid grid-cols-2 gap-3">
+            <div class="bg-zinc-900 border border-zinc-800 p-3 rounded-xl">
+              <span class="text-xs text-zinc-400 block mb-1">Pontos Fidelidade</span>
+              <div class="flex items-center space-x-2">
+                <i class="fa-solid fa-star text-amber-500"></i>
+                <span id="client-points" class="text-xl font-extrabold text-white">0</span>
+              </div>
+            </div>
+            <div class="bg-zinc-900 border border-zinc-800 p-3 rounded-xl">
+              <span class="text-xs text-zinc-400 block mb-1">Saldo Cashback</span>
+              <div class="flex items-center space-x-2">
+                <i class="fa-solid fa-wallet text-emerald-500"></i>
+                <span id="client-cashback" class="text-xl font-extrabold text-white">R$ 0,00</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="space-y-3">
+          <h3 class="text-sm font-bold text-zinc-400 uppercase tracking-wider">Últimas Compras</h3>
+          <div id="client-purchases" class="space-y-2">
+            <!-- Inserido dinamicamente via JS -->
+          </div>
+        </div>
+      </section>
+
+      <!-- 4. DASHBOARD FUNCIONÁRIO (VENDEDOR / GERENTE / DONO) -->
+      <section id="screen-staff-dashboard" class="hidden space-y-6">
+        <div class="bg-zinc-950 border border-zinc-800 p-4 rounded-xl flex justify-between items-center">
+          <div>
+            <h2 id="staff-name" class="font-bold text-white">Nome do Funcionário</h2>
+            <span id="staff-role-badge" class="text-[10px] uppercase tracking-wider font-extrabold px-2 py-0.5 rounded bg-amber-500/20 text-amber-400 border border-amber-500/30">Vendedor</span>
+          </div>
+        </div>
+
+        <!-- MÓDULO DE VENDAS (TODOS OS PERFIS) -->
+        <div class="bg-zinc-950 border border-zinc-800 p-4 rounded-xl space-y-3">
+          <h3 class="text-sm font-bold text-amber-500 uppercase flex items-center">
+            <i class="fa-solid fa-cart-shopping mr-2"></i> Registrar Venda & Fidelidade
+          </h3>
+          <form onsubmit="handleSale(event)" class="space-y-3">
+            <input type="text" id="sale-cpf" placeholder="CPF do Cliente" required class="w-full bg-zinc-900 border border-zinc-800 rounded-lg px-3 py-2 text-sm text-white">
+            <input type="number" step="0.01" id="sale-amount" placeholder="Valor Total da Compra (R$)" required class="w-full bg-zinc-900 border border-zinc-800 rounded-lg px-3 py-2 text-sm text-white">
+            <button type="submit" class="w-full bg-emerald-600 hover:bg-emerald-500 text-white font-bold py-2 rounded-lg text-sm">
+              Confirmar e Pontuar Cliente
+            </button>
+          </form>
+        </div>
+
+        <!-- MÓDULO LOCALIZADOR E ESTOQUE (VENDEDOR, GERENTE, DONO) -->
+        <div class="bg-zinc-950 border border-zinc-800 p-4 rounded-xl space-y-3">
+          <h3 class="text-sm font-bold text-amber-500 uppercase flex items-center">
+            <i class="fa-solid fa-boxes-stacked mr-2"></i> Localizador de Prateleira
+          </h3>
+          <div class="space-y-2" id="stock-list">
+            <!-- Inserido via JS -->
+          </div>
+        </div>
+
+        <!-- MÓDULO EXCLUSIVO GERENTE E DONO (RELATÓRIOS E GESTÃO) -->
+        <div id="module-manager" class="hidden bg-zinc-950 border border-amber-500/30 p-4 rounded-xl space-y-3">
+          <h3 class="text-sm font-bold text-amber-400 uppercase flex items-center">
+            <i class="fa-solid fa-chart-line mr-2"></i> Gestão & Relatórios (Gerência)
+          </h3>
+          <div class="grid grid-cols-2 gap-2 text-xs">
+            <div class="bg-zinc-900 p-3 rounded-lg border border-zinc-800">
+              <span class="text-zinc-400">Total Vendas (Hoje)</span>
+              <p id="metrics-sales-today" class="text-lg font-bold text-white mt-1">R$ 0,00</p>
+            </div>
+            <div class="bg-zinc-900 p-3 rounded-lg border border-zinc-800">
+              <span class="text-zinc-400">Clientes Ativos</span>
+              <p id="metrics-total-clients" class="text-lg font-bold text-white mt-1">0</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- MÓDULO EXCLUSIVO DONO (CONTROLE TOTAL DE ACESSOS) -->
+        <div id="module-owner" class="hidden bg-zinc-950 border border-red-500/30 p-4 rounded-xl space-y-3">
+          <h3 class="text-sm font-bold text-red-400 uppercase flex items-center">
+            <i class="fa-solid fa-user-shield mr-2"></i> Painel do Proprietário
+          </h3>
+          <p class="text-xs text-zinc-400">Controle total de permissões, faturamento da loja e relatórios consolidados.</p>
+          <button onclick="alert('Relatório consolidado exportado com sucesso!')" class="w-full bg-zinc-900 hover:bg-zinc-800 text-zinc-200 border border-zinc-700 py-2 rounded-lg text-xs font-semibold">
+            Exportar Dados Financeiros completos
+          </button>
+        </div>
+
+      </section>
+
+    </main>
+
+  </div>
+
+  <script>
+    // --- BANCO DE DADOS EM MEMÓRIA / LOCALSTORAGE ---
+    const defaultData = {
+      clients: [
+        { cpf: "12345678900", name: "João Silva", phone: "19999999999", points: 120, cashback: 15.50, history: [{ date: "2026-11-01", amount: 150.00 }] }
+      ],
+      staff: [
+        { user: "vendedor@bombastic.com", pass: "123", name: "Carlos (Vendedor)", role: "vendedor" },
+        { user: "gerente@bombastic.com", pass: "123", name: "Mariana (Gerente)", role: "gerente" },
+        { user: "dono@bombastic.com", pass: "123", name: "Ricardo (Dono)", role: "dono" }
+      ],
+      products: [
+        { name: "Essência Zomo Strong Mint", shelf: "Corredor A - Prateleira 2", stock: 45 },
+        { name: "Carvão Coco Hexagonal 1kg", shelf: "Corredor B - Base 1", stock: 30 },
+        { name: "Pod Descartável 5000 Puffs", shelf: "Vitrine Principal - Gaveta 3", stock: 12 }
+      ]
+    };
+
+    function initStorage() {
+      if (!localStorage.getItem('bombastic_db')) {
+        localStorage.setItem('bombastic_db', JSON.stringify(defaultData));
+      }
+    }
+
+    function getDB() {
+      return JSON.parse(localStorage.getItem('bombastic_db'));
+    }
+
+    function saveDB(db) {
+      localStorage.setItem('bombastic_db', JSON.stringify(db));
+    }
+
+    // --- TROCA DE ABAS LOGIN ---
+    function switchTab(tab) {
+      const clientBtn = document.getElementById('tab-client-btn');
+      const staffBtn = document.getElementById('tab-staff-btn');
+      const formClient = document.getElementById('form-client');
+      const formStaff = document.getElementById('form-staff');
+
+      if (tab === 'client') {
+        clientBtn.className = "flex-1 py-2 text-sm font-semibold rounded-lg bg-amber-500 text-zinc-950 transition-all";
+        staffBtn.className = "flex-1 py-2 text-sm font-semibold text-zinc-400 rounded-lg transition-all";
+        formClient.classList.remove('hidden');
+        formStaff.classList.add('hidden');
+      } else {
+        staffBtn.className = "flex-1 py-2 text-sm font-semibold rounded-lg bg-amber-500 text-zinc-950 transition-all";
+        clientBtn.className = "flex-1 py-2 text-sm font-semibold text-zinc-400 rounded-lg transition-all";
+        formStaff.classList.remove('hidden');
+        formClient.classList.add('hidden');
+      }
+    }
+
+    // --- AUTENTICAÇÃO CLIENTE ---
+    let pendingCpf = "";
+
+    function handleClientLogin(e) {
+      e.preventDefault();
+      const rawCpf = document.getElementById('client-cpf').value.replace(/\D/g, '');
+      const db = getDB();
+      const client = db.clients.find(c => c.cpf === rawCpf);
+
+      if (client) {
+        openClientDashboard(client);
+      } else {
+        pendingCpf = rawCpf;
+        document.getElementById('screen-auth').classList.add('hidden');
+        document.getElementById('screen-register').classList.remove('hidden');
+        document.getElementById('reg-cpf').value = rawCpf;
+      }
+    }
+
+    function handleRegister(e) {
+      e.preventDefault();
+      const name = document.getElementById('reg-name').value;
+      const phone = document.getElementById('reg-phone').value;
+
+      const db = getDB();
+      const newClient = {
+        cpf: pendingCpf,
+        name: name,
+        phone: phone,
+        points: 0,
+        cashback: 0.00,
+        history: []
+      };
+
+      db.clients.push(newClient);
+      saveDB(db);
+
+      document.getElementById('screen-register').classList.add('hidden');
+      openClientDashboard(newClient);
+    }
+
+    function openClientDashboard(client) {
+      document.getElementById('screen-auth').classList.add('hidden');
+      document.getElementById('screen-client-dashboard').classList.remove('hidden');
+      document.getElementById('logoutBtn').classList.remove('hidden');
+
+      document.getElementById('client-welcome-name').innerText = client.name;
+      document.getElementById('client-points').innerText = client.points;
+      document.getElementById('client-cashback').innerText = `R$ ${client.cashback.toFixed(2)}`;
+
+      const purchasesContainer = document.getElementById('client-purchases');
+      purchasesContainer.innerHTML = '';
+      if (client.history.length === 0) {
+        purchasesContainer.innerHTML = `<p class="text-xs text-zinc-500 italic">Nenhuma compra registrada ainda.</p>`;
+      } else {
+        client.history.forEach(p => {
+          purchasesContainer.innerHTML += `
+            <div class="bg-zinc-950 border border-zinc-800 p-3 rounded-xl flex justify-between items-center text-xs">
+              <div>
+                <p class="font-bold text-white">Compra Realizada</p>
+                <p class="text-zinc-500">${p.date}</p>
+              </div>
+              <span class="font-bold text-amber-500">R$ ${p.amount.toFixed(2)}</span>
+            </div>
+          `;
+        });
+      }
+    }
+
+    // --- AUTENTICAÇÃO FUNCIONÁRIO ---
+    function handleStaffLogin(e) {
+      e.preventDefault();
+      const user = document.getElementById('staff-user').value.trim();
+      const pass = document.getElementById('staff-password').value;
+
+      const db = getDB();
+      const staffMember = db.staff.find(s => (s.user === user || s.user === user.replace(/\D/g, '')) && s.pass === pass);
+
+      if (staffMember) {
+        openStaffDashboard(staffMember);
+      } else {
+        alert("Credenciais inválidas! Tente novamente.");
+      }
+    }
+
+    function openStaffDashboard(staff) {
+      document.getElementById('screen-auth').classList.add('hidden');
+      document.getElementById('screen-staff-dashboard').classList.remove('hidden');
+      document.getElementById('logoutBtn').classList.remove('hidden');
+
+      document.getElementById('staff-name').innerText = staff.name;
+      const badge = document.getElementById('staff-role-badge');
+      badge.innerText = staff.role.toUpperCase();
+
+      // Esconde módulos condicionais
+      document.getElementById('module-manager').classList.add('hidden');
+      document.getElementById('module-owner').classList.add('hidden');
+
+      // Exibe módulos conforme cargo (Vendedor, Gerente ou Dono)
+      if (staff.role === 'gerente' || staff.role === 'dono') {
+        document.getElementById('module-manager').classList.remove('hidden');
+        renderMetrics();
+      }
+
+      if (staff.role === 'dono') {
+        document.getElementById('module-owner').classList.remove('hidden');
+      }
+
+      renderStock();
+    }
+
+    function renderStock() {
+      const db = getDB();
+      const container = document.getElementById('stock-list');
+      container.innerHTML = '';
+      db.products.forEach(prod => {
+        container.innerHTML += `
+          <div class="bg-zinc-900 p-3 rounded-lg border border-zinc-800 flex justify-between items-center text-xs">
+            <div>
+              <p class="font-bold text-white">${prod.name}</p>
+              <p class="text-amber-500/80"><i class="fa-solid fa-location-dot mr-1"></i>${prod.shelf}</p>
+            </div>
+            <span class="bg-zinc-800 text-zinc-300 px-2 py-1 rounded font-mono">Qtd: ${prod.stock}</span>
+          </div>
+        `;
+      });
+    }
+
+    function renderMetrics() {
+      const db = getDB();
+      document.getElementById('metrics-total-clients').innerText = db.clients.length;
+      let totalSales = 0;
+      db.clients.forEach(c => {
+        c.history.forEach(h => totalSales += h.amount);
+      });
+      document.getElementById('metrics-sales-today').innerText = `R$ ${totalSales.toFixed(2)}`;
+    }
+
+    // --- REGISTRAR VENDA E FIDELIDADE ---
+    function handleSale(e) {
+      e.preventDefault();
+      const cpf = document.getElementById('sale-cpf').value.replace(/\D/g, '');
+      const amount = parseFloat(document.getElementById('sale-amount').value);
+
+      const db = getDB();
+      const client = db.clients.find(c => c.cpf === cpf);
+
+      if (!client) {
+        alert("Cliente não cadastrado! Peça para o cliente se cadastrar na tela inicial.");
+        return;
+      }
+
+      // Regra de Fidelidade & Cashback: 1 Ponto a cada R$ 10,00 e 5% Cashback
+      const pointsEarned = Math.floor(amount / 10);
+      const cashbackEarned = amount * 0.05;
+
+      client.points += pointsEarned;
+      client.cashback += cashbackEarned;
+      client.history.push({
+        date: new Date().toISOString().split('T')[0],
+        amount: amount
+      });
+
+      saveDB(db);
+      alert(`Venda registrada com sucesso!\n\nPontos Adicionados: ${pointsEarned}\nCashback Gerado: R$ ${cashbackEarned.toFixed(2)}`);
+      
+      document.getElementById('sale-cpf').value = '';
+      document.getElementById('sale-amount').value = '';
+      renderMetrics();
+    }
+
+    // --- LOGOUT GLOBAL ---
+    function logout() {
+      document.getElementById('screen-client-dashboard').classList.add('hidden');
+      document.getElementById('screen-staff-dashboard').classList.add('hidden');
+      document.getElementById('screen-register').classList.add('hidden');
+      document.getElementById('screen-auth').classList.remove('hidden');
+      document.getElementById('logoutBtn').classList.add('hidden');
+    }
+
+    // Inicializar no carregamento da página
+    window.onload = initStorage;
+  </script>
+</body>
+</html>
