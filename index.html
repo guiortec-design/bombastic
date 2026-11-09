@@ -61,7 +61,7 @@ input,select{width:100%;padding:12px;border-radius:10px;background:#0c0a08;borde
  <div class="hero"><h2>Crie uma nova senha</h2><p class="muted">Informe o código temporário fornecido pela equipe e escolha uma nova senha. O código expira em 30 minutos.</p><label>CPF</label><input id="forcedCpf" inputmode="numeric" placeholder="000.000.000-00" maxlength="14" oninput="formatCPF(this)"><label>Código temporário</label><input id="forcedCode" inputmode="numeric" autocomplete="one-time-code" maxlength="8" placeholder="Código de 8 dígitos"><label>Nova senha</label><input id="forcedPassword" type="password" autocomplete="new-password" minlength="8" placeholder="Mínimo de 8 caracteres"><label>Confirme a nova senha</label><input id="forcedPasswordConfirm" type="password" autocomplete="new-password" minlength="8" placeholder="Repita sua senha"><button class="btn primary" onclick="saveForcedClientPassword()">Salvar nova senha</button></div>
 </section>
 <section id="staffLogin" class="hidden">
- <div class="hero"><h2>Acesso da equipe</h2><p class="muted">Entre com seu e-mail corporativo e senha. Sua unidade e suas permissões serão carregadas automaticamente.</p><label>E-mail de acesso</label><input id="staffUser" type="email" autocomplete="username" placeholder="seu e-mail cadastrado"><label>Senha</label><input id="staffPass" type="password" autocomplete="current-password" placeholder="Sua senha"><button class="btn primary" id="staffLoginBtn" onclick="staffLogin()">Entrar</button><p class="small muted">A loja é identificada pelo cadastro do funcionário. Não escolha a unidade nesta tela.</p><details style="margin-top:14px"><summary>Primeiro acesso? Criar conta do funcionário</summary><label>E-mail cadastrado pelo proprietário</label><input id="staffSignupEmail" type="email" placeholder="seu e-mail"><label>Crie uma senha</label><input id="staffSignupPassword" type="password" minlength="8" placeholder="Mínimo de 8 caracteres"><button class="btn" onclick="createStaffAccount()">Criar acesso</button><p class="small muted">O proprietário precisa cadastrar seu perfil e unidade antes.</p></details></div>
+ <div class="hero"><h2>Acesso da equipe</h2><p class="muted">Entre com seu e-mail e senha de acesso.</p><label>E-mail</label><input id="staffUser" type="email" autocomplete="username" placeholder="seu e-mail cadastrado"><label>Senha</label><input id="staffPass" type="password" autocomplete="current-password" placeholder="Sua senha"><button class="btn primary" id="staffLoginBtn" onclick="staffLogin()">Entrar</button><button class="btn" id="staffResetBtn" onclick="requestStaffPasswordReset()">Solicitar reset de senha</button><button class="btn" onclick="show('start')">Voltar</button><p class="small muted">A unidade e as permissões são identificadas pelo cadastro feito pelo proprietário.</p></div>
 </section>
 <section id="staff" class="hidden">
  <div class="hero"><h2 id="staffTitle">Painel</h2><p class="muted" id="staffSubtitle"></p><div id="staffModules" class="grid cards"></div></div>
@@ -451,14 +451,17 @@ function exportStockAudit(mode){let unit=role==='Proprietário'?(document.getEle
 
 
 
-async function createStaffAccount(){
- const email=(document.getElementById('staffSignupEmail')?.value||'').trim().toLowerCase();
- const password=document.getElementById('staffSignupPassword')?.value||'';
- if(!email||password.length<8){toast('Informe o e-mail cadastrado e uma senha de pelo menos 8 caracteres.');return}
- const {data,error}=await supabaseClient.auth.signUp({email,password});
- if(error){toast('Não foi possível criar o acesso: '+error.message);return}
- if(data.session){const link=await supabaseClient.rpc('vincular_funcionario_por_email');if(link.error){toast(link.error.message);return}toast('Acesso criado e perfil vinculado. Entre com seu e-mail e senha.')}
- else toast('Cadastro iniciado. Confirme o e-mail e depois entre com sua senha.');
+async function requestStaffPasswordReset(){
+ const email=document.getElementById('staffUser').value.trim().toLowerCase();
+ if(!email){toast('Informe seu e-mail para solicitar o reset de senha.');return}
+ const btn=document.getElementById('staffResetBtn');
+ btn.disabled=true;btn.textContent='Enviando solicitação...';
+ try{
+  const {error}=await supabaseClient.auth.resetPasswordForEmail(email,{redirectTo:window.location.origin+window.location.pathname});
+  if(error)throw error;
+  toast('Se o e-mail estiver cadastrado, você receberá as instruções para redefinir sua senha.');
+ }catch(e){toast('Não foi possível solicitar o reset: '+(e.message||'tente novamente.'))}
+ finally{btn.disabled=false;btn.textContent='Solicitar reset de senha'}
 }
 async function teamManagementView(){
  if(role!=='Proprietário')return '<p>Apenas o proprietário pode gerenciar a equipe.</p>';
