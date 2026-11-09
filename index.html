@@ -522,7 +522,7 @@ async function staffLogin(){
   staffActor=profileData.nome||email;
   staffBranch=role==='Proprietário'?'Todas as unidades':unit;
   window.currentStaffProfile=profileData;
-  if(unit){branch=unit;document.getElementById('branch-label').textContent=unit;document.getElementById('customerBranch').textContent=unit;if(branches[unit]){document.getElementById('branchAddress').textContent=branches[unit].address;document.getElementById('branchWhats').href='https://wa.me/'+branches[unit].phone}}
+  if(unit){branch=unit;const branchLabel=document.getElementById('branch-label');if(branchLabel)branchLabel.textContent=unit;const customerBranchLabel=document.getElementById('customerBranch');if(customerBranchLabel)customerBranchLabel.textContent=unit;if(branches[unit]){const branchAddress=document.getElementById('branchAddress');if(branchAddress)branchAddress.textContent=branches[unit].address;const branchWhats=document.getElementById('branchWhats');if(branchWhats)branchWhats.href='https://wa.me/'+branches[unit].phone}}
   try{await loadStorePixSettings();await loadProductsFromSupabase(true);await loadOrdersFromSupabase();await loadStaffData();await loadOwnerSettings()}catch(loadError){throw new Error('Login efetuado, mas não foi possível sincronizar catálogo e pedidos: '+loadError.message)}
   document.getElementById('profile').classList.remove('hidden');
   document.getElementById('profile-name').textContent=profileData.nome||role;
