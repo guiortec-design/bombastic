@@ -891,8 +891,10 @@ async function addReward(){
 
 
 function branchSelectHtml(id,selected,includeAll){let options=includeAll?'<option value="all">Todas as unidades</option>':'';for(const pair of Object.entries(branches)){const name=pair[0],store=pair[1];options+='<option value="'+store.id+'" '+(String(selected)===String(store.id)?'selected':'')+'>'+esc(name)+'</option>';}return '<select id="'+id+'">'+options+'</select>';}
-function setOwnerDashboardScope(scope){dashboardScope=scope;const d=document.getElementById('staffDetail');if(d)d.innerHTML=ownerDashboardView(scope)}
+function setOwnerDashboardScope(scope){if(role==='Vendedor')scope=staffBranch;if(role==='Gerente')scope=staffBranch;dashboardScope=scope;const d=document.getElementById('staffDetail');if(d)d.innerHTML=ownerDashboardView(scope)}
 function ownerDashboardView(scope){
+ if(role==='Vendedor'||role==='Gerente')scope=staffBranch;
+ if(!scope||scope==='Todas as lojas')scope=staffBranch||Object.keys(branches)[0]||'';
  dashboardScope=scope;
  const all=scope==='Todas as lojas',names=Object.keys(branches),now=new Date(),monthStart=new Date(now.getFullYear(),now.getMonth(),1),monthKey=now.getFullYear()+'-'+String(now.getMonth()+1).padStart(2,'0')+'-01',rows=all?names:[scope],validSale=s=>rows.includes(s.branch)&&new Date(s.saleDate||s.date)>=monthStart;
  const monthSales=sales.filter(validSale),total=monthSales.reduce((a,s)=>a+Number(s.total||0),0);
