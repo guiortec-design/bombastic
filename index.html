@@ -411,6 +411,7 @@ async function addReward(){
 
 
 
+function branchSelectHtml(id,selected,includeAll){let opts=includeAll?'<option value="all">Todas as unidades</option>':'';Object.entries(branches).forEach(([name,b])=>opts+='<option value="'+b.id+'" '+(String(selected)===String(b.id)?'selected':'')+'>'+esc(name)+'</option>');return '<select id="'+id+'">'+opts+'</select>}
 function ownerDashboardView(scope){
  const all=scope==='Todas as unidades',names=Object.keys(branches),selected=names.includes(scope)?scope:names[0],now=new Date(),start=new Date(now.getFullYear(),now.getMonth(),1),rows=all?names:[selected];
  const monthSales=sales.filter(s=>rows.includes(s.branch)&&new Date(s.saleDate||s.date)>=start),monthOrders=orders.filter(o=>rows.includes(o.branch)&&new Date(o.date)>=start&&!['Cancelado','Estornado'].includes(o.status)),total=monthSales.reduce((a,s)=>a+s.total,0),goal=rows.reduce((a,n)=>a+(storeGoals[Number(branches[n].id)]||0),0),pct=goal?Math.min(100,total/goal*100):0;
