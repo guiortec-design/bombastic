@@ -39,7 +39,8 @@ input,select{width:100%;padding:12px;border-radius:10px;background:#0c0a08;borde
 </header>
 <main id="app">
 <section id="start">
- <div class="hero"><span class="pill">Experiência Bombastic</span><h2>Bem-vindo à Bombastic!</h2><p class="muted">Escolha como deseja acessar.</p><div class="actions"><button class="btn primary" onclick="show('branch')">Sou Cliente</button><button class="btn" onclick="show('staffLogin')">Sou Funcionário</button></div></div>
+ <div class="hero"><h2>Bem-vindo à Bombastic!</h2><p class="muted">Escolha sua unidade para começar suas compras.</p><div class="actions"><button class="btn primary" onclick="show('branch')">Entrar como cliente</button></div></div>
+ <div style="display:flex;justify-content:flex-end;margin-top:14px"><button class="btn" style="font-size:.88rem;padding:9px 14px" onclick="show('staffLogin')">Área Administrativa</button></div>
  <div class="notice">Bombastic Tabacaria — sistema integrado às unidades. Alguns serviços externos, como envio de e-mail e confirmação bancária do Pix, dependem de configuração própria.</div>
 </section>
 <section id="branch" class="hidden">
