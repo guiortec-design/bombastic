@@ -527,8 +527,8 @@ async function staffLogin(){
   document.getElementById('profile').classList.remove('hidden');
   document.getElementById('profile-name').textContent=profileData.nome||role;
   document.getElementById('avatar').textContent=role==='Proprietário'?'P':(profileData.nome||role)[0].toUpperCase();
-  document.getElementById('staffTitle').textContent='Painel '+role;
-  document.getElementById('staffSubtitle').textContent=role==='Proprietário'?'Acesso administrativo às três unidades':unit;
+  const staffTitle=document.getElementById('staffTitle');staffTitle.textContent=role==='Vendedor'?'':'Painel '+role;staffTitle.classList.toggle('hidden',role==='Vendedor');
+  document.getElementById('staffSubtitle').textContent=role==='Proprietário'?'Acesso administrativo às três unidades':role==='Vendedor'?'':unit;
   let modules=role==='Vendedor'?['Visão geral','Estoque','Financeiro']:['Visão geral','Estoque','Financeiro','Configurações'];
   document.getElementById('staffModules').innerHTML=modules.map(m=>`<button type="button" class="admin-category-btn" onclick='openModule(${JSON.stringify(m)})'>${esc(m)}</button>`).join('');
   show('staff');startStaffOrderNotifications();
@@ -554,6 +554,12 @@ async function approveClientReset(id){
   const detail=document.getElementById('staffDetail');detail.innerHTML='<h3>Redefinição de senha</h3>'+(data.temporaryCode?'<div class="card"><strong>Código temporário do cliente</strong><h2>'+esc(data.temporaryCode)+'</h2><p class="small muted">Válido até '+new Date(data.expiresAt).toLocaleString('pt-BR')+'. Entregue este código ao cliente. Ele não é a senha definitiva.</p></div>':'')+await passwordResetRequestsView();
  }catch(e){toast('Não foi possível aprovar: '+(e.message||'tente novamente.'))}
 }
+function sellerGoalView(){
+  const profile=window.currentStaffProfile||{},name=String(profile.nome||staffActor||'').trim(),unit=staffBranch,now=new Date(),monthStart=new Date(now.getFullYear(),now.getMonth(),1),monthEnd=new Date(now.getFullYear(),now.getMonth()+1,1),goal=Number(employeeGoalSettings[Number(profile.id)]?.meta_mensal||0);
+  const ownSales=sales.filter(s=>String(s.branch||'')===unit&&String(s.assignedTo||'').trim().toLowerCase()===name.toLowerCase()&&new Date(s.saleDate||s.date)>=monthStart&&new Date(s.saleDate||s.date)<monthEnd);
+  const sold=ownSales.reduce((sum,s)=>sum+Number(s.total||0),0),remaining=Math.max(0,goal-sold),pct=goal>0?Math.min(100,sold/goal*100):0,month=now.toLocaleDateString('pt-BR',{month:'long',year:'numeric'});
+  return '<h3>Minha meta</h3><p class="muted">'+esc(unit)+' • '+esc(month)+'</p><section class="seller-chart-card"><h4>Meta mensal</h4><div class="owner-dashboard-total"><span>Valor vendido por você</span><strong>'+money(sold)+'</strong><small>'+ownSales.length+' venda(s) concluída(s) no mês</small></div>'+(goal>0?'<div class="seller-bar-track" style="height:18px"><i style="display:block;height:100%;width:'+pct.toFixed(1)+'%;background:linear-gradient(90deg,#f9d328,#b7e34b);border-radius:20px"></i></div><div class="seller-bar-label"><strong>'+pct.toFixed(1)+'% da meta</strong><span>Meta: '+money(goal)+'</span></div><div class="grid cards"><div class="card"><p>Falta para atingir</p><div class="stat">'+money(remaining)+'</div></div><div class="card"><p>Meta mensal</p><div class="stat">'+money(goal)+'</div></div></div>'+(sold>=goal?'<p><strong>Parabéns! Você atingiu sua meta mensal.</strong></p>':''):'<p class="muted">Sua meta mensal ainda não foi definida. Peça ao gerente ou proprietário para cadastrá-la.</p>')+'</section>';
+}
 function showAdminCategory(category){
  staffPanelHistory=[];
  const owner=role==='Proprietário',manager=role==='Gerente',seller=role==='Vendedor';
@@ -572,6 +578,7 @@ function showAdminCategory(category){
  }
  const d=document.getElementById('staffDetail');d.classList.remove('hidden');
  if(category==='Visão geral'&&owner){d.innerHTML=ownerDashboardView('Todas as lojas');d.scrollIntoView({behavior:'smooth',block:'start'});updateFloatingPanelBack();return}
+  if(category==='Visão geral'&&seller){d.innerHTML=sellerGoalView()+'<p><button type="button" class="btn btn-close-module" onclick="goBackStaffPanel()">← Voltar às abas</button></p>';d.scrollIntoView({behavior:'smooth',block:'start'});updateFloatingPanelBack();return}
  d.innerHTML=(category==='Visão geral'?'':'<h3>'+esc(category)+'</h3>')+(category==='Visão geral'?'':'<p class="muted">Escolha uma opção para abrir sua página.</p>')+'<div class="'+(category==='Visão geral'?'overview-store-grid':'admin-shortcut-grid')+'">'+items.map(x=>'<button type="button" class="'+(category==='Visão geral'?'overview-store-btn':'admin-shortcut')+'" onclick="openModule('+JSON.stringify(x).replace(/"/g,'&quot;')+')">'+esc(x)+'</button>').join('')+'</div><p><button type="button" class="btn btn-close-module" onclick="goBackStaffPanel()">← Voltar às abas</button></p>';
  d.scrollIntoView({behavior:'smooth',block:'start'});updateFloatingPanelBack();
 }
