@@ -97,15 +97,6 @@ const branchNameById={1:"Loja Volobueff",2:"Loja Picerno",3:"Nova Veneza"};
 const SUPABASE_URL="https://mxbmzpnoawfbwpbjkbcw.supabase.co";
 const SUPABASE_ANON_KEY="sb_publishable_-zBTfhTld23BHReZ4huWyQ_zWO-xPIj";
 const supabaseClient=window.supabase.createClient(SUPABASE_URL,SUPABASE_ANON_KEY);
-const seedProducts=[
- {id:1,name:"Essência ZIG Melancia",category:"Essência",shelf:"Prateleira A1",price:24.90,emoji:"🍉",tag:"Oferta Especial",stock:30},
- {id:2,name:"Essência ZIG Maracujá",category:"Essência",shelf:"Prateleira A1",price:24.90,emoji:"🥭",tag:"Todos",stock:25},
- {id:3,name:"Essência ZOMO",category:"Essência",shelf:"Prateleira A2",price:29.90,emoji:"🍇",tag:"Promoção",stock:18},
- {id:4,name:"Carvão",category:"Carvão",shelf:"Prateleira B1",price:18.00,emoji:"⬛",tag:"Todos",stock:40},
- {id:5,name:"Papel alumínio",category:"Acessórios",shelf:"Prateleira B2",price:8.50,emoji:"✨",tag:"Todos",stock:50},
- {id:6,name:"Pegador",category:"Acessórios",shelf:"Prateleira B2",price:12.00,emoji:"🗜️",tag:"Oferta Especial",stock:15},
- {id:7,name:"Furador",category:"Acessórios",shelf:"Prateleira B2",price:9.90,emoji:"🔧",tag:"Todos",stock:20}
-];
 let products=[],clients={},orders=[],sales=[],suppliers=[],ledger=[],rewards=[],redemptions=[],stockLots=[];
 let branch='',client=null,cart={},role='',staffBranch='',staffActor='',activeFilter='Todos',currentOrder=null,activeCartProductId=null,pendingClientCpf='',pendingClientEmail='',clientAuthUser=null,purchaseDraftItems=[];
 const money=n=>Number(n||0).toLocaleString('pt-BR',{style:'currency',currency:'BRL'});
@@ -200,7 +191,7 @@ async function staffLogin(){
 
 function canManage(){return role==='Gerente'||role==='Proprietário'}
 function stockModuleName(){return role==='Vendedor'?'Cadastro de produtos e lotes':role==='Proprietário'?'Estoque e fornecedores':'Estoque e lotes'}
-async function openModule(m){if(role==='Vendedor'&&['Financeiro e relatórios','Estornar venda','Backup e auditoria','Configurações','Cancelar pedido não retirado','Estoque e lotes','Produtos e fornecedores','Compras necessárias'].includes(m)){toast('Você não tem permissão para este módulo.');return}let d=document.getElementById('staffDetail');d.classList.remove('hidden');let html=`<h3>${esc(m)}</h3><p class="muted">Unidade: ${esc(staffBranch)}</p>`;
+async function openModule(m){if(role==='Vendedor'&&['Financeiro e relatórios','Estornar venda','Backup e auditoria','Configurações','Cancelar pedido não retirado','Estoque e lotes','Produtos e fornecedores','Compras necessárias','Compras e recebimento'].includes(m)){toast('Você não tem permissão para este módulo.');return}let d=document.getElementById('staffDetail');d.classList.remove('hidden');let html=`<h3>${esc(m)}</h3><p class="muted">Unidade: ${esc(staffBranch)}</p>`;
  if(m.includes('Consulta de produtos'))html+=stockLookupView();
  else if(m.includes('Pedidos'))html+=ordersView();
  else if(m.includes('Visão geral'))html+=overviewView();
