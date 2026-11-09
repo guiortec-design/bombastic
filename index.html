@@ -46,6 +46,14 @@ input,select{width:100%;padding:12px;border-radius:10px;background:#0c0a08;borde
 .floating-panel-back.visible{display:flex}
 .floating-panel-back:active{transform:scale(.97)}
 @media(max-width:600px){.floating-panel-back{left:12px;bottom:14px;padding:11px 14px;font-size:12px}}
+/* Acabamento neon dos módulos do painel */
+.admin-module-grid{display:grid!important;grid-template-columns:repeat(auto-fit,minmax(118px,1fr));gap:9px!important;justify-items:center;align-items:stretch;margin-top:16px}
+.admin-category-btn{width:100%;max-width:190px;min-height:54px!important;padding:10px 8px!important;display:flex;align-items:center;justify-content:center;text-align:center!important;border:1px solid #f9d328!important;border-radius:11px!important;background:linear-gradient(145deg,#24200b,#111)!important;color:#ffe45c!important;font-size:13px!important;font-weight:900!important;letter-spacing:.35px;box-shadow:0 0 5px #f9d32899,inset 0 0 8px #f9d32822,0 0 13px #f9d32833!important;text-shadow:0 0 7px #f9d32888;transition:transform .15s,box-shadow .15s}
+.admin-category-btn small{display:none!important}
+.admin-category-btn:hover{transform:translateY(-2px);border-color:#fff08a!important;background:linear-gradient(145deg,#39300c,#17140a)!important;box-shadow:0 0 8px #f9d328,0 0 20px #f9d32866!important}
+.area-admin-btn{font-size:11px!important;font-weight:800!important;letter-spacing:.2px;padding:6px 10px!important;min-height:0!important;border:1px solid #36d68a!important;border-radius:8px!important;background:linear-gradient(135deg,#123b2a,#10251c)!important;color:#8fffc1!important;box-shadow:0 0 5px #28d98766!important;opacity:.92}
+.area-admin-btn:hover{background:#174d35!important;box-shadow:0 0 9px #28d987aa!important}
+@media(max-width:600px){.admin-module-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:8px!important}.admin-category-btn{max-width:none;min-height:50px!important;font-size:12px!important}.area-admin-btn{font-size:10px!important;padding:5px 8px!important}}
 </style>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js" defer></script>
 </head>
@@ -64,7 +72,7 @@ input,select{width:100%;padding:12px;border-radius:10px;background:#0c0a08;borde
 </header>
 <main id="app">
 <section id="start">
- <div style="display:flex;justify-content:flex-end;margin-bottom:14px"><button class="btn" style="font-size:.9rem;padding:10px 16px" onclick="show('staffLogin')">Área Administrativa</button></div>
+ <div style="display:flex;justify-content:flex-end;margin-bottom:14px"><button class="btn area-admin-btn" onclick="show('staffLogin')">Área Administrativa</button></div>
  <div class="hero"><h2>Selecione sua loja</h2><p class="muted">Escolha a unidade onde deseja fazer suas compras.</p></div>
  <div class="grid branches">
   <article class="card"><h3>Loja Picerno</h3><p>Avenida Fuad Assef Maluf, 07</p><button class="btn primary" onclick="show('cpfLogin'); chooseBranch('Loja Picerno')">Entrar nesta loja</button></article>
@@ -102,7 +110,7 @@ input,select{width:100%;padding:12px;border-radius:10px;background:#0c0a08;borde
  </div>
 </section>
 <section id="staff" class="hidden">
- <div class="hero"><h2 id="staffTitle">Painel</h2><p class="muted" id="staffSubtitle"></p><div id="staffModules" class="grid cards"></div></div>
+ <div class="hero"><h2 id="staffTitle">Painel</h2><p class="muted" id="staffSubtitle"></p><div id="staffModules" class="grid cards admin-module-grid"></div></div>
  <div id="staffDetail" class="card hidden"></div>
 </section>
 </main>
@@ -345,7 +353,7 @@ async function staffLogin(){
   document.getElementById('staffTitle').textContent='Painel '+role;
   document.getElementById('staffSubtitle').textContent=role==='Proprietário'?'Acesso administrativo às três unidades':unit;
   let modules=role==='Vendedor'?['Visão geral','Estoque','Financeiro']:['Visão geral','Estoque','Financeiro','Configurações'];
-  document.getElementById('staffModules').innerHTML=modules.map(m=>`<button type="button" class="admin-category-btn" onclick='openModule(${JSON.stringify(m)})'>${esc(m)}<small>Abrir opções</small></button>`).join('');
+  document.getElementById('staffModules').innerHTML=modules.map(m=>`<button type="button" class="admin-category-btn" onclick='openModule(${JSON.stringify(m)})'>${esc(m)}</button>`).join('');
   show('staff');startStaffOrderNotifications();
  }catch(error){await supabaseClient.auth.signOut();toast(error.message||'Não foi possível entrar. Confira suas credenciais.')}
  finally{btn.disabled=false;btn.textContent='Entrar'}
