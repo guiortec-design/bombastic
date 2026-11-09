@@ -93,7 +93,7 @@ const SUPABASE_URL="https://mxbmzpnoawfbwpbjkbcw.supabase.co";
 const SUPABASE_ANON_KEY="sb_publishable_-zBTfhTld23BHReZ4huWyQ_zWO-xPIj";
 const supabaseClient=window.supabase.createClient(SUPABASE_URL,SUPABASE_ANON_KEY);
 let products=[],clients={},orders=[],sales=[],suppliers=[],ledger=[],rewards=[],redemptions=[],stockLots=[];
-let branch='',client=null,cart={},role='',staffBranch='',staffActor='',activeFilter='Todos',currentOrder=null,activeCartProductId=null,pendingClientCpf='',pendingClientEmail='',clientAuthUser=null,purchaseDraftItems=[],orderChannel=null,orderAlarmTimer=null,ignoredSuggestions=[],barcodeStream=null,barcodeDetector=null,barcodeScanActive=false,barcodeFrame=null,barcodeTargetId=null,storeGoals={},loyaltyRules={cashback_percent:5,cashback_minimo:100,cashback_validade_dias:90,pontos_a_cada:10,prata_minimo:500,ouro_minimo:1500},staffDirectory=[];
+let branch='',client=null,cart={},role='',staffBranch='',staffActor='',activeFilter='Todos',currentOrder=null,activeCartProductId=null,pendingClientCpf='',pendingClientEmail='',clientAuthUser=null,pendingTemporaryCpf='',purchaseDraftItems=[],orderChannel=null,orderAlarmTimer=null,ignoredSuggestions=[],barcodeStream=null,barcodeDetector=null,barcodeScanActive=false,barcodeFrame=null,barcodeTargetId=null,storeGoals={},loyaltyRules={cashback_percent:5,cashback_minimo:100,cashback_validade_dias:90,pontos_a_cada:10,prata_minimo:500,ouro_minimo:1500},staffDirectory=[];
 const money=n=>Number(n||0).toLocaleString('pt-BR',{style:'currency',currency:'BRL'});
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 function branchStock(p,b=staffBranch||branch){if(!p)return 0;let lots=stockLots.filter(l=>Number(l.productId)===Number(p.id)&&l.branch===b);if(lots.length)return lots.filter(l=>!l.expiryDate||l.expiryDate>=new Date().toISOString().slice(0,10)).reduce((a,l)=>a+Math.max(0,Number(l.quantity)||0),0);let map=p.stockByBranch||{};if(Object.keys(map).length)return Math.max(0,Number(map[b])||0);return Math.max(0,Number(p.stock)||0)}
@@ -151,13 +151,14 @@ async function loadOrdersFromSupabase(){const {data,error}=await supabaseClient.
 function validCPF(v){let s=String(v||'').replace(/\D/g,'');if(s.length!==11||/^([0-9])\1+$/.test(s))return false;let sum=0;for(let i=0;i<9;i++)sum+=Number(s[i])*(10-i);let d=(sum*10)%11;if(d===10)d=0;if(d!==Number(s[9]))return false;sum=0;for(let i=0;i<10;i++)sum+=Number(s[i])*(11-i);d=(sum*10)%11;if(d===10)d=0;return d===Number(s[10])}
 function formatCPF(input){const d=input.value.replace(/\D/g,'').slice(0,11);input.value=d.replace(/(\d{3})(\d)/,'$1.$2').replace(/(\d{3})(\d)/,'$1.$2').replace(/(\d{3})(\d{1,2})$/,'$1-$2')}
 async function applyCustomerSession(result){
- const session=result?.session,customer=result?.customer;
- if(!session||!customer)throw new Error('O servidor não retornou uma sessão válida.');
+ const customer=result?.customer;
+ if(!customer)throw new Error('O servidor não retornou os dados do cliente.');
+ if(result.forcePasswordChange){pendingTemporaryCpf=customer.cpf;show('forceClientPassword');toast('Antes de continuar, cadastre uma nova senha.');return}
+ const session=result?.session;if(!session)throw new Error('O servidor não retornou uma sessão válida.');
  const {data,error}=await supabaseClient.auth.setSession({access_token:session.access_token,refresh_token:session.refresh_token});
  if(error)throw error;
  clientAuthUser=data.user;
  client={id:customer.id,cpf:customer.cpf,name:customer.nome||'',phone:customer.telefone||'',email:'',address:'',neighborhood:'',city:'',complement:'',reference:'',points:0,cashbackLots:[],spent12m:0,history:[]};
- if(result.forcePasswordChange){show('forceClientPassword');toast('Antes de continuar, cadastre uma nova senha.');return}
  await openCustomer();
 }
 async function clientLogin(){
@@ -200,9 +201,9 @@ async function saveForcedClientPassword(){
  if(password.length<8){toast('A nova senha deve ter pelo menos 8 caracteres.');return}
  if(password!==confirmPassword){toast('As senhas não conferem.');return}
  try{
-  const {data,error}=await supabaseClient.functions.invoke('customer-access',{body:{action:'change_temporary_password',password}});
+  const {data,error}=await supabaseClient.functions.invoke('customer-access',{body:{action:'change_temporary_password',cpf:pendingTemporaryCpf,currentPassword:'123456',password}});
   if(error)throw error;if(data?.error)throw new Error(data.error);
-  toast('Senha atualizada com sucesso!');await openCustomer();
+  toast('Senha atualizada com sucesso!');pendingTemporaryCpf='';await applyCustomerSession(data);
  }catch(e){toast('Não foi possível atualizar a senha: '+(e.message||'tente novamente.'))}
 }
 
