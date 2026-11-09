@@ -154,6 +154,44 @@ button:disabled,.btn:disabled,input[type="button"]:disabled,input[type="submit"]
 .goal-store-target{padding:12px;border:1px solid #5e501e;border-radius:10px;margin:12px 0}.goal-store-target input{width:100%;box-sizing:border-box}
 .goal-employee-input{display:grid;grid-template-columns:minmax(120px,1fr) minmax(120px,180px);gap:10px;align-items:center;padding:9px 0;border-bottom:1px solid #39321b}.goal-employee-input label{margin:0}.goal-employee-input label small{display:block;color:#aaa}.goal-employee-input input{width:100%;box-sizing:border-box}
 @media(max-width:520px){.seller-pie-layout{justify-content:center}.seller-pie{width:165px;height:165px;flex-basis:165px}.seller-pie-hole{width:98px;height:98px}.seller-legend{width:100%}.goal-employee-input{grid-template-columns:1fr 120px}.owner-dashboard-tabs{gap:5px}.owner-dashboard-tabs button{padding:8px 9px!important}}
+
+/* Ajuste global de alinhamento, espaçamento e brilho suave dos botões */
+button,.btn,input[type="button"],input[type="submit"],summary.btn{
+ margin:4px!important;
+ transition:background .18s ease,border-color .18s ease,box-shadow .18s ease,transform .18s ease!important;
+}
+.admin-category-grid,.admin-shortcut-grid,.admin-module-grid,.overview-store-grid{
+ justify-items:center!important;
+ align-items:stretch!important;
+ column-gap:16px!important;
+ row-gap:16px!important;
+}
+.admin-category-btn,.admin-shortcut,.overview-store-btn{
+ width:100%!important;
+ max-width:300px;
+ justify-self:center!important;
+ text-align:center!important;
+}
+.admin-category-btn,.admin-shortcut{
+ box-shadow:0 0 2px rgba(249,211,40,.18)!important;
+ text-shadow:none!important;
+}
+.admin-category-btn:hover,.admin-shortcut:hover,.area-admin-btn:hover,.overview-define-goals:hover,.overview-store-btn:hover,.btn-close-module:hover{
+ box-shadow:0 0 4px rgba(249,211,40,.32),0 0 8px rgba(249,211,40,.14)!important;
+ border-color:#f9d328!important;
+ transform:translateY(-1px)!important;
+}
+button:hover,button[class]:hover,.btn:hover,summary.btn:hover,input[type="button"]:hover,input[type="submit"]:hover{
+ box-shadow:0 0 4px rgba(249,211,40,.32),0 0 8px rgba(249,211,40,.14)!important;
+ border-color:#f9d328!important;
+}
+.owner-dashboard-tabs{justify-content:center!important;gap:12px!important}
+.dashboard-toolbar,.goal-modal-actions,.staff-login-actions{display:flex;justify-content:center;align-items:center;flex-wrap:wrap;gap:12px!important}
+button:focus-visible,.btn:focus-visible{outline:2px solid #f9d328!important;outline-offset:3px}
+@media(max-width:600px){
+ .admin-category-grid,.admin-shortcut-grid,.admin-module-grid,.overview-store-grid{column-gap:12px!important;row-gap:13px!important}
+ button,.btn,input[type="button"],input[type="submit"],summary.btn{margin:3px!important}
+}
 </style>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js" defer></script>
 </head>
