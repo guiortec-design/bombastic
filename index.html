@@ -386,7 +386,7 @@ function showAdminCategory(category){
   if(manager)items.push('Metas da unidade');
  }
  const d=document.getElementById('staffDetail');d.classList.remove('hidden');
- d.innerHTML='<h3>'+esc(category)+'</h3><p class="muted">Escolha uma opção para abrir sua página. Unidade: '+esc(staffBranch)+'</p><div class="admin-shortcut-grid">'+items.map(x=>'<button type="button" class="admin-shortcut" onclick="openModule('+JSON.stringify(x).replace(/"/g,'&quot;')+')">'+esc(x)+' →</button>').join('')+'</div><p><button type="button" class="btn btn-close-module" onclick="document.getElementById(\'staffDetail\').classList.add(\'hidden\')">← Voltar às abas</button></p>';
+ d.innerHTML='<h3>'+esc(category)+'</h3><p class="muted">Escolha uma opção para abrir sua página. Unidade: '+esc(staffBranch)+'</p><div class="admin-shortcut-grid">'+items.map(x=>'<button type="button" class="admin-shortcut" onclick="openModule('+JSON.stringify(x).replace(/"/g,'&quot;')+')">'+esc(x)+' →</button>').join('')+'</div><p><button type="button" class="btn btn-close-module" onclick="goBackStaffPanel()">← Voltar às abas</button></p>';
  d.scrollIntoView({behavior:'smooth',block:'start'});updateFloatingPanelBack();
 }
 async function openModule(m){
@@ -416,7 +416,7 @@ async function openModule(m){
  else if(m.includes('Backup'))html+='<button class="btn primary" onclick="exportBackup()">Exportar backup JSON</button><hr><h4>Auditoria física de estoque — PDF</h4><p class="small muted">O proprietário imprime a lista com o saldo esperado. A gerente imprime a lista com a contagem em branco para preencher na loja.</p><label>Unidade</label>'+branchSelectHtml('auditBranch','all',true)+'<button class="btn primary" onclick="exportStockAudit(\'owner\')">PDF do proprietário — quantidades do sistema</button> <button class="btn" onclick="exportStockAudit(\'manager\')">PDF para contagem manual</button>';
  else if(m.includes('Configurações')){let configBranch=role==='Proprietário'?'Loja Picerno':staffBranch;let pc=pixSettings[configBranch]||{};html+='<h4>Dados de recebimento Pix</h4>'+(role==='Proprietário'?'<label>Unidade</label><select id="cfgPixBranch" onchange="fillPixSettings(this.value)"><option>Loja Picerno</option><option>Loja Volobueff</option><option>Loja Nova Veneza</option></select>':'')+'<label>Chave Pix oficial</label><input id="cfgPix" value="'+esc(pc.key||'')+'" placeholder="Chave Pix"><label>Nome do recebedor</label><input id="cfgPixName" maxlength="25" value="'+esc(pc.merchant||'BOMBASTIC TABACARIA')+'"><label>Cidade do recebedor</label><input id="cfgPixCity" maxlength="15" value="'+esc(pc.city||'SUMARE')+'"><button class="btn primary" onclick="savePixSettings()">Salvar dados Pix</button>';}
  else html+='<p>Selecione um módulo para consultar os dados.</p>';
- html+='<p><button type="button" class="btn btn-close-module" onclick="stopBarcodeScanner();document.getElementById(\'staffDetail\').classList.add(\'hidden\')">← Voltar ao painel</button></p>';
+ html+='<p><button type="button" class="btn btn-close-module" onclick="goBackStaffPanel()">← Voltar ao painel</button></p>';
  d.innerHTML=html;d.scrollIntoView({behavior:'smooth',block:'start'});updateFloatingPanelBack();
 }
 async function teamManagementView(){
