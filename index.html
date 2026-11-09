@@ -72,8 +72,8 @@ input,select{width:100%;padding:12px;border-radius:10px;background:#0c0a08;borde
 .admin-shortcut{padding:10px 9px!important;min-height:48px;border-radius:10px!important;font-size:12px!important;font-weight:850!important;background:linear-gradient(145deg,#24200b,#101010)!important;border:1px solid #f9d328!important;color:#ffe45c!important;text-align:center!important;box-shadow:0 0 5px #f9d32866,inset 0 0 7px #f9d32818!important;text-shadow:0 0 5px #f9d32855}
 .admin-shortcut:hover{background:linear-gradient(145deg,#39300c,#17140a)!important;border-color:#fff08a!important;box-shadow:0 0 9px #f9d328,0 0 17px #f9d32855!important}
 .overview-store-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:11px;margin:18px 0}
-.overview-store-btn{min-height:66px;padding:13px 10px!important;border:1px solid #f9d328!important;border-radius:12px!important;background:linear-gradient(145deg,#292309,#0d0d0d)!important;color:#ffe45c!important;font-size:14px!important;font-weight:900!important;text-align:center!important;box-shadow:0 0 7px #f9d32877,inset 0 0 10px #f9d32822!important;text-shadow:0 0 6px #f9d32866}
-.overview-store-btn:hover{box-shadow:0 0 12px #f9d328,0 0 22px #f9d32866!important;transform:translateY(-2px)}
+.overview-store-btn{min-height:60px;padding:13px 10px!important;border:1px solid #f9d328!important;border-radius:12px!important;background:linear-gradient(145deg,#ffe96a,#f9d328)!important;color:#111!important;font-size:14px!important;font-weight:900!important;text-align:center!important;box-shadow:0 0 4px #f9d32866!important;text-shadow:none!important}
+.overview-store-btn:hover{background:linear-gradient(145deg,#fff080,#f9d328)!important;box-shadow:0 0 7px #f9d32888!important;transform:translateY(-1px)}
 .overview-stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(135px,1fr));gap:10px;margin:14px 0}
 .overview-stat{background:linear-gradient(145deg,#1b190e,#101010);border:1px solid #7a641a;border-radius:12px;padding:13px;text-align:center;box-shadow:inset 0 0 12px #f9d3280c}
 .overview-stat p{font-size:11px;color:#d7c77c;margin:0 0 7px}.overview-stat .stat{font-size:clamp(17px,3vw,23px);font-weight:900;color:#ffe45c;text-shadow:0 0 7px #f9d32866}
@@ -414,7 +414,7 @@ function showAdminCategory(category){
  const owner=role==='Proprietário',manager=role==='Gerente',seller=role==='Vendedor';
  let items=[];
  if(category==='Visão geral'){
-  items=owner?['Loja Picerno','Loja Volobueff','Loja Nova Veneza','Todas as lojas']:[staffBranch];
+  items=owner?['Loja Picerno','Loja Volobueff','Loja Nova Veneza']:[staffBranch];
  }else if(category==='Estoque'){
   items=seller?['Consulta de produtos e estoque','Cadastro de produtos e lotes','Produtos mais vendidos']:['Estoque e lotes','Histórico de vendas','Produtos mais vendidos','Fornecedores','Compras e recebimentos','Auditoria de estoque'];
  }else if(category==='Financeiro'){
@@ -426,7 +426,7 @@ function showAdminCategory(category){
   if(manager)items.push('Metas da unidade');
  }
  const d=document.getElementById('staffDetail');d.classList.remove('hidden');
- d.innerHTML='<h3>'+esc(category)+'</h3>'+(category==='Visão geral'?'':'<p class="muted">Escolha uma opção para abrir sua página.</p>')+'<div class="'+(category==='Visão geral'?'overview-store-grid':'admin-shortcut-grid')+'">'+items.map(x=>'<button type="button" class="'+(category==='Visão geral'?'overview-store-btn':'admin-shortcut')+'" onclick="openModule('+JSON.stringify(x).replace(/"/g,'&quot;')+')">'+esc(x)+'</button>').join('')+'</div><p><button type="button" class="btn btn-close-module" onclick="goBackStaffPanel()">← Voltar às abas</button></p>';
+ d.innerHTML=(category==='Visão geral'?'':'<h3>'+esc(category)+'</h3>')+(category==='Visão geral'?'':'<p class="muted">Escolha uma opção para abrir sua página.</p>')+'<div class="'+(category==='Visão geral'?'overview-store-grid':'admin-shortcut-grid')+'">'+items.map(x=>'<button type="button" class="'+(category==='Visão geral'?'overview-store-btn':'admin-shortcut')+'" onclick="openModule('+JSON.stringify(x).replace(/"/g,'&quot;')+')">'+esc(x)+'</button>').join('')+'</div><p><button type="button" class="btn btn-close-module" onclick="goBackStaffPanel()">← Voltar às abas</button></p>';
  d.scrollIntoView({behavior:'smooth',block:'start'});updateFloatingPanelBack();
 }
 async function openModule(m){
