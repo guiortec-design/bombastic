@@ -44,8 +44,8 @@ input,select{width:100%;padding:12px;border-radius:10px;background:#0c0a08;borde
 <section id="branch" class="hidden">
  <div class="hero"><h2>Escolha sua unidade</h2><p class="muted">O catálogo, estoque, pedidos e WhatsApp serão vinculados à loja selecionada.</p></div>
  <div class="grid branches">
-  <article class="card"><h3>Sumaré — Av. Fuad Assef Maluf</h3><p>Av. Fuad Assef Maluf, 07</p><button class="btn primary" onclick="chooseBranch('Sumaré — Av. Fuad Assef Maluf')">Entrar nesta loja</button></article>
-  <article class="card"><h3>Sumaré — Rua Generoso Alves Vieira</h3><p>Rua Generoso Alves Vieira, 165</p><button class="btn primary" onclick="chooseBranch('Sumaré — Rua Generoso Alves Vieira')">Entrar nesta loja</button></article>
+  <article class="card"><h3>Loja Picerno</h3><p>Avenida Fuad Assef Maluf, 07</p><button class="btn primary" onclick="chooseBranch('Loja Picerno')">Entrar nesta loja</button></article>
+  <article class="card"><h3>Loja Volobueff</h3><p>Rua Generoso Alves Vieira, 165</p><button class="btn primary" onclick="chooseBranch('Loja Volobueff')">Entrar nesta loja</button></article>
   <article class="card"><h3>Nova Veneza</h3><p>Av. da Amizade, 3249</p><button class="btn primary" onclick="chooseBranch('Nova Veneza')">Entrar nesta loja</button></article>
  </div>
 </section>
@@ -75,7 +75,7 @@ input,select{width:100%;padding:12px;border-radius:10px;background:#0c0a08;borde
  <div class="grid cards">
   <div><strong style="color:var(--gold)">Bombastic Tabacaria</strong><p>Referência em variedade & atendimento.</p><p>+200 opções de essências, Headshop, bebidas e frozen de gin.</p></div>
   <div><strong>Redes sociais</strong><p><a href="https://www.instagram.com/storebombastic/" target="_blank">@storebombastic</a></p><p>Mais novidades nas redes da Bombastic.</p></div>
-  <div><strong>Unidades e contato</strong><p>Sumaré: Av. Fuad Assef Maluf, 07 — <a href="https://wa.me/5519991937346">WhatsApp</a></p><p>Sumaré: Rua Generoso Alves Vieira, 165 — <a href="https://wa.me/5519997530184">WhatsApp</a></p><p>Nova Veneza: Av. da Amizade, 3249 — <a href="https://wa.me/5519991344011">WhatsApp</a></p></div>
+  <div><strong>Unidades e contato</strong><p>Loja Picerno: Avenida Fuad Assef Maluf, 07 — <a href="https://wa.me/5519991937346">WhatsApp</a></p><p>Loja Volobueff: Rua Generoso Alves Vieira, 165 — <a href="https://wa.me/5519997530184">WhatsApp</a></p><p>Nova Veneza: Av. da Amizade, 3249 — <a href="https://wa.me/5519991344011">WhatsApp</a></p></div>
  </div>
  <p>© 2026 Bombastic Tabacaria. Aplicativo Bombastic Tabacaria.</p>
 </footer>
@@ -86,11 +86,11 @@ input,select{width:100%;padding:12px;border-radius:10px;background:#0c0a08;borde
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
 const branches={
- "Sumaré — Av. Fuad Assef Maluf":{id:2,address:"Av. Fuad Assef Maluf, 07",phone:"5519991937346"},
- "Sumaré — Rua Generoso Alves Vieira":{id:1,address:"Rua Generoso Alves Vieira, 165",phone:"5519997530184"},
+ "Loja Picerno":{id:2,address:"Avenida Fuad Assef Maluf, 07",phone:"5519991937346"},
+ "Loja Volobueff":{id:1,address:"Rua Generoso Alves Vieira, 165",phone:"5519997530184"},
  "Nova Veneza":{id:3,address:"Av. da Amizade, 3249",phone:"5519991344011"}
 };
-const branchNameById={1:"Sumaré — Rua Generoso Alves Vieira",2:"Sumaré — Av. Fuad Assef Maluf",3:"Nova Veneza"};
+const branchNameById={1:"Loja Volobueff",2:"Loja Picerno",3:"Nova Veneza"};
 const SUPABASE_URL="https://mxbmzpnoawfbwpbjkbcw.supabase.co";
 const SUPABASE_ANON_KEY="sb_publishable_-zBTfhTld23BHReZ4huWyQ_zWO-xPIj";
 const supabaseClient=window.supabase.createClient(SUPABASE_URL,SUPABASE_ANON_KEY);
