@@ -482,6 +482,17 @@ async function saveForcedClientPassword(){
 function renderClientAvatar(url,name){const el=document.getElementById('avatar');if(!el)return;if(url){el.innerHTML='<img src="'+esc(url)+'" alt="Foto do perfil">'}else{el.textContent=(name||'C').trim().charAt(0).toUpperCase()}}
 async function loadClientProfilePhoto(){if(!clientAuthUser||!client)return;const {data,error}=await supabaseClient.from('clientes').select('foto_url').eq('auth_user_id',clientAuthUser.id).maybeSingle();if(!error){client.photoUrl=data?.foto_url||'';renderClientAvatar(client.photoUrl,client.name)}}
 function previewClientProfilePhoto(input){const file=input.files?.[0];if(!file)return;if(!file.type.startsWith('image/')){input.value='';toast('Selecione um arquivo de imagem.');return}if(file.size>5*1024*1024){input.value='';toast('A foto deve ter até 5 MB.');return}const preview=document.getElementById('clientPhotoPreview');if(preview){preview.src=URL.createObjectURL(file);preview.classList.remove('hidden')}}
+function previewStaffProfilePhoto(input){
+ const file=input.files?.[0];if(!file)return;
+ if(!file.type.startsWith('image/')){input.value='';toast('Selecione um arquivo de imagem.');return}
+ if(file.size>5*1024*1024){input.value='';toast('A foto deve ter até 5 MB.');return}
+ const preview=document.getElementById('staffPhotoPreview');if(preview){preview.src=URL.createObjectURL(file);preview.classList.remove('hidden')}
+}
+function renderStaffAvatar(url,name){
+ const el=document.getElementById('avatar');if(!el)return;
+ if(url){el.innerHTML='<img src="'+esc(url)+'" alt="Foto do funcionário">'}
+ else{el.textContent=(name||'V').trim().charAt(0).toUpperCase()}
+}
 function openMyProfileEditor(){
  if(role==='Vendedor'||role==='Gerente'||role==='Proprietário'){openStaffProfileEditor();return}
  openProfileEditor();
@@ -492,7 +503,7 @@ function openStaffProfileEditor(){
  const box=document.querySelector('#modal .modalbox');
  document.getElementById('modal').classList.add('profile-editor-modal');
  box.classList.add('profile-editor');
- box.innerHTML='<h2 style="color:var(--gold);margin-top:0">Editar meu perfil</h2><p class="small muted">Você pode atualizar seu nome de exibição e telefone. Cargo, loja e permissões permanecem protegidos.</p><label>Nome do vendedor</label><input id="editStaffName" maxlength="120" autocomplete="name" value="'+esc(profile.nome||staffActor||'')+'" placeholder="Seu nome para aparecer nos pedidos"><label>Telefone / WhatsApp</label><input id="editStaffPhone" type="tel" inputmode="numeric" maxlength="15" value="'+esc(formatBrazilPhoneValue(profile.telefone||''))+'" placeholder="(19) 99999-9999" oninput="formatBrazilPhone(this)" onblur="checkBrazilPhone(this)"><p class="small muted">Seu e-mail de acesso: '+esc(profile.email||'')+'</p><button class="btn primary" id="saveStaffProfileBtn" onclick="saveStaffProfile()">Salvar alterações</button> <button class="btn" onclick="closeModal()">Cancelar</button>';
+ box.innerHTML='<h2 style="color:var(--gold);margin-top:0">Editar meu perfil</h2><p class="small muted">Atualize sua foto, nome de exibição e telefone. Cargo, loja e permissões permanecem protegidos.</p><label>Foto do perfil</label><div class="client-photo-edit"><img id="staffPhotoPreview" src="'+esc(profile.foto_url||'')+'" alt="Prévia da foto" class="'+(profile.foto_url?'':'hidden')+'"><div class="client-photo-placeholder '+(profile.foto_url?'hidden':'')+'">'+esc((profile.nome||'V').trim().charAt(0).toUpperCase())+'</div><input id="editStaffPhoto" type="file" accept="image/*" onchange="previewStaffProfilePhoto(this)"></div><label>Nome do vendedor</label><input id="editStaffName" maxlength="120" autocomplete="name" value="'+esc(profile.nome||staffActor||'')+'" placeholder="Seu nome para aparecer nos pedidos"><label>Telefone / WhatsApp</label><input id="editStaffPhone" type="tel" inputmode="numeric" maxlength="15" value="'+esc(formatBrazilPhoneValue(profile.telefone||''))+'" placeholder="(19) 99999-9999" oninput="formatBrazilPhone(this)" onblur="checkBrazilPhone(this)"><p class="small muted">Seu e-mail de acesso: '+esc(profile.email||'')+'</p><button class="btn primary" id="saveStaffProfileBtn" onclick="saveStaffProfile()">Salvar alterações</button> <button class="btn" onclick="closeModal()">Cancelar</button>';
  document.getElementById('modal').classList.remove('hidden');
 }
 async function saveStaffProfile(){
@@ -509,7 +520,17 @@ async function saveStaffProfile(){
   const {data:userData,error:userError}=await supabaseClient.auth.getUser();
   if(userError)throw userError;
   if(!userData?.user?.id||userData.user.id!==profile.auth_user_id)throw new Error('A sessão não corresponde ao funcionário conectado. Entre novamente.');
-  const {data,error}=await supabaseClient.from('funcionarios').update({nome:name,telefone:phone||null}).eq('id',profile.id).eq('auth_user_id',userData.user.id).select('id,nome,email,cargo,loja_id,ativo,foto_url,telefone').single();
+  const patch={nome:name,telefone:phone||null};
+  const photoFile=document.getElementById('editStaffPhoto')?.files?.[0];
+  if(photoFile){
+   if(!photoFile.type.startsWith('image/')||photoFile.size>5*1024*1024)throw new Error('Escolha uma imagem de até 5 MB.');
+   const ext=(photoFile.name.split('.').pop()||'jpg').toLowerCase().replace(/[^a-z0-9]/g,'')||'jpg';
+   const path='funcionarios/'+profile.id+'/'+Date.now()+'.'+ext;
+   const {error:uploadError}=await supabaseClient.storage.from('bombastic-perfis').upload(path,photoFile,{upsert:true,contentType:photoFile.type||'image/jpeg'});
+   if(uploadError)throw new Error('Falha ao enviar a foto: '+uploadError.message);
+   patch.foto_url=supabaseClient.storage.from('bombastic-perfis').getPublicUrl(path).data.publicUrl;
+  }
+  const {data,error}=await supabaseClient.from('funcionarios').update(patch).eq('id',profile.id).eq('auth_user_id',userData.user.id).select('id,nome,email,cargo,loja_id,ativo,foto_url,telefone').single();
   if(error)throw error;
   if(!data)throw new Error('O banco não confirmou a atualização do perfil.');
   window.currentStaffProfile=data;
@@ -517,7 +538,7 @@ async function saveStaffProfile(){
   const directoryIndex=staffDirectory.findIndex(x=>Number(x.id)===Number(data.id));
   if(directoryIndex>=0)staffDirectory[directoryIndex]={...staffDirectory[directoryIndex],...data};
   document.getElementById('profile-name').textContent=staffActor+' • '+role;
-  document.getElementById('avatar').textContent=staffActor.trim().charAt(0).toUpperCase()||'B';
+  renderStaffAvatar(data.foto_url,staffActor);
   closeModal();
   toast('Perfil atualizado no Supabase. Seu novo nome já aparece no aplicativo.');
   if(!document.getElementById('staffDetail').classList.contains('hidden')&&document.getElementById('staffDetail').textContent.includes('Minha meta'))openModule('Visão geral');
@@ -527,7 +548,7 @@ async function saveStaffProfile(){
  }
 }
 function openProfileEditor(){if(!client)return;var box=document.querySelector('#modal .modalbox');
-document.getElementById('modal').classList.add('profile-editor-modal');box.classList.add('profile-editor');box.innerHTML='<h2 style="color:var(--gold);margin-top:0">Editar meu perfil</h2><p class="small muted">Atualize seus dados para facilitar seus próximos pedidos.</p><label>Foto do perfil</label><div class="client-photo-edit"><img id="clientPhotoPreview" src="'+esc(client.photoUrl||'')+'" alt="Prévia da foto" class="'+(client.photoUrl?'':'hidden')+'"><div class="client-photo-placeholder '+(client.photoUrl?'hidden':'')+'">'+esc((client.name||'C').trim().charAt(0).toUpperCase())+'</div><input id="editClientPhoto" type="file" accept="image/*" capture="user" onchange="previewClientProfilePhoto(this)"></div><label>Nome completo</label><input id="editClientName" value="'+esc(client.name||'')+'" placeholder="Seu nome completo"><label>Telefone / WhatsApp</label><input id="editClientPhone" type="tel" inputmode="numeric" autocomplete="tel-national" maxlength="15" value="'+esc(formatBrazilPhoneValue(client.phone||''))+'" placeholder="(19) 99999-9999" oninput="formatBrazilPhone(this)" onblur="checkBrazilPhone(this)"><label>Endereço principal</label><input id="editClientAddress" value="'+esc(client.address||'')+'" placeholder="Rua e número"><label>Bairro</label><input id="editClientNeighborhood" value="'+esc(client.neighborhood||'')+'" placeholder="Seu bairro"><label>Cidade</label><input id="editClientCity" value="'+esc(client.city||'')+'" placeholder="Sua cidade"><label>Complemento</label><input id="editClientComplement" value="'+esc(client.complement||'')+'" placeholder="Casa, apartamento, bloco..."><label>Ponto de referência (opcional)</label><input id="editClientReference" value="'+esc(client.reference||'')+'" placeholder="Próximo a..."><button class="btn primary" onclick="saveClientProfile()">Salvar alterações</button> <button class="btn" onclick="closeModal()">Cancelar</button>';
+document.getElementById('modal').classList.add('profile-editor-modal');box.classList.add('profile-editor');box.innerHTML='<h2 style="color:var(--gold);margin-top:0">Editar meu perfil</h2><p class="small muted">Atualize seus dados para facilitar seus próximos pedidos.</p><label>Foto do perfil</label><div class="client-photo-edit"><img id="clientPhotoPreview" src="'+esc(client.photoUrl||'')+'" alt="Prévia da foto" class="'+(client.photoUrl?'':'hidden')+'"><div class="client-photo-placeholder '+(client.photoUrl?'hidden':'')+'">'+esc((client.name||'C').trim().charAt(0).toUpperCase())+'</div><input id="editClientPhoto" type="file" accept="image/*" onchange="previewClientProfilePhoto(this)"></div><label>Nome completo</label><input id="editClientName" value="'+esc(client.name||'')+'" placeholder="Seu nome completo"><label>Telefone / WhatsApp</label><input id="editClientPhone" type="tel" inputmode="numeric" autocomplete="tel-national" maxlength="15" value="'+esc(formatBrazilPhoneValue(client.phone||''))+'" placeholder="(19) 99999-9999" oninput="formatBrazilPhone(this)" onblur="checkBrazilPhone(this)"><label>Endereço principal</label><input id="editClientAddress" value="'+esc(client.address||'')+'" placeholder="Rua e número"><label>Bairro</label><input id="editClientNeighborhood" value="'+esc(client.neighborhood||'')+'" placeholder="Seu bairro"><label>Cidade</label><input id="editClientCity" value="'+esc(client.city||'')+'" placeholder="Sua cidade"><label>Complemento</label><input id="editClientComplement" value="'+esc(client.complement||'')+'" placeholder="Casa, apartamento, bloco..."><label>Ponto de referência (opcional)</label><input id="editClientReference" value="'+esc(client.reference||'')+'" placeholder="Próximo a..."><button class="btn primary" onclick="saveClientProfile()">Salvar alterações</button> <button class="btn" onclick="closeModal()">Cancelar</button>';
 document.getElementById('modal').classList.remove('hidden')}
 async function saveClientProfile(){if(!client)return;var name=document.getElementById('editClientName').value.trim(),phone=document.getElementById('editClientPhone').value.trim(),photoFile=document.getElementById('editClientPhoto')?.files?.[0]||null;if(!name){toast('Informe seu nome completo.');return}if(!checkBrazilPhone(document.getElementById('editClientPhone')))return;if(photoFile&&(!photoFile.type.startsWith('image/')||photoFile.size>5*1024*1024)){toast('Selecione uma imagem de até 5 MB.');return}let photoUrl=client.photoUrl||null;if(photoFile){const ext=(photoFile.name.split('.').pop()||'jpg').toLowerCase().replace(/[^a-z0-9]/g,'')||'jpg',path='clientes/'+clientAuthUser.id+'/'+Date.now()+'.'+ext;const {error:uploadError}=await supabaseClient.storage.from('bombastic-perfis').upload(path,photoFile,{upsert:false,contentType:photoFile.type||'image/jpeg'});if(uploadError){toast('Não foi possível enviar a foto: '+uploadError.message);return}photoUrl=supabaseClient.storage.from('bombastic-perfis').getPublicUrl(path).data.publicUrl}const updated={nome:name,telefone:phone.replace(/\D/g,''),endereco:document.getElementById('editClientAddress').value.trim(),bairro:document.getElementById('editClientNeighborhood').value.trim(),cidade:document.getElementById('editClientCity').value.trim(),complemento:document.getElementById('editClientComplement').value.trim(),referencia:document.getElementById('editClientReference').value.trim(),foto_url:photoUrl};const {error}=await supabaseClient.from('clientes').update(updated).eq('auth_user_id',clientAuthUser.id);if(error){toast('Não foi possível salvar o perfil: '+error.message);return}Object.assign(client,{name:updated.nome,phone:updated.telefone,address:updated.endereco,neighborhood:updated.bairro,city:updated.cidade,complement:updated.complemento,reference:updated.referencia,photoUrl:photoUrl||''});document.getElementById('profile-name').textContent=client.name;renderClientAvatar(client.photoUrl,client.name);document.getElementById('welcome').textContent='Bem-vindo, '+client.name.split(' ')[0]+'!';closeModal();toast('Perfil atualizado e sincronizado.')}
 function cashbackBalance(c){return (c.cashbackLots||[]).filter(x=>new Date(x.expires)>new Date()).reduce((a,x)=>a+x.amount,0)}
@@ -566,6 +587,7 @@ async function staffLogin(){
   staffActor=profileData.nome||email;
   staffBranch=role==='Proprietário'?'Todas as unidades':unit;
   window.currentStaffProfile=profileData;
+  renderStaffAvatar(profileData.foto_url,staffActor);
   if(unit){branch=unit;const branchLabel=document.getElementById('branch-label');if(branchLabel)branchLabel.textContent=unit;const customerBranchLabel=document.getElementById('customerBranch');if(customerBranchLabel)customerBranchLabel.textContent=unit;if(branches[unit]){const branchAddress=document.getElementById('branchAddress');if(branchAddress)branchAddress.textContent=branches[unit].address;const branchWhats=document.getElementById('branchWhats');if(branchWhats)branchWhats.href='https://wa.me/'+branches[unit].phone}}
   try{await loadStorePixSettings();await loadProductsFromSupabase(true);await loadOrdersFromSupabase();await loadStaffData();await loadOwnerSettings()}catch(loadError){throw new Error('Login efetuado, mas não foi possível sincronizar catálogo e pedidos: '+loadError.message)}
   document.getElementById('profile').classList.remove('hidden');
