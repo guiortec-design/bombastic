@@ -52,7 +52,7 @@ input,select{width:100%;padding:12px;border-radius:10px;background:#0c0a08;borde
  </div>
 </section>
 <section id="cpfLogin" class="hidden">
- <div class="hero"><h2>Acesse sua conta</h2><p class="muted">Informe seu CPF e sua senha para entrar.</p><label>CPF</label><input id="cpf" inputmode="numeric" autocomplete="username" placeholder="000.000.000-00" maxlength="14" oninput="formatCPF(this)"><label>Senha</label><input id="clientPassword" type="password" autocomplete="current-password" placeholder="Sua senha"><button class="btn primary" onclick="clientLogin()">Entrar</button><button class="btn" onclick="show('register')">Primeiro acesso? Criar cadastro</button><button class="btn" onclick="requestClientPasswordReset()">Esqueci minha senha</button><p class="small muted">Acesso por CPF e senha. Não pedimos confirmação por e-mail.</p></div>
+ <div class="hero"><h2>Acesse sua conta</h2><p class="muted">Informe seu CPF e sua senha para entrar.</p><label>CPF</label><input id="cpf" inputmode="numeric" autocomplete="username" placeholder="000.000.000-00" maxlength="14" oninput="formatCPF(this)"><label>Senha</label><input id="clientPassword" type="password" autocomplete="current-password" placeholder="Sua senha"><button class="btn primary" onclick="clientLogin()">Entrar</button><button class="btn" onclick="show('register')">Primeiro acesso? Criar cadastro</button><button class="btn" onclick="requestClientPasswordReset()">Esqueci minha senha</button><button class="btn" onclick="openTemporaryCodeForm()">Já tenho um código da equipe</button><p class="small muted">Acesso por CPF e senha. Não pedimos confirmação por e-mail.</p></div>
 </section>
 <section id="register" class="hidden">
  <div class="hero"><h2>Crie seu acesso</h2><p class="muted">Preencha seus dados e escolha uma senha.</p><label>CPF</label><input id="newCpf" inputmode="numeric" placeholder="000.000.000-00" maxlength="14" oninput="formatCPF(this)"><label>Nome completo</label><input id="newName" autocomplete="name" placeholder="Seu nome"><label>WhatsApp (opcional)</label><input id="newPhone" type="tel" inputmode="numeric" autocomplete="tel-national" maxlength="15" placeholder="(19) 99999-9999" oninput="formatBrazilPhone(this)" onblur="checkBrazilPhone(this)"><label>Crie uma senha</label><input id="newClientPassword" type="password" autocomplete="new-password" minlength="8" placeholder="Mínimo de 8 caracteres"><label>Confirme sua senha</label><input id="confirmClientPassword" type="password" autocomplete="new-password" minlength="8" placeholder="Repita sua senha"><button class="btn primary" onclick="registerClient()">Criar cadastro</button><button class="btn" onclick="show('cpfLogin')">Voltar ao login</button></div>
@@ -195,6 +195,14 @@ async function requestClientPasswordReset(){
   if(error)throw error;if(data?.error)throw new Error(data.error);
   toast(data.message||'Solicitação encaminhada à equipe.');
  }catch(e){toast('Não foi possível solicitar a redefinição: '+(e.message||'tente novamente.'))}
+}
+function openTemporaryCodeForm(){
+ const cpf=document.getElementById('cpf').value.replace(/\\D/g,'');
+ if(!validCPF(cpf)){toast('Informe seu CPF primeiro.');return}
+ pendingTemporaryCpf=cpf;
+ show('forceClientPassword');
+ document.getElementById('forcedCpf').value=cpf;
+ document.getElementById('forcedCode').focus();
 }
 async function saveForcedClientPassword(){
  const cpf=document.getElementById('forcedCpf').value.replace(/\\D/g,''),temporaryCode=document.getElementById('forcedCode').value.trim();
