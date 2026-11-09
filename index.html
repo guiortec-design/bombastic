@@ -98,25 +98,37 @@ input,select{width:100%;padding:12px;border-radius:10px;background:#0c0a08;borde
 .stock-photo-actions .btn{background:#24200b;border:1px solid #f9d328;color:#ffe45c}
 @media(max-width:480px){.stock-barcode-row{gap:6px}.stock-camera-btn{padding:9px 8px;font-size:11px}}
 
-/* Identidade visual única para todos os botões do aplicativo */
-button,.btn,summary.btn{
- background:linear-gradient(100deg,var(--gold),var(--orange))!important;
- color:#17100a!important;
- border:1px solid #f9d328!important;
- border-radius:12px!important;
- font-weight:800!important;
- box-shadow:0 0 5px rgba(249,211,40,.38)!important;
- text-shadow:none!important;
+/* Tema unificado: preto, grafite e neon discreto */
+button,button[class],.btn,summary.btn,input[type="button"],input[type="submit"]{
+ background:linear-gradient(145deg,#191b18,#10120f)!important;
+ color:#e6f36a!important;
+ border:1px solid rgba(214,239,66,.58)!important;
+ border-radius:10px!important;
+ font-weight:700!important;
+ letter-spacing:.12px!important;
+ box-shadow:0 0 0 1px rgba(214,239,66,.06),0 0 7px rgba(190,220,45,.12)!important;
+ text-shadow:0 0 5px rgba(214,239,66,.18)!important;
+ transition:background .18s ease,border-color .18s ease,box-shadow .18s ease,transform .18s ease!important;
 }
-button:hover,.btn:hover,summary.btn:hover{
- background:linear-gradient(100deg,#ffe978,#ffc247)!important;
- color:#111!important;
- box-shadow:0 0 8px rgba(249,211,40,.55)!important;
+button:hover,button[class]:hover,.btn:hover,summary.btn:hover,input[type="button"]:hover,input[type="submit"]:hover{
+ background:linear-gradient(145deg,#24291b,#171b12)!important;
+ color:#f0ff78!important;
+ border-color:rgba(224,248,76,.9)!important;
+ box-shadow:0 0 8px rgba(190,220,45,.22)!important;
 }
-button:disabled,.btn:disabled{
- opacity:.58!important;
+button:active,.btn:active,summary.btn:active{
+ transform:translateY(1px)!important;
+}
+button:disabled,.btn:disabled,input[type="button"]:disabled,input[type="submit"]:disabled{
+ opacity:.48!important;
  cursor:not-allowed!important;
  box-shadow:none!important;
+}
+/* Ações principais recebem apenas um realce leve, sem destoar do conjunto */
+button.primary,.btn.primary,button.area-admin-btn{
+ background:linear-gradient(145deg,#30351b,#1b2012)!important;
+ border-color:rgba(224,248,76,.82)!important;
+ color:#f0ff78!important;
 }
 </style>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js" defer></script>
