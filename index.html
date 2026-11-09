@@ -197,7 +197,7 @@ async function requestClientPasswordReset(){
  }catch(e){toast('Não foi possível solicitar a redefinição: '+(e.message||'tente novamente.'))}
 }
 function openTemporaryCodeForm(){
- const cpf=document.getElementById('cpf').value.replace(/\\D/g,'');
+ const cpf=document.getElementById('cpf').value.replace(/\D/g,'');
  if(!validCPF(cpf)){toast('Informe seu CPF primeiro.');return}
  pendingTemporaryCpf=cpf;
  show('forceClientPassword');
@@ -205,9 +205,9 @@ function openTemporaryCodeForm(){
  document.getElementById('forcedCode').focus();
 }
 async function saveForcedClientPassword(){
- const cpf=document.getElementById('forcedCpf').value.replace(/\\D/g,''),temporaryCode=document.getElementById('forcedCode').value.trim();
+ const cpf=document.getElementById('forcedCpf').value.replace(/\D/g,''),temporaryCode=document.getElementById('forcedCode').value.trim();
  const password=document.getElementById('forcedPassword').value,confirmPassword=document.getElementById('forcedPasswordConfirm').value;
- if(!validCPF(cpf)||!/^\\d{8}$/.test(temporaryCode)){toast('Informe um CPF válido e o código de 8 dígitos.');return}
+ if(!validCPF(cpf)||!/^\d{8}$/.test(temporaryCode)){toast('Informe um CPF válido e o código de 8 dígitos.');return}
  if(password.length<8){toast('A nova senha deve ter pelo menos 8 caracteres.');return}
  if(password!==confirmPassword){toast('As senhas não conferem.');return}
  try{
