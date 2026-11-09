@@ -54,6 +54,19 @@ input,select{width:100%;padding:12px;border-radius:10px;background:#0c0a08;borde
 .area-admin-btn{font-size:11px!important;font-weight:800!important;letter-spacing:.2px;padding:6px 10px!important;min-height:0!important;border:1px solid #36d68a!important;border-radius:8px!important;background:linear-gradient(135deg,#123b2a,#10251c)!important;color:#8fffc1!important;box-shadow:0 0 5px #28d98766!important;opacity:.92}
 .area-admin-btn:hover{background:#174d35!important;box-shadow:0 0 9px #28d987aa!important}
 @media(max-width:600px){.admin-module-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:8px!important}.admin-category-btn{max-width:none;min-height:50px!important;font-size:12px!important}.area-admin-btn{font-size:10px!important;padding:5px 8px!important}}
+/* Login administrativo compacto, centralizado e com ações coloridas */
+#staffLogin .staff-login-card{width:min(100%,430px);margin:24px auto;padding:22px 20px!important;text-align:center;border:1px solid #59451b;border-radius:16px;background:linear-gradient(155deg,#17140b,#101010);box-shadow:0 8px 28px #0008}
+#staffLogin .staff-login-card h2{font-size:21px!important;margin:0 0 7px}
+#staffLogin .staff-login-card>p{font-size:12px;line-height:1.45;margin:0 0 15px}
+#staffLogin .staff-login-card label{display:block;text-align:left;max-width:330px;margin:10px auto 4px;font-size:12px;color:#f5dc62}
+#staffLogin .staff-login-card input{display:block;width:min(100%,330px);margin:4px auto 12px;padding:9px 11px;font-size:13px;border-radius:9px}
+#staffLogin .staff-login-actions{display:flex;flex-direction:column;align-items:center;gap:10px;margin:17px auto 13px}
+#staffLogin .staff-login-actions .btn{width:min(100%,245px);min-height:37px;padding:9px 12px!important;border-radius:9px!important;font-size:12px!important;font-weight:800!important;letter-spacing:.2px;line-height:1.2}
+#staffLogin #staffLoginBtn{background:linear-gradient(135deg,#ffe45c,#e0a900)!important;border:1px solid #ffe45c!important;color:#171200!important;box-shadow:0 0 9px #f9d32877!important}
+#staffLogin #staffResetBtn{background:linear-gradient(135deg,#145b38,#0d3d28)!important;border:1px solid #39d98a!important;color:#a5ffca!important;box-shadow:0 0 8px #24c87955!important}
+#staffLogin .staff-login-back{background:linear-gradient(135deg,#7e2020,#501313)!important;border:1px solid #ff6666!important;color:#ffe1e1!important;box-shadow:0 0 8px #ff444455!important}
+#staffLogin .staff-login-note{font-size:10px!important;line-height:1.4;margin:8px auto 0!important;max-width:310px;color:#aaa}
+@media(max-width:600px){#staffLogin .staff-login-card{width:calc(100% - 18px);margin:12px auto;padding:17px 14px!important}#staffLogin .staff-login-actions{gap:9px;margin:14px auto 10px}#staffLogin .staff-login-actions .btn{width:min(100%,230px)}}
 </style>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js" defer></script>
 </head>
@@ -99,7 +112,7 @@ input,select{width:100%;padding:12px;border-radius:10px;background:#0c0a08;borde
  <div class="hero"><h2>Crie uma nova senha</h2><p class="muted">Informe o código temporário fornecido pela equipe e escolha uma nova senha. O código expira em 30 minutos.</p><label>CPF</label><input id="forcedCpf" inputmode="numeric" placeholder="000.000.000-00" maxlength="14" oninput="formatCPF(this)"><label>Código temporário</label><input id="forcedCode" inputmode="numeric" autocomplete="one-time-code" maxlength="8" placeholder="Código de 8 dígitos"><label>Nova senha</label><input id="forcedPassword" type="password" autocomplete="new-password" minlength="8" placeholder="Mínimo de 8 caracteres"><label>Confirme a nova senha</label><input id="forcedPasswordConfirm" type="password" autocomplete="new-password" minlength="8" placeholder="Repita sua senha"><button class="btn primary" onclick="saveForcedClientPassword()">Salvar nova senha</button></div>
 </section>
 <section id="staffLogin" class="hidden">
- <div class="hero"><h2>Acesso da equipe</h2><p class="muted">Entre com seu e-mail e senha de acesso.</p><label>E-mail</label><input id="staffUser" type="email" autocomplete="username" placeholder="seu e-mail cadastrado"><label>Senha</label><input id="staffPass" type="password" autocomplete="current-password" placeholder="Sua senha"><button class="btn primary" id="staffLoginBtn" onclick="staffLogin()">Entrar</button><button class="btn" id="staffResetBtn" onclick="requestStaffPasswordReset()">Solicitar reset de senha</button><button class="btn" onclick="show('start')">Voltar</button><p class="small muted">A unidade e as permissões são identificadas pelo cadastro feito pelo proprietário.</p></div>
+ <div class="hero staff-login-card"><h2>Acesso da equipe</h2><p class="muted">Entre com seu e-mail e senha de acesso.</p><label for="staffUser">E-mail</label><input id="staffUser" type="email" autocomplete="username" placeholder="seu e-mail cadastrado"><label for="staffPass">Senha</label><input id="staffPass" type="password" autocomplete="current-password" placeholder="Sua senha"><div class="staff-login-actions"><button class="btn primary" id="staffLoginBtn" onclick="staffLogin()">Entrar</button><button class="btn" id="staffResetBtn" onclick="requestStaffPasswordReset()">Solicitar reset de senha</button><button class="btn staff-login-back" onclick="show('start')">Voltar</button></div><p class="small muted staff-login-note">A unidade e as permissões são identificadas pelo cadastro feito pelo proprietário.</p></div>
 </section>
 <section id="customer" class="hidden">
  <div class="hero"><h2 id="customerHeading">Bem-vindo à Bombastic!</h2><p class="muted">Escolha seus produtos e confira a localização nas prateleiras.</p><div class="small muted">Unidade selecionada: <strong id="customerStoreName"></strong></div></div>
