@@ -98,38 +98,41 @@ input,select{width:100%;padding:12px;border-radius:10px;background:#0c0a08;borde
 .stock-photo-actions .btn{background:#24200b;border:1px solid #f9d328;color:#ffe45c}
 @media(max-width:480px){.stock-barcode-row{gap:6px}.stock-camera-btn{padding:9px 8px;font-size:11px}}
 
-/* Tema unificado: preto, grafite e neon discreto */
+/* Tema Bombastic: amarelo vivo, texto preto e neon suave no hover */
 button,button[class],.btn,summary.btn,input[type="button"],input[type="submit"]{
- background:linear-gradient(145deg,#191b18,#10120f)!important;
- color:#e6f36a!important;
- border:1px solid rgba(214,239,66,.58)!important;
+ background:linear-gradient(135deg,#ffe45c,#f2c900)!important;
+ color:#111!important;
+ border:1px solid #f9d328!important;
  border-radius:10px!important;
- font-weight:700!important;
+ font-weight:800!important;
  letter-spacing:.12px!important;
- box-shadow:0 0 0 1px rgba(214,239,66,.06),0 0 7px rgba(190,220,45,.12)!important;
- text-shadow:0 0 5px rgba(214,239,66,.18)!important;
+ box-shadow:0 0 3px rgba(249,211,40,.24)!important;
+ text-shadow:none!important;
  transition:background .18s ease,border-color .18s ease,box-shadow .18s ease,transform .18s ease!important;
 }
 button:hover,button[class]:hover,.btn:hover,summary.btn:hover,input[type="button"]:hover,input[type="submit"]:hover{
- background:linear-gradient(145deg,#24291b,#171b12)!important;
- color:#f0ff78!important;
- border-color:rgba(224,248,76,.9)!important;
- box-shadow:0 0 8px rgba(190,220,45,.22)!important;
+ background:linear-gradient(135deg,#fff080,#ffdc35)!important;
+ color:#080808!important;
+ border-color:#fff08a!important;
+ box-shadow:0 0 7px #f9d328,0 0 15px rgba(249,211,40,.42)!important;
 }
-button:active,.btn:active,summary.btn:active{
- transform:translateY(1px)!important;
-}
-button:disabled,.btn:disabled,input[type="button"]:disabled,input[type="submit"]:disabled{
- opacity:.48!important;
- cursor:not-allowed!important;
- box-shadow:none!important;
-}
-/* Ações principais recebem apenas um realce leve, sem destoar do conjunto */
-button.primary,.btn.primary,button.area-admin-btn{
- background:linear-gradient(145deg,#30351b,#1b2012)!important;
- border-color:rgba(224,248,76,.82)!important;
- color:#f0ff78!important;
-}
+button:active,.btn:active,summary.btn:active{transform:translateY(1px)!important}
+button:disabled,.btn:disabled,input[type="button"]:disabled,input[type="submit"]:disabled{opacity:.5!important;cursor:not-allowed!important;box-shadow:none!important}
+
+/* Dashboard de metas e janela de configuração */
+.overview-progress.overview-goals-panel{display:block;padding:18px;border-color:#806819;background:linear-gradient(145deg,#17150c,#0c0c0b);box-shadow:0 0 10px #f9d32812}
+.overview-goals-title{display:flex;justify-content:space-between;gap:12px;align-items:center;margin-bottom:14px;color:#ffe45c}
+.overview-goals-title strong{font-size:18px}.overview-goals-title span{font-size:12px;color:#c9c9c9}
+.goal-progress-row{margin:13px 0 17px}.goal-progress-head,.goal-progress-foot{display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap}.goal-progress-head{color:#f5e7a0;font-size:13px;margin-bottom:7px}.goal-progress-head span{color:#ffe45c;font-weight:800}
+.goal-track{height:9px;border-radius:20px;background:#393939;overflow:hidden;border:1px solid #57502e}.goal-fill{display:block;height:100%;border-radius:20px;background:linear-gradient(90deg,#b8a326,#ffe45c);box-shadow:0 0 7px #f9d32866}
+.goal-progress-foot{font-size:11px;color:#c9c9c9;margin-top:6px}
+.goal-orders-summary{display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap;padding-top:12px;border-top:1px solid #51451d;color:#eee}.goal-orders-summary span{color:#ffe45c;font-weight:800}.goal-orders-summary small{width:100%;color:#aaa}
+.overview-section-title{color:#ffe45c;margin:20px 0 10px}
+.dashboard-toolbar{display:flex;justify-content:flex-end;margin-bottom:8px}
+.goal-modal{max-height:min(88vh,760px);overflow:auto;width:min(100%,520px)}
+.goal-modal h2{color:#ffe45c;margin:0 0 8px}.goal-modal-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}.goal-modal-grid input{width:100%;box-sizing:border-box}
+.goal-modal-actions{display:flex;gap:10px;justify-content:flex-end;flex-wrap:wrap;margin-top:18px}
+@media(max-width:480px){.goal-modal-grid{grid-template-columns:1fr}.goal-progress-foot{font-size:10px}.overview-goals-title{align-items:flex-start;flex-direction:column}}
 </style>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js" defer></script>
 </head>
@@ -217,7 +220,7 @@ const SUPABASE_URL="https://mxbmzpnoawfbwpbjkbcw.supabase.co";
 const SUPABASE_ANON_KEY="sb_publishable_-zBTfhTld23BHReZ4huWyQ_zWO-xPIj";
 const supabaseClient=window.supabase.createClient(SUPABASE_URL,SUPABASE_ANON_KEY);
 let products=[],clients={},orders=[],sales=[],suppliers=[],ledger=[],rewards=[],redemptions=[],stockLots=[];
-let dashboardScope='Todas as lojas',branch='',client=null,cart={},role='',staffBranch='',staffActor='',activeFilter='Todos',currentOrder=null,activeCartProductId=null,pendingClientCpf='',pendingClientEmail='',clientAuthUser=null,pendingTemporaryCpf='',purchaseDraftItems=[],orderChannel=null,orderAlarmTimer=null,ignoredSuggestions=[],barcodeStream=null,barcodeDetector=null,barcodeScanActive=false,barcodeFrame=null,barcodeTargetId=null,storeGoals={},loyaltyRules={cashback_percent:5,cashback_minimo:100,cashback_validade_dias:90,pontos_a_cada:10,prata_minimo:500,ouro_minimo:1500},staffDirectory=[],adultConfirmed=false;
+let dashboardScope='Todas as lojas',ownerGoalSettings={},branch='',client=null,cart={},role='',staffBranch='',staffActor='',activeFilter='Todos',currentOrder=null,activeCartProductId=null,pendingClientCpf='',pendingClientEmail='',clientAuthUser=null,pendingTemporaryCpf='',purchaseDraftItems=[],orderChannel=null,orderAlarmTimer=null,ignoredSuggestions=[],barcodeStream=null,barcodeDetector=null,barcodeScanActive=false,barcodeFrame=null,barcodeTargetId=null,storeGoals={},loyaltyRules={cashback_percent:5,cashback_minimo:100,cashback_validade_dias:90,pontos_a_cada:10,prata_minimo:500,ouro_minimo:1500},staffDirectory=[],adultConfirmed=false;
 const money=n=>Number(n||0).toLocaleString('pt-BR',{style:'currency',currency:'BRL'});
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 function branchStock(p,b=staffBranch||branch){if(!p)return 0;let lots=stockLots.filter(l=>Number(l.productId)===Number(p.id)&&l.branch===b);if(lots.length)return lots.filter(l=>!l.expiryDate||l.expiryDate>=new Date().toISOString().slice(0,10)).reduce((a,l)=>a+Math.max(0,Number(l.quantity)||0),0);let map=p.stockByBranch||{};if(Object.keys(map).length)return Math.max(0,Number(map[b])||0);return Math.max(0,Number(p.stock)||0)}
@@ -287,7 +290,7 @@ async function loadStaffData(){
  redemptions=(redeem.data||[]).map(x=>({id:x.id,customer:x.clientes?.nome||'Cliente',cpf:x.clientes?.cpf||'',reward:x.brindes?.nome||'Brinde',points:x.pontos_utilizados,branch:branchNameById[Number(x.loja_id)]||'Unidade',branchId:x.loja_id,status:x.status,date:x.created_at}));
  if(role!=='Vendedor'){const l=await supabaseClient.from('lancamentos_financeiros').select('id,loja_id,funcionario_id,beneficiario_funcionario_id,tipo,categoria,descricao,valor,data_lancamento,status').order('data_lancamento',{ascending:false});if(l.error)throw l.error;ledger=(l.data||[]).map(x=>({id:x.id,type:x.tipo,description:x.descricao,total:(x.tipo==='Saída'||x.tipo==='Estorno'?-1:1)*(Number(String(x.valor||'0').replace(',','.'))||0),branch:branchNameById[Number(x.loja_id)]||'Unidade',branchId:x.loja_id,date:x.data_lancamento,status:x.status,beneficiaryId:x.beneficiario_funcionario_id,beneficiary:staffDirectory.find(s=>Number(s.id)===Number(x.beneficiario_funcionario_id))?.nome||''}))}
 }
-async function loadOwnerSettings(){const [m,r]=await Promise.all([supabaseClient.from('metas_loja').select('loja_id,meta_mensal'),supabaseClient.from('regras_fidelidade').select('*').eq('id',1).maybeSingle()]);if(m.error)throw m.error;if(r.error)throw r.error;storeGoals={};(m.data||[]).forEach(x=>storeGoals[Number(x.loja_id)]=Number(x.meta_mensal)||0);if(r.data)loyaltyRules=r.data}
+async function loadOwnerSettings(){const [m,r]=await Promise.all([supabaseClient.from('metas_loja').select('loja_id,meta_diaria,meta_semanal,meta_mensal,meta_pedidos'),supabaseClient.from('regras_fidelidade').select('*').eq('id',1).maybeSingle()]);if(m.error)throw m.error;if(r.error)throw r.error;storeGoals={};ownerGoalSettings={};(m.data||[]).forEach(x=>{const id=Number(x.loja_id);ownerGoalSettings[id]={meta_diaria:Number(x.meta_diaria)||0,meta_semanal:Number(x.meta_semanal)||0,meta_mensal:Number(x.meta_mensal)||0,meta_pedidos:Number(x.meta_pedidos)||0};storeGoals[id]=Number(x.meta_mensal)||0});if(r.data)loyaltyRules=r.data}
 async function loadOrdersFromSupabase(){const {data,error}=await supabaseClient.from('pedidos').select('*,itens_pedido(id,produto_id,quantidade,preco_unitario,subtotal,produtos(nome))').order('created_at',{ascending:false});if(error)throw error;orders=(data||[]).map(o=>({id:o.id,date:o.created_at,completedAt:o.data_conclusao||null,cpf:o.cpf_cliente||'',customer:o.nome_cliente||'Cliente',branch:o.unidade_nome||branchNameById[Number(o.loja_id)]||'Unidade',items:(o.itens_pedido||[]).map(i=>({id:i.produto_id,name:i.produtos?.nome||products.find(p=>Number(p.id)===Number(i.produto_id))?.name||'Produto',price:Number(i.preco_unitario)||0,qty:Number(i.quantidade)||0})),total:Number(o.total??o.valor_total??0),payment:o.forma_pagamento||'Pix',pickup:o.tipo_recebimento||'Retirar na loja',deliveryAddress:o.endereco_entrega||'',note:o.observacoes||o.observacao_cliente||'',status:o.status||'Aguardando atendimento',paymentConfirmed:!!o.pagamento_confirmado,assignedTo:o.responsavel||null,assignedRole:o.cargo_responsavel||null,history:Array.isArray(o.status_historico)?o.status_historico:[]}));sales=orders.filter(o=>o.completedAt||['Retirada concluída','Entrega concluída'].includes(o.status)).map(o=>({...o,orderId:o.id,saleDate:o.completedAt||o.date}))}
 function validCPF(v){let s=String(v||'').replace(/\D/g,'');if(s.length!==11||/^([0-9])\1+$/.test(s))return false;let sum=0;for(let i=0;i<9;i++)sum+=Number(s[i])*(10-i);let d=(sum*10)%11;if(d===10)d=0;if(d!==Number(s[9]))return false;sum=0;for(let i=0;i<10;i++)sum+=Number(s[i])*(11-i);d=(sum*10)%11;if(d===10)d=0;return d===Number(s[10])}
 function formatCPF(input){const d=input.value.replace(/\D/g,'').slice(0,11);input.value=d.replace(/(\d{3})(\d)/,'$1.$2').replace(/(\d{3})(\d)/,'$1.$2').replace(/(\d{3})(\d{1,2})$/,'$1-$2')}
@@ -673,12 +676,13 @@ async function addReward(){
 function branchSelectHtml(id,selected,includeAll){let options=includeAll?'<option value="all">Todas as unidades</option>':'';for(const pair of Object.entries(branches)){const name=pair[0],store=pair[1];options+='<option value="'+store.id+'" '+(String(selected)===String(store.id)?'selected':'')+'>'+esc(name)+'</option>';}return '<select id="'+id+'">'+options+'</select>';}
 function ownerDashboardView(scope){
  dashboardScope=scope;
- const all=scope==='Todas as lojas',names=Object.keys(branches),selected=names.includes(scope)?scope:names[0],now=new Date(),start=new Date(now.getFullYear(),now.getMonth(),1),rows=all?names:[selected];
- const monthSales=sales.filter(s=>rows.includes(s.branch)&&new Date(s.saleDate||s.date)>=start),monthOrders=orders.filter(o=>rows.includes(o.branch)&&new Date(o.date)>=start&&!['Cancelado','Estornado'].includes(o.status)),total=monthSales.reduce((a,s)=>a+s.total,0),goal=rows.reduce((a,n)=>a+(storeGoals[Number(branches[n].id)]||0),0),pct=goal?total/goal*100:0,done=Math.max(0,Math.min(100,pct)),remaining=Math.max(0,100-done);
- const donut=(value,small=false)=>'<div class="overview-donut" style="--done:'+Math.max(0,Math.min(100,value))+'%"><strong>'+value.toFixed(1)+'%</strong></div>';
- const cards=rows.map(n=>{let id=Number(branches[n].id),v=sales.filter(s=>s.branch===n&&new Date(s.saleDate||s.date)>=start).reduce((a,s)=>a+s.total,0),g=storeGoals[id]||0,p=g?v/g*100:0,complete=Math.max(0,Math.min(100,p));return '<div class="overview-branch-card"><div style="display:flex;align-items:center;gap:12px">'+donut(complete,true)+'<div><strong>'+esc(n)+'</strong><p class="small">Vendas: '+money(v)+'</p><p class="small">Meta: '+money(g)+'</p><p class="small">'+p.toFixed(1)+'% concluído</p></div></div></div>'}).join('');
- const daily=Array.from({length:now.getDate()},(_,i)=>{let d=new Date(now.getFullYear(),now.getMonth(),i+1),v=monthSales.filter(s=>new Date(s.saleDate||s.date).toDateString()===d.toDateString()).reduce((a,s)=>a+s.total,0);return {d:i+1,v}}),max=Math.max(1,...daily.map(x=>x.v));
- return (role==='Proprietário'?'<button type="button" class="overview-define-goals" onclick="openModule(\'Equipe e metas\')">✦ Definir metas</button>':'')+'<div class="overview-stats"><div class="overview-stat"><p>Vendas do mês</p><div class="stat">'+money(total)+'</div></div><div class="overview-stat"><p>Pedidos do mês</p><div class="stat">'+monthOrders.length+'</div></div><div class="overview-stat"><p>Meta somada</p><div class="stat">'+money(goal)+'</div></div><div class="overview-stat"><p>Meta alcançada</p><div class="stat">'+pct.toFixed(1)+'%</div></div></div><div class="overview-progress">'+donut(done)+'<div style="flex:1;min-width:150px"><strong style="color:#ffe45c">Acompanhamento da meta</strong><p class="small">Realizado: '+money(total)+'</p><p class="small">Restante: '+money(Math.max(0,goal-total))+'</p><div class="overview-legend"><span><i></i> Concluído</span><span class="remaining"><i></i> A concluir</span></div></div></div><h4 style="color:#ffe45c">Desempenho por loja</h4><div class="grid cards">'+cards+'</div><h4 style="color:#ffe45c">Vendas diárias no mês</h4><div style="display:flex;align-items:end;gap:4px;height:140px;border-bottom:1px solid #66551a;padding-top:10px">'+daily.map(x=>'<div title="Dia '+x.d+': '+money(x.v)+'" style="flex:1;min-width:2px;height:'+Math.max(3,x.v/max*100)+'%;background:linear-gradient(#ffe45c,#b88a00);border-radius:3px 3px 0 0;box-shadow:0 0 5px #f9d32866"></div>').join('')+'</div>';
+ const all=scope==='Todas as lojas',names=Object.keys(branches),selected=names.includes(scope)?scope:names[0],now=new Date(),dayStart=new Date(now.getFullYear(),now.getMonth(),now.getDate()),weekStart=new Date(dayStart);weekStart.setDate(weekStart.getDate()-((weekStart.getDay()+6)%7));const monthStart=new Date(now.getFullYear(),now.getMonth(),1),rows=all?names:[selected],valid=o=>!['Cancelado','Estornado'].includes(o.status);
+ const sumSalesSince=from=>sales.filter(s=>rows.includes(s.branch)&&new Date(s.saleDate||s.date)>=from).reduce((a,s)=>a+Number(s.total||0),0);
+ const sumTarget=field=>rows.reduce((a,n)=>a+Number(ownerGoalSettings[Number(branches[n].id)]?.[field]||0),0);
+ const dailyActual=sumSalesSince(dayStart),weeklyActual=sumSalesSince(weekStart),monthlyActual=sumSalesSince(monthStart),dailyGoal=sumTarget('meta_diaria'),weeklyGoal=sumTarget('meta_semanal'),monthlyGoal=sumTarget('meta_mensal'),monthOrders=orders.filter(o=>rows.includes(o.branch)&&new Date(o.date)>=monthStart&&valid(o)),orderGoal=sumTarget('meta_pedidos');
+ const progressRow=(label,actual,target)=>{const pct=target?actual/target*100:0,fill=Math.max(0,Math.min(100,pct));return '<div class="goal-progress-row"><div class="goal-progress-head"><strong>'+label+'</strong><span>'+pct.toFixed(1)+'%</span></div><div class="goal-track"><span class="goal-fill" style="width:'+fill+'%"></span></div><div class="goal-progress-foot"><span>Realizado: '+money(actual)+'</span><span>Restante: '+money(Math.max(0,target-actual))+'</span><span>Meta: '+money(target)+'</span></div></div>'};
+ const cards=rows.map(n=>{const id=Number(branches[n].id),v=sales.filter(s=>s.branch===n&&new Date(s.saleDate||s.date)>=monthStart).reduce((a,s)=>a+Number(s.total||0),0),g=Number(ownerGoalSettings[id]?.meta_mensal||0),p=g?v/g*100:0,storeOrders=orders.filter(o=>o.branch===n&&new Date(o.date)>=monthStart&&valid(o)).length,ordersTarget=Number(ownerGoalSettings[id]?.meta_pedidos||0);return '<div class="overview-branch-card"><strong>'+esc(n)+'</strong><p class="small">Vendas realizadas: '+money(v)+'</p><p class="small">Meta mensal: '+money(g)+'</p><div class="goal-track"><span class="goal-fill" style="width:'+Math.max(0,Math.min(100,p))+'%"></span></div><p class="small">'+p.toFixed(1)+'% da meta • Pedidos: '+storeOrders+(ordersTarget?' / '+ordersTarget:'')+'</p></div>'}).join('');
+ return (role==='Proprietário'?'<div class="dashboard-toolbar"><button type="button" class="overview-define-goals" onclick="openGoalModal()">✦ Definir metas</button></div>':'')+'<section class="overview-progress overview-goals-panel"><div class="overview-goals-title"><strong>Acompanhamento de meta</strong><span>'+ (all?'Todas as lojas':esc(selected))+'</span></div>'+progressRow('Meta diária',dailyActual,dailyGoal)+progressRow('Meta semanal',weeklyActual,weeklyGoal)+progressRow('Meta mensal',monthlyActual,monthlyGoal)+'<div class="goal-orders-summary"><strong>Quantidade de pedidos no mês</strong><span>'+monthOrders.length+(orderGoal?' / '+orderGoal:'')+' pedidos</span><small>Meta de pedidos: '+(orderGoal||'Não definida')+'</small></div></section><h4 class="overview-section-title">Desempenho por loja</h4><div class="grid cards">'+cards+'</div>';
 }
 async function financeView(){
  const chosen=role==='Proprietário'?(document.getElementById('financeBranch')?.value||'all'):String(branches[staffBranch]?.id||''),rows=ledger.filter(x=>chosen==='all'||String(x.branchId)===String(chosen)),salesRows=sales.filter(s=>chosen==='all'||String(branches[s.branch]?.id)===String(chosen)),sold=salesRows.reduce((a,s)=>a+s.total,0),ins=rows.filter(x=>x.total>0).reduce((a,x)=>a+x.total,0),outs=rows.filter(x=>x.total<0).reduce((a,x)=>a+Math.abs(x.total),0),opts=(role==='Proprietário'?'<option value="all">Todas as unidades</option>':'')+Object.entries(branches).map(([n,b])=>'<option value="'+b.id+'" '+(String(b.id)===String(chosen)?'selected':'')+'>'+esc(n)+'</option>').join(''),employees=staffDirectory;
@@ -700,11 +704,25 @@ function reportsView(){
 }
 async function goalsView(){
  if(role==='Vendedor')return '<p>Sem permissão.</p>';
- const {data,error}=await supabaseClient.from('metas_loja').select('loja_id,meta_mensal');if(error)return '<p class="notice">'+esc(error.message)+'</p>';let values={};(data||[]).forEach(x=>values[x.loja_id]=x.meta_mensal);
- if(role==='Gerente'){let id=branches[staffBranch]?.id;return '<h4>Meta da unidade — '+esc(staffBranch)+'</h4><div class="card"><div class="stat">'+money(values[id]||0)+'</div><p>Meta mensal definida pelo proprietário.</p></div>'}
- return '<h4>Definir metas mensais</h4><p class="small muted">Escolha o valor de cada unidade. Você pode aumentar ou reduzir a meta a qualquer momento; os gráficos da dashboard serão atualizados após salvar.</p>'+Object.entries(branches).map(([n,b])=>'<div class="goal-editor-card"><strong>'+esc(n)+'</strong><label>Meta de vendas do mês (R$)</label><input id="goal-'+b.id+'" type="number" min="0" step="0.01" value="'+(values[b.id]||0)+'" placeholder="Ex.: 30000"><button class="overview-define-goals" onclick="saveStoreGoal('+b.id+')">Salvar meta</button></div>').join('');
+ if(role==='Gerente'){const id=Number(branches[staffBranch]?.id),g=ownerGoalSettings[id]||{};return '<h4>Metas da unidade — '+esc(staffBranch)+'</h4><div class="card"><p>Meta diária: '+money(g.meta_diaria||0)+'</p><p>Meta semanal: '+money(g.meta_semanal||0)+'</p><p>Meta mensal: '+money(g.meta_mensal||0)+'</p><p>Meta de pedidos no mês: '+(g.meta_pedidos||0)+'</p></div>'}
+ return '<p class="muted">Configure as metas de cada unidade em uma janela rápida.</p><button class="overview-define-goals" onclick="openGoalModal()">✦ Definir metas</button>';
 }
-async function saveStoreGoal(id){let v=Number(document.getElementById('goal-'+id).value);if(role!=='Proprietário'||!Number.isFinite(v)||v<0){toast('Meta inválida.');return}let {error}=await supabaseClient.from('metas_loja').upsert({loja_id:id,meta_mensal:v,atualizado_em:new Date().toISOString(),atualizado_por:window.currentStaffProfile?.auth_user_id},{onConflict:'loja_id'});if(error){toast(error.message);return}storeGoals[id]=v;toast('Meta salva e dashboard atualizada.');openModule(dashboardScope==='Todas as lojas'?'Todas as lojas':dashboardScope)}
+async function openGoalModal(){
+ if(role!=='Proprietário'){toast('Somente o proprietário pode definir metas.');return}
+ const modal=document.getElementById('modal');modal.innerHTML='<div class="modalbox goal-modal"><h2>Definir metas</h2><p class="small muted">Escolha a unidade e informe os objetivos de vendas e pedidos.</p><label>Loja</label><select id="goalModalBranch" onchange="changeGoalModalBranch()"></select><div class="goal-modal-grid"><div><label>Meta diária (R$)</label><input id="goalDaily" type="number" min="0" step="0.01" placeholder="0,00"></div><div><label>Meta semanal (R$)</label><input id="goalWeekly" type="number" min="0" step="0.01" placeholder="0,00"></div><div><label>Meta mensal (R$)</label><input id="goalMonthly" type="number" min="0" step="0.01" placeholder="0,00"></div><div><label>Quantidade de pedidos no mês</label><input id="goalOrders" type="number" min="0" step="1" placeholder="Ex.: 300"></div></div><div class="goal-modal-actions"><button class="btn primary" onclick="saveGoalModal()">Salvar metas</button><button class="btn" onclick="closeModal()">Cancelar</button></div></div>';
+ const {data,error}=await supabaseClient.from('metas_loja').select('loja_id,meta_diaria,meta_semanal,meta_mensal,meta_pedidos');if(error){modal.classList.add('hidden');toast('Não foi possível carregar as metas: '+error.message);return}
+ ownerGoalSettings={};(data||[]).forEach(x=>ownerGoalSettings[Number(x.loja_id)]={meta_diaria:Number(x.meta_diaria)||0,meta_semanal:Number(x.meta_semanal)||0,meta_mensal:Number(x.meta_mensal)||0,meta_pedidos:Number(x.meta_pedidos)||0});
+ const select=document.getElementById('goalModalBranch');select.innerHTML=Object.entries(branches).map(([name,b])=>'<option value="'+b.id+'">'+esc(name)+'</option>').join('');modal.classList.remove('hidden');changeGoalModalBranch();
+}
+function changeGoalModalBranch(){const id=Number(document.getElementById('goalModalBranch')?.value),g=ownerGoalSettings[id]||{};const values={goalDaily:g.meta_diaria||0,goalWeekly:g.meta_semanal||0,goalMonthly:g.meta_mensal||0,goalOrders:g.meta_pedidos||0};Object.entries(values).forEach(([key,value])=>{const el=document.getElementById(key);if(el)el.value=value})}
+async function saveGoalModal(){
+ if(role!=='Proprietário'){toast('Somente o proprietário pode salvar metas.');return}
+ const id=Number(document.getElementById('goalModalBranch')?.value),daily=Number(document.getElementById('goalDaily')?.value||0),weekly=Number(document.getElementById('goalWeekly')?.value||0),monthly=Number(document.getElementById('goalMonthly')?.value||0),ordersTarget=Number(document.getElementById('goalOrders')?.value||0);
+ if(!id||![daily,weekly,monthly,ordersTarget].every(v=>Number.isFinite(v)&&v>=0)||!Number.isInteger(ordersTarget)){toast('Confira os valores. As metas devem ser positivas e a quantidade de pedidos deve ser um número inteiro.');return}
+ const payload={loja_id:id,meta_diaria:daily,meta_semanal:weekly,meta_mensal:monthly,meta_pedidos:ordersTarget,atualizado_em:new Date().toISOString(),atualizado_por:window.currentStaffProfile?.auth_user_id};
+ const {error}=await supabaseClient.from('metas_loja').upsert(payload,{onConflict:'loja_id'});if(error){toast('Não foi possível salvar: '+error.message);return}
+ ownerGoalSettings[id]={meta_diaria:daily,meta_semanal:weekly,meta_mensal:monthly,meta_pedidos:ordersTarget};storeGoals[id]=monthly;toast('Metas da unidade salvas.');closeModal();const detail=document.getElementById('staffDetail');if(detail&&!detail.classList.contains('hidden'))detail.innerHTML=ownerDashboardView(dashboardScope);
+}
 function clientsView(){let list=Object.values(clients).sort((a,b)=>(a.name||'').localeCompare(b.name||''));return '<h4>Cadastro completo de clientes</h4><input id="allClientsSearch" placeholder="Buscar por nome, CPF, telefone ou e-mail" oninput="filterAllClients()"><p class="small muted">'+list.length+' clientes cadastrados.</p><div id="allClientsRows">'+clientRowsHtml(list)+'</div>'}
 function clientRowsHtml(list){return list.map(c=>'<div class="card"><strong>'+esc(c.name||'Sem nome')+'</strong><p>CPF: '+esc(c.cpf)+' • WhatsApp: '+esc(c.phone||'-')+'</p><p>E-mail: '+esc(c.email||'-')+'</p><p>Endereço: '+esc([c.address,c.complement,c.neighborhood,c.city].filter(Boolean).join(', ')||'-')+'</p><p>Último acesso: '+(c.lastLogin?new Date(c.lastLogin).toLocaleString('pt-BR'):'Não registrado')+' • Pontos: '+(c.points||0)+' • Cashback: '+money(c.cashbackLots.reduce((a,x)=>a+x.amount,0))+'</p><button class="btn" onclick="showClientDetails(\''+String(c.cpf).replace(/'/g,'')+'\')">Ver histórico</button></div>').join('')||'<p>Nenhum cliente cadastrado.</p>'}
 function filterAllClients(){let q=(document.getElementById('allClientsSearch').value||'').toLowerCase(),list=Object.values(clients).filter(c=>[c.name,c.cpf,c.phone,c.email,c.address,c.city].join(' ').toLowerCase().includes(q));document.getElementById('allClientsRows').innerHTML=clientRowsHtml(list)}
