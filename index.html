@@ -695,7 +695,7 @@ async function editProduct(id){
  modal.classList.remove('hidden');
 }
 async function saveStockProductEdit(id,unitId){
- const val=x=>document.getElementById(x).value,name=val('editProdName').trim(),price=Number(val('editProdPrice')),qty=Number(val('editStockQty')),min=Number(val('editStockMin')),barcode=val('editProdBarcode').replace(/\\D/g,'');
+ const val=x=>document.getElementById(x).value,name=val('editProdName').trim(),price=Number(val('editProdPrice')),qty=Number(val('editStockQty')),min=Number(val('editStockMin')),barcode=val('editProdBarcode').replace(/\D/g,'');
  if(!name||!Number.isFinite(price)||price<0||!Number.isInteger(qty)||qty<0||!Number.isInteger(min)||min<0){toast('Confira nome, preço e quantidades.');return}
  if(barcode&&products.some(p=>Number(p.id)!==Number(id)&&String(p.barcode||'')===barcode)){toast('Código de barras já cadastrado em outro produto.');return}
  const payload={nome,marca:val('editProdBrand').trim()||null,categoria:val('editProdCategory').trim()||'Outros',descricao:val('editProdDesc').trim()||null,codigo_barras:barcode||null,foto_url:val('editProdPhoto').trim()||null,preco,ativo:val('editProdActive')==='true',prateleira:val('editProdShelf').trim()||null,etiqueta:val('editProdTag'),unidade:val('editProdUnit').trim()||'unidades'};
@@ -703,6 +703,10 @@ async function saveStockProductEdit(id,unitId){
  const {data:row,error:readErr}=await supabaseClient.from('estoque').select('id').eq('produto_id',id).eq('loja_id',unitId).maybeSingle();if(readErr){toast('Produto salvo; erro ao consultar saldo: '+readErr.message);return}
  const result=row?.id?await supabaseClient.from('estoque').update({quantidade:qty,estoque_minimo:min}).eq('id',row.id):await supabaseClient.from('estoque').insert({produto_id:id,loja_id:unitId,quantidade:qty,estoque_minimo:min});
  if(result.error){toast('Produto salvo; erro ao atualizar saldo: '+result.error.message);return}
+ const {data:lots,error:lotsError}=await supabaseClient.from('estoque_lotes').select('id,quantidade,quantidade_inicial,data_validade').eq('produto_id',id).eq('loja_id',unitId).order('data_validade',{ascending:true,nullsFirst:false});
+ if(lotsError){toast('Saldo salvo, mas não foi possível sincronizar os lotes: '+lotsError.message);return}
+ const today=new Date().toISOString().slice(0,10),validLots=(lots||[]).filter(l=>!l.data_validade||l.data_validade>=today);let difference=qty-validLots.reduce((sum,l)=>sum+Number(l.quantidade||0),0);
+ for(const lot of [...validLots].reverse()){if(difference===0)break;const current=Number(lot.quantidade)||0,change=difference>0?difference:-Math.min(current,Math.abs(difference)),next=current+change;const upd=await supabaseClient.from('estoque_lotes').update({quantidade:next,quantidade_inicial:Math.max(Number(lot.quantidade_inicial)||0,next)}).eq('id',lot.id);if(upd.error){toast('Saldo salvo, mas houve erro ao ajustar um lote: '+upd.error.message);return}difference-=change;}
  await loadProductsFromSupabase(true);closeModal();toast('Produto, disponibilidade, endereço e saldo atualizados.');openModule(stockModuleName());
 }
 async function editStockLot(id){
