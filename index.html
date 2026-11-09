@@ -377,10 +377,10 @@ async function editEmployeeProfile(id){
 }
 async function saveEmployeeProfile(id){
  if(role!=='Proprietário')return;
- const patch={nome:document.getElementById('editEmpName').value.trim(),email:window.editingEmployeeLinked?undefined:document.getElementById('editEmpEmail').value.trim().toLowerCase(),telefone:document.getElementById('editEmpPhone').value.replace(/\D/g,'')||null,cargo:document.getElementById('editEmpRole').value,loja_id:Number(document.getElementById('editEmpStore').value)};
+ const empRole=document.getElementById('editEmpRole').value,patch={nome:document.getElementById('editEmpName').value.trim(),email:window.editingEmployeeLinked?undefined:document.getElementById('editEmpEmail').value.trim().toLowerCase(),telefone:document.getElementById('editEmpPhone').value.replace(/\D/g,'')||null,cargo:empRole,loja_id:empRole==='proprietario'?null:Number(document.getElementById('editEmpStore').value)};
  const file=document.getElementById('editEmpPhoto').files?.[0];
- if(!patch.nome||(!window.editingEmployeeLinked&&!patch.email?.includes('@'))||!patch.loja_id){toast('Confira nome, e-mail e unidade.');return}
- if(file){if(file.size>5*1024*1024){toast('A foto deve ter até 5 MB.');return}const ext=(file.name.split('.').pop()||'jpg').toLowerCase(),path='funcionarios/'+id+'/'+Date.now()+'.'+ext;const {error:up}=await supabaseClient.storage.from('bombastic-perfis').upload(path,file,{upsert:true,contentType:file.type||'image/jpeg'});if(up){toast('Falha ao enviar a foto: '+up.message);return}patch.foto_url=supabaseClient.storage.from('bombastic-perfis').getPublicUrl(path).data.publicUrl}
+ if(!patch.nome||(!window.editingEmployeeLinked&&!patch.email?.includes('@'))||(empRole!=='proprietario'&&!patch.loja_id)){toast('Confira nome, e-mail e unidade.');return}
+ if(window.editingEmployeeLinked)delete patch.email;if(file){if(file.size>5*1024*1024){toast('A foto deve ter até 5 MB.');return}const ext=(file.name.split('.').pop()||'jpg').toLowerCase(),path='funcionarios/'+id+'/'+Date.now()+'.'+ext;const {error:up}=await supabaseClient.storage.from('bombastic-perfis').upload(path,file,{upsert:true,contentType:file.type||'image/jpeg'});if(up){toast('Falha ao enviar a foto: '+up.message);return}patch.foto_url=supabaseClient.storage.from('bombastic-perfis').getPublicUrl(path).data.publicUrl}
  const {error}=await supabaseClient.from('funcionarios').update(patch).eq('id',id);
  if(error){toast(error.message);return}
  closeModal();toast('Perfil atualizado.');openModule('Equipe e funcionários');
