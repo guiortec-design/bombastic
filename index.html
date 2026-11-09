@@ -316,7 +316,7 @@ const branches={
 const branchNameById={1:"Loja Volobueff",2:"Loja Picerno",3:"Loja Nova Veneza"};
 const SUPABASE_URL="https://mxbmzpnoawfbwpbjkbcw.supabase.co";
 const SUPABASE_ANON_KEY="sb_publishable_-zBTfhTld23BHReZ4huWyQ_zWO-xPIj";
-const supabaseClient=window.supabase.createClient(SUPABASE_URL,SUPABASE_ANON_KEY);
+const supabaseClient=window.supabase.createClient(SUPABASE_URL,SUPABASE_ANON_KEY,{auth:{persistSession:true,autoRefreshToken:true,detectSessionInUrl:true,storage:window.localStorage}});
 let products=[],clients={},orders=[],sales=[],suppliers=[],ledger=[],rewards=[],redemptions=[],stockLots=[];
 let dashboardScope='Todas as lojas',ownerGoalSettings={},employeeGoalSettings={},branch='',client=null,cart={},role='',staffBranch='',staffActor='',activeFilter='Todos',currentOrder=null,activeCartProductId=null,pendingClientCpf='',pendingClientEmail='',clientAuthUser=null,pendingTemporaryCpf='',purchaseDraftItems=[],orderChannel=null,orderAlarmTimer=null,ignoredSuggestions=[],barcodeStream=null,barcodeDetector=null,barcodeScanActive=false,barcodeFrame=null,barcodeTargetId=null,storeGoals={},loyaltyRules={cashback_percent:5,cashback_minimo:100,cashback_validade_dias:90,pontos_a_cada:10,prata_minimo:500,ouro_minimo:1500},staffDirectory=[],adultConfirmed=false;
 const money=n=>Number(n||0).toLocaleString('pt-BR',{style:'currency',currency:'BRL'});
@@ -345,7 +345,7 @@ function copyPixKey(key){if(navigator.clipboard?.writeText){navigator.clipboard.
 function copyPixPayload(){let el=document.getElementById('pixPayload');if(!el)return;el.select();document.execCommand('copy');toast('Código Pix copiado.')}
 async function chooseBranch(b){
  if(!branches[b]){toast('Selecione uma loja válida.');return}
- branch=b;adultConfirmed=false;pendingCustomerCatalog=false;
+ branch=b;try{localStorage.setItem('bombastic_customer_branch',b)}catch(e){}adultConfirmed=false;pendingCustomerCatalog=false;
  document.getElementById('branch-label').textContent=b;
  document.getElementById('customerStoreName').textContent=b;
  document.getElementById('cpf').value='';document.getElementById('clientPassword').value='';
@@ -358,7 +358,7 @@ async function chooseBranch(b){
 }
 let pendingCustomerCatalog=false;
 function confirmAdultAccess(){adultConfirmed=true;if(pendingCustomerCatalog){pendingCustomerCatalog=false;openCustomer();return}show('cpfLogin');document.getElementById('cpf')?.focus()}
-async function denyAdultAccess(){adultConfirmed=false;pendingCustomerCatalog=false;try{await supabaseClient.auth.signOut({scope:'local'})}catch(e){}clientAuthUser=null;client=null;cart={};document.getElementById('profile').classList.add('hidden');document.getElementById('customerSummary').classList.add('hidden');document.getElementById('branch-label').textContent='Selecione sua loja';branch='';show('start');toast('O catálogo é permitido somente para maiores de 18 anos.')}
+async function denyAdultAccess(){adultConfirmed=false;pendingCustomerCatalog=false;try{await supabaseClient.auth.signOut({scope:'local'})}catch(e){}clientAuthUser=null;client=null;cart={};try{localStorage.removeItem('bombastic_customer_branch')}catch(e){}document.getElementById('profile').classList.add('hidden');document.getElementById('customerSummary').classList.add('hidden');document.getElementById('branch-label').textContent='Selecione sua loja';branch='';show('start');toast('O catálogo é permitido somente para maiores de 18 anos.')}
 const validBrazilDDDs=new Set([11,12,13,14,15,16,17,18,19,21,22,24,27,28,31,32,33,34,35,37,38,41,42,43,44,45,46,47,48,49,51,53,54,55,61,62,63,64,65,66,67,68,69,71,73,74,75,77,79,81,82,83,84,85,86,87,88,89,91,92,93,94,95,96,97,98,99]);
 function formatBrazilPhoneValue(value){let d=String(value||'').replace(/\D/g,'');if(d.length===13&&d.startsWith('55'))d=d.slice(2);d=d.slice(0,11);if(!d)return '';if(d.length<=2)return '('+d;if(d.length<=7)return '('+d.slice(0,2)+') '+d.slice(2);return '('+d.slice(0,2)+') '+d.slice(2,d.length-4)+'-'+d.slice(-4)}
 function formatBrazilPhone(input){let digits=String(input.value||'').replace(/\D/g,'');if(digits.length===13&&digits.startsWith('55'))digits=digits.slice(2);digits=digits.slice(0,11);input.value=formatBrazilPhoneValue(digits);input.setCustomValidity('')}
@@ -398,7 +398,7 @@ async function applyCustomerSession(result){
  if(result.forcePasswordChange){pendingTemporaryCpf=customer.cpf;show('forceClientPassword');document.getElementById('forcedCpf').value=customer.cpf||'';toast('Informe o código temporário fornecido pela equipe e crie uma nova senha.');return}
  const session=result?.session;if(!session)throw new Error('O servidor não retornou uma sessão válida.');
  const {data,error}=await supabaseClient.auth.setSession({access_token:session.access_token,refresh_token:session.refresh_token});if(error)throw error;
- clientAuthUser=data.user;client={id:customer.id,cpf:customer.cpf,name:customer.nome||'',phone:customer.telefone||'',email:'',photoUrl:'',address:'',neighborhood:'',city:'',complement:'',reference:'',points:0,cashbackLots:[],spent12m:0,history:[]};
+ clientAuthUser=data.user;client={id:customer.id,cpf:customer.cpf,name:customer.nome||'',phone:customer.telefone||'',email:'',photoUrl:'',address:'',neighborhood:'',city:'',complement:'',reference:'',points:0,cashbackLots:[],spent12m:0,history:[]};try{if(branch)localStorage.setItem('bombastic_customer_branch',branch)}catch(e){}
  pendingCustomerCatalog=true;adultConfirmed=false;show('ageGate');
 }
 async function openCustomer(){
@@ -980,7 +980,7 @@ async function logout(){
  try{await supabaseClient.auth.signOut({scope:'local'})}
  catch(error){console.warn('Encerrando a sessão local apesar da falha de rede:',error)}
  finally{
-  window.currentStaffProfile=null;clientAuthUser=null;client=null;role='';staffActor='';staffBranch='';branch='';adultConfirmed=false;cart={};currentOrder=null;pendingTemporaryCpf='';pendingClientCpf='';pendingClientEmail='';
+  window.currentStaffProfile=null;clientAuthUser=null;client=null;role='';staffActor='';staffBranch='';branch='';adultConfirmed=false;cart={};try{localStorage.removeItem('bombastic_customer_branch')}catch(e){}currentOrder=null;pendingTemporaryCpf='';pendingClientCpf='';pendingClientEmail='';
   document.getElementById('profile').classList.add('hidden');
   document.getElementById('customerSummary').classList.add('hidden');
   document.getElementById('staffDetail').classList.add('hidden');
@@ -991,5 +991,34 @@ async function logout(){
  }
 }
 
+
+async function restoreCustomerSession(){
+ try{
+  const {data:sessionData,error:sessionError}=await supabaseClient.auth.getSession();
+  if(sessionError)throw sessionError;
+  const session=sessionData?.session;
+  if(!session?.user)return;
+  const {data:profileData,error:profileError}=await supabaseClient.from('clientes')
+   .select('id,cpf,nome,telefone,email,ativo,endereco,bairro,cidade,complemento,referencia')
+   .eq('auth_user_id',session.user.id).maybeSingle();
+  if(profileError)throw profileError;
+  if(!profileData||profileData.ativo===false)return;
+  let savedBranch='';
+  try{savedBranch=localStorage.getItem('bombastic_customer_branch')||''}catch(e){}
+  if(!branches[savedBranch])return;
+  clientAuthUser=session.user;
+  client={id:profileData.id,cpf:profileData.cpf,name:profileData.nome||'',phone:profileData.telefone||'',email:profileData.email||'',photoUrl:'',address:profileData.endereco||'',neighborhood:profileData.bairro||'',city:profileData.cidade||'',complement:profileData.complemento||'',reference:profileData.referencia||'',points:0,cashbackLots:[],spent12m:0,history:[]};
+  branch=savedBranch;adultConfirmed=true;pendingCustomerCatalog=false;
+  document.getElementById('branch-label').textContent=branch;
+  document.getElementById('customerStoreName').textContent=branch;
+  await Promise.all([loadStorePixSettings(),loadProductsFromSupabase(false)]);
+  document.getElementById('profile').classList.remove('hidden');
+  document.getElementById('profile-name').textContent=client.name||'Cliente';
+  await openCustomer();
+ }catch(error){
+  console.warn('Não foi possível restaurar a sessão do cliente:',error);
+ }
+}
+window.addEventListener('load',restoreCustomerSession,{once:true});
 </script>
 </body></html>
