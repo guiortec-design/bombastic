@@ -60,7 +60,7 @@ input,select{width:100%;padding:12px;border-radius:10px;background:#0c0a08;borde
 </section>
 <section id="cpfLogin" class="hidden">
  <div class="hero"><h2>Acesse a Bombastic</h2><p class="muted">Digite seu CPF para localizar seu cadastro.</p>
-  <label>CPF</label><input id="cpf" inputmode="numeric" autocomplete="username" placeholder="000.000.000-00" maxlength="14" oninput="formatCPF(this)" onkeydown="if(event.key==='Enter')checkCustomerCpf()">
+  <label>CPF</label><input id="cpf" inputmode="numeric" autocomplete="username" placeholder="000.000.000-00" maxlength="14" oninput="formatCPF(this);document.getElementById('customerPasswordStep').classList.add('hidden');document.getElementById('clientResetRequestBtn').classList.add('hidden')" onkeydown="if(event.key==='Enter')checkCustomerCpf()">
   <button class="btn primary" id="checkCpfBtn" onclick="checkCustomerCpf()">Continuar</button>
   <div id="customerPasswordStep" class="hidden"><hr><p class="muted">Cadastro localizado. Agora informe sua senha.</p><label>Senha</label><input id="clientPassword" type="password" autocomplete="current-password" placeholder="Sua senha" onkeydown="if(event.key==='Enter')clientLogin()"><button class="btn primary" id="clientLoginBtn" onclick="clientLogin()">Entrar</button><button class="btn hidden" id="clientResetRequestBtn" onclick="requestClientPasswordReset()">Esqueci minha senha — solicitar redefinição</button></div>
   <button class="btn" onclick="show('start')">Voltar à seleção de loja</button><p class="small muted">Se ainda não tiver cadastro, vamos abrir o formulário para criar sua conta.</p>
@@ -141,8 +141,6 @@ async function chooseBranch(b){
  branch=b;adultConfirmed=false;pendingCustomerCatalog=false;
  document.getElementById('branch-label').textContent=b;
  document.getElementById('customerStoreName').textContent=b;
- document.getElementById('branchAddress').textContent=branches[b].address;
- document.getElementById('branchWhats').href='https://wa.me/'+branches[b].phone+'?text='+encodeURIComponent('Olá! Estou fazendo um pedido na Bombastic '+b+'.');
  document.getElementById('cpf').value='';document.getElementById('clientPassword').value='';
  document.getElementById('customerPasswordStep').classList.add('hidden');
  document.getElementById('clientResetRequestBtn').classList.add('hidden');
