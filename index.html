@@ -114,7 +114,7 @@ function drawPixQr(){let el=document.getElementById('pixQr'),payload=document.ge
 function copyPixKey(key){if(navigator.clipboard?.writeText){navigator.clipboard.writeText(key).then(()=>toast('Chave Pix copiada.')).catch(()=>toast('Não foi possível copiar automaticamente.'))}else toast('Selecione e copie a chave Pix exibida.')}
 function copyPixPayload(){let el=document.getElementById('pixPayload');if(!el)return;el.select();document.execCommand('copy');toast('Código Pix copiado.')}
 async function chooseBranch(b){
- if(!branches[b])return;
+ if(!branches[b]){toast('Selecione uma loja válida.');return}
  branch=b;
  document.getElementById('branch-label').textContent=b;
  document.getElementById('customerBranch').textContent=b;
@@ -123,9 +123,15 @@ async function chooseBranch(b){
  document.getElementById('cpf').value='';
  document.getElementById('clientPassword').value='';
  document.getElementById('newCpf').value='';
- try{await loadStorePixSettings();await loadProductsFromSupabase(false)}
- catch(e){toast('Não foi possível carregar os dados da loja: '+(e.message||'verifique a conexão.'))}
+ // Mostra o login imediatamente; o carregamento remoto não pode bloquear a entrada.
  show('cpfLogin');
+ document.getElementById('cpf').focus();
+ try{
+  await Promise.all([loadStorePixSettings(),loadProductsFromSupabase(false)]);
+ }catch(e){
+  console.error('Falha ao carregar dados da unidade:',e);
+  toast('A tela de acesso está disponível, mas não foi possível carregar os dados da loja. Verifique a conexão.');
+ }
 }
 const validBrazilDDDs=new Set([11,12,13,14,15,16,17,18,19,21,22,24,27,28,31,32,33,34,35,37,38,41,42,43,44,45,46,47,48,49,51,53,54,55,61,62,63,64,65,66,67,68,69,71,73,74,75,77,79,81,82,83,84,85,86,87,88,89,91,92,93,94,95,96,97,98,99]);
 function formatBrazilPhoneValue(value){let d=String(value||'').replace(/\D/g,'');if(d.length===13&&d.startsWith('55'))d=d.slice(2);d=d.slice(0,11);if(!d)return '';if(d.length<=2)return '('+d;if(d.length<=7)return '('+d.slice(0,2)+') '+d.slice(2);return '('+d.slice(0,2)+') '+d.slice(2,d.length-4)+'-'+d.slice(-4)}
