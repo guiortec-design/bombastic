@@ -40,6 +40,12 @@ input,select{width:100%;padding:12px;border-radius:10px;background:#0c0a08;borde
 @media(max-width:600px){.modal{padding:10px}.modalbox.profile-editor{max-height:calc(100dvh - 20px);padding:12px}.modalbox.profile-editor h2{font-size:17px!important}.modalbox.profile-editor input,.modalbox.profile-editor select{font-size:12px;padding:7px 9px;margin-bottom:6px}}
 
 .client-photo-edit{display:flex;align-items:center;gap:10px;margin:5px 0 10px}.client-photo-edit img,.client-photo-placeholder{width:62px;height:62px;flex:0 0 62px;border-radius:50%;object-fit:cover;background:#292117;border:2px solid var(--gold)}.client-photo-placeholder{display:grid;place-items:center;color:var(--gold);font-size:22px;font-weight:800}.client-photo-edit input[type=file]{min-width:0;flex:1;font-size:11px!important;padding:6px!important}
+
+/* Botão flutuante de retorno nas páginas internas do painel da equipe */
+.floating-panel-back{position:fixed;left:16px;bottom:22px;z-index:1000;display:none;align-items:center;gap:8px;padding:12px 16px;border:1px solid #f9d328;border-radius:999px;background:#171717;color:#f9d328;font-size:13px;font-weight:800;box-shadow:0 5px 18px #0009;cursor:pointer}
+.floating-panel-back.visible{display:flex}
+.floating-panel-back:active{transform:scale(.97)}
+@media(max-width:600px){.floating-panel-back{left:12px;bottom:14px;padding:11px 14px;font-size:12px}}
 </style>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js" defer></script>
 </head>
@@ -110,11 +116,13 @@ input,select{width:100%;padding:12px;border-radius:10px;background:#0c0a08;borde
 </footer>
 </div>
 <button id="floatingCart" class="floating-cart hidden" type="button" onclick="goToCart()" aria-label="Abrir carrinho">🛒 <span>Carrinho</span> <strong id="floatingCartCount">0</strong></button>
+<button id="floatingPanelBack" class="floating-panel-back" type="button" onclick="goBackStaffPanel()" aria-label="Voltar à página anterior">← <span>Voltar</span></button>
 <div id="toast" class="toast hidden"></div>
 <div id="modal" class="modal hidden"><div class="modalbox"><h2 style="color:var(--gold);margin-top:0">Pedido</h2><p>O pedido será registrado no sistema e ficará disponível para a equipe da unidade.</p><button class="btn primary" onclick="closeModal()">Entendi</button></div></div>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js" defer></script>
 <script>
+let staffPanelHistory=[];
 const branches={
  "Loja Picerno":{id:2,address:"Avenida Fuad Assef Maluf, 07",phone:"5519991937346"},
  "Loja Volobueff":{id:1,address:"Rua Generoso Alves Vieira, 165",phone:"5519997530184"},
@@ -133,7 +141,9 @@ function productLots(productId,b=staffBranch||branch){return stockLots.filter(l=
 function lotDateLabel(v){return v?new Date(v+'T12:00:00').toLocaleDateString('pt-BR'):'Sem validade informada'}
 function lotExpiryState(l){if(!l.expiryDate)return 'Sem validade';let days=Math.ceil((new Date(l.expiryDate+'T23:59:59')-new Date())/86400000);return days<0?'Vencido':days<=30?'Vence em até 30 dias':'Dentro da validade'}
 
-function show(id){document.querySelectorAll('main section').forEach(x=>x.classList.add('hidden'));const el=document.getElementById(id);if(el)el.classList.remove('hidden')}
+function updateFloatingPanelBack(){const btn=document.getElementById('floatingPanelBack'),staff=document.getElementById('staff'),detail=document.getElementById('staffDetail');if(!btn)return;btn.classList.toggle('visible',!!(staff&&!staff.classList.contains('hidden')&&detail&&!detail.classList.contains('hidden')))}
+function goBackStaffPanel(){const d=document.getElementById('staffDetail');if(!d)return;if(staffPanelHistory.length){d.innerHTML=staffPanelHistory.pop();d.classList.remove('hidden');d.scrollIntoView({behavior:'smooth',block:'start'})}else{stopBarcodeScanner();d.classList.add('hidden')}updateFloatingPanelBack()}
+function show(id){document.querySelectorAll('main section').forEach(x=>x.classList.add('hidden'));const el=document.getElementById(id);if(el)el.classList.remove('hidden')};updateFloatingPanelBack()
 function toast(msg){let t=document.getElementById('toast');t.textContent=msg;t.classList.remove('hidden');clearTimeout(window._toastTimer);window._toastTimer=setTimeout(()=>t.classList.add('hidden'),2800)}
 const pixSettings={};
 async function loadStorePixSettings(){const {data,error}=await supabaseClient.from('lojas').select('id,nome,pix_chave,pix_nome,pix_cidade');if(error)throw error;for(const s of data||[]){let name=branchNameById[Number(s.id)]||s.nome;pixSettings[name]={key:s.pix_chave||'',merchant:s.pix_nome||'BOMBASTIC TABACARIA',city:s.pix_cidade||'SUMARE'}}return pixSettings}
@@ -360,6 +370,7 @@ async function approveClientReset(id){
  }catch(e){toast('Não foi possível aprovar: '+(e.message||'tente novamente.'))}
 }
 function showAdminCategory(category){
+ staffPanelHistory=[];
  const owner=role==='Proprietário',manager=role==='Gerente',seller=role==='Vendedor';
  let items=[];
  if(category==='Visão geral'){
@@ -376,12 +387,12 @@ function showAdminCategory(category){
  }
  const d=document.getElementById('staffDetail');d.classList.remove('hidden');
  d.innerHTML='<h3>'+esc(category)+'</h3><p class="muted">Escolha uma opção para abrir sua página. Unidade: '+esc(staffBranch)+'</p><div class="admin-shortcut-grid">'+items.map(x=>'<button type="button" class="admin-shortcut" onclick="openModule('+JSON.stringify(x).replace(/"/g,'&quot;')+')">'+esc(x)+' →</button>').join('')+'</div><p><button type="button" class="btn btn-close-module" onclick="document.getElementById(\'staffDetail\').classList.add(\'hidden\')">← Voltar às abas</button></p>';
- d.scrollIntoView({behavior:'smooth',block:'start'});
+ d.scrollIntoView({behavior:'smooth',block:'start'});updateFloatingPanelBack();
 }
 async function openModule(m){
  if(role==='Vendedor'&&(m==='Fluxo de caixa'||m.includes('Estornar')||m==='Relatórios'||m==='Backup e auditoria'||m.includes('Configurações')||m==='Cancelar pedido não retirado'||m==='Estoque e lotes'||m==='Fornecedores'||m.includes('Compras'))){toast('Você não tem permissão para este módulo.');return}
  if(['Visão geral','Estoque','Financeiro','Configurações'].includes(m)){showAdminCategory(m);return}
- let d=document.getElementById('staffDetail');d.classList.remove('hidden');let html='<h3>'+esc(m)+'</h3><p class="muted">Unidade: '+esc(staffBranch)+'</p>';
+ let d=document.getElementById('staffDetail');if(!d.classList.contains('hidden')&&d.innerHTML.trim())staffPanelHistory.push(d.innerHTML);d.classList.remove('hidden');let html='<h3>'+esc(m)+'</h3><p class="muted">Unidade: '+esc(staffBranch)+'</p>';
  if(m==='Redefinição de senha')html+=await passwordResetRequestsView();
  else if(m==='Visão geral das três lojas')html+=ownerDashboardView('Todas as unidades');
  else if(m.startsWith('Visão geral — '))html+=ownerDashboardView(m.replace('Visão geral — ',''));
@@ -406,7 +417,7 @@ async function openModule(m){
  else if(m.includes('Configurações')){let configBranch=role==='Proprietário'?'Loja Picerno':staffBranch;let pc=pixSettings[configBranch]||{};html+='<h4>Dados de recebimento Pix</h4>'+(role==='Proprietário'?'<label>Unidade</label><select id="cfgPixBranch" onchange="fillPixSettings(this.value)"><option>Loja Picerno</option><option>Loja Volobueff</option><option>Loja Nova Veneza</option></select>':'')+'<label>Chave Pix oficial</label><input id="cfgPix" value="'+esc(pc.key||'')+'" placeholder="Chave Pix"><label>Nome do recebedor</label><input id="cfgPixName" maxlength="25" value="'+esc(pc.merchant||'BOMBASTIC TABACARIA')+'"><label>Cidade do recebedor</label><input id="cfgPixCity" maxlength="15" value="'+esc(pc.city||'SUMARE')+'"><button class="btn primary" onclick="savePixSettings()">Salvar dados Pix</button>';}
  else html+='<p>Selecione um módulo para consultar os dados.</p>';
  html+='<p><button type="button" class="btn btn-close-module" onclick="stopBarcodeScanner();document.getElementById(\'staffDetail\').classList.add(\'hidden\')">← Voltar ao painel</button></p>';
- d.innerHTML=html;d.scrollIntoView({behavior:'smooth',block:'start'});
+ d.innerHTML=html;d.scrollIntoView({behavior:'smooth',block:'start'});updateFloatingPanelBack();
 }
 async function teamManagementView(){
  if(role!=='Proprietário')return '<p>Apenas o proprietário pode alterar a equipe.</p>';
