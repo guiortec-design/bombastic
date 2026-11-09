@@ -694,8 +694,8 @@ async function passwordResetRequestsView(){
  const {data,error}=await supabaseClient.functions.invoke('customer-access',{body:{action:'list_resets'}});
  if(error)throw error;if(data?.error)throw new Error(data.error);
  const rows=data.requests||[];
- if(!rows.length)return '<p class="muted">Não há solicitações pendentes de redefinição de senha.</p>';
- return '<p class="muted">A aprovação gera um código aleatório de 8 dígitos, válido por 30 minutos. Entregue o código ao cliente para que ele cadastre uma nova senha.</p>'+rows.map(r=>'<div class="card"><strong>'+esc(r.clientes?.nome||'Cliente')+'</strong><p>CPF: '+esc(r.clientes?.cpf||'')+'</p><p class="small muted">Solicitado em '+new Date(r.solicitado_em).toLocaleString('pt-BR')+'</p><button class="btn primary" onclick="approveClientReset('+Number(r.id)+')">Aprovar redefinição</button></div>').join('');
+ if(!rows.length)return '<h4>Solicitações de redefinição de senha</h4><p class="muted">Não há clientes com solicitação pendente no momento.</p><button class="btn" onclick="openModule(\'Redefinição de senha\')">Atualizar lista</button>';
+ return '<h4>Solicitações de redefinição de senha</h4><p class="muted">Clientes que solicitaram a troca da senha e aguardam aprovação. A aprovação gera um código aleatório de 8 dígitos, válido por 30 minutos.</p><button class="btn" onclick="openModule(\'Redefinição de senha\')">Atualizar lista</button>'+rows.map(r=>'<div class="card"><strong>'+esc(r.clientes?.nome||'Cliente')+'</strong><p>CPF: '+esc(r.clientes?.cpf||'')+'</p><p class="small muted">Solicitado em '+new Date(r.solicitado_em).toLocaleString('pt-BR')+'</p><button class="btn primary" onclick="approveClientReset('+Number(r.id)+')">Aprovar redefinição</button></div>').join('');
 }
 async function approveClientReset(id){
  if(!confirm('Gerar um código temporário aleatório, válido por 30 minutos, para o cliente cadastrar uma nova senha?'))return;
@@ -735,7 +735,7 @@ function showAdminCategory(category){
  d.scrollIntoView({behavior:'smooth',block:'start'});updateFloatingPanelBack();
 }
 async function openModule(m){
- if(role==='Vendedor'&&(m==='Fluxo de caixa'||m.includes('Estornar')||m==='Relatórios'||m==='Backup e auditoria'||m.includes('Configurações')||m==='Cancelar pedido não retirado'||m==='Estoque e lotes'||m==='Fornecedores'||m.includes('Compras'))){toast('Você não tem permissão para este módulo.');return}
+ if(role==='Vendedor'&&(m==='Fluxo de caixa'||m.includes('Estornar')||m==='Relatórios'||m==='Backup e auditoria'||m.includes('Configurações')||m==='Configurar Pix loja'||m==='Cancelar pedido não retirado'||m==='Estoque e lotes'||m==='Fornecedores'||m.includes('Compras'))){toast('Você não tem permissão para este módulo.');return}
  if(['Visão geral','Estoque','Financeiro','Configurações'].includes(m)){showAdminCategory(m);return}
  let d=document.getElementById('staffDetail');if(!d.classList.contains('hidden')&&d.innerHTML.trim())staffPanelHistory.push(d.innerHTML);d.classList.remove('hidden');const dashboardPage=(m==='Todas as lojas'||Object.prototype.hasOwnProperty.call(branches,m));let html=dashboardPage?'':'<h3>'+esc(m)+'</h3><p class="muted">Unidade: '+esc(staffBranch)+'</p>';
  if(m==='Redefinição de senha')html+=await passwordResetRequestsView();
@@ -1046,7 +1046,7 @@ async function goalsView(){
 }
 async function openGoalModal(branchId){
  if(role!=='Proprietário'){toast('Somente o proprietário pode definir metas.');return}
- const modal=document.getElementById('modal');modal.innerHTML='<div class="modalbox goal-modal"><h2>Equipe e metas</h2><p class="small muted">Configure as metas do mês para esta unidade.</p><label>Unidade</label><select id="goalModalBranch" onchange="changeGoalModalBranch()"></select><h4>Meta do mês</h4><div class="goal-store-target"><label>Meta mensal da loja (R$)</label><input id="goalMonthly" type="number" min="0" step="0.01" placeholder="Ex.: 20000"></div><h4>Meta de cada funcionário</h4><div id="goalEmployeeFields"></div><div class="goal-modal-actions"><button class="btn primary" onclick="saveGoalModal()">Salvar metas</button><button class="btn" onclick="closeModal()">Cancelar</button></div></div>';
+ const modal=document.getElementById('modal');modal.innerHTML='<div class="modalbox goal-modal"><h2>Equipe e metas</h2><p class="small muted">Configure as metas do mês para esta unidade.</p><h4>Meta do mês — '+new Date().toLocaleDateString('pt-BR',{month:'long',year:'numeric'})+'</h4><label>Unidade</label><select id="goalModalBranch" onchange="changeGoalModalBranch()"></select><h4>Meta do mês</h4><div class="goal-store-target"><label>Meta mensal da loja (R$)</label><input id="goalMonthly" type="number" min="0" step="0.01" placeholder="Ex.: 20000"></div><h4>Meta de cada funcionário</h4><div id="goalEmployeeFields"></div><div class="goal-modal-actions"><button class="btn primary" onclick="saveGoalModal()">Salvar metas</button><button class="btn" onclick="closeModal()">Cancelar</button></div></div>';
  const [stores,employees,individual]=await Promise.all([supabaseClient.from('metas_loja').select('loja_id,meta_mensal'),supabaseClient.from('funcionarios').select('id,nome,cargo,loja_id,ativo').eq('ativo',true).order('nome'),supabaseClient.from('metas_funcionarios').select('loja_id,funcionario_id,mes_referencia,meta_mensal')]);
  for(const x of [stores,employees,individual])if(x.error){modal.classList.add('hidden');toast('Não foi possível carregar equipe e metas: '+x.error.message);return}
  ownerGoalSettings={};(stores.data||[]).forEach(x=>ownerGoalSettings[Number(x.loja_id)]={...(ownerGoalSettings[Number(x.loja_id)]||{}),meta_mensal:Number(x.meta_mensal)||0});
