@@ -64,7 +64,8 @@ input,select{width:100%;padding:12px;border-radius:10px;background:#0c0a08;borde
  <div class="section-title"><h2>Fale com a unidade</h2></div><div class="card branch-contact"><p id="branchAddress"></p><div class="branch-whats-wrap"><a id="branchWhats" class="btn green" target="_blank" rel="noopener">Abrir WhatsApp da loja</a></div></div>
 </section>
 <section id="staffLogin" class="hidden">
- <div class="hero"><h2>Acesso de Funcionário</h2><p class="muted">Entre com seu usuário de teste.</p><label>Usuário</label><input id="staffUser" placeholder="vendedor, gerente ou Caio"><label>Senha</label><input id="staffPass" type="password" placeholder="123456"><label>Nome do funcionário (para identificar quem assumiu o pedido)</label><input id="staffDisplayName" placeholder="Digite seu nome"><label>Unidade</label><select id="staffBranch"><option>Sumaré — Av. Fuad Assef Maluf</option><option>Sumaré — Rua Generoso Alves Vieira</option><option>Nova Veneza</option></select><button class="btn primary" onclick="staffLogin()">Entrar</button><p class="small muted">Demonstração local: os dados ficam neste navegador e ainda não são gravados no Supabase. Não use estas credenciais em produção.</p></div>
+ <div class="hero"><h2>Acesso da equipe</h2><p class="muted">Entre com seu e-mail corporativo e senha. Sua unidade e suas permissões serão carregadas automaticamente.</p><label>E-mail de acesso</label><input id="staffUser" type="email" autocomplete="username" placeholder="seu e-mail cadastrado"><label>Senha</label><input id="staffPass" type="password" autocomplete="current-password" placeholder="Sua senha"><button class="btn primary" id="staffLoginBtn" onclick="staffLogin()">Entrar</button><p class="small muted">A loja é identificada pelo cadastro do funcionário. Não escolha a unidade nesta tela.</p></div>
+</section>
 </section>
 <section id="staff" class="hidden">
  <div class="hero"><h2 id="staffTitle">Painel</h2><p class="muted" id="staffSubtitle"></p><div id="staffModules" class="grid cards"></div></div>
@@ -77,7 +78,7 @@ input,select{width:100%;padding:12px;border-radius:10px;background:#0c0a08;borde
   <div><strong>Redes sociais</strong><p><a href="https://www.instagram.com/storebombastic/" target="_blank">@storebombastic</a></p><p>Mais novidades nas redes da Bombastic.</p></div>
   <div><strong>Unidades e contato</strong><p>Sumaré: Av. Fuad Assef Maluf, 07 — <a href="https://wa.me/5519991937346">WhatsApp</a></p><p>Sumaré: Rua Generoso Alves Vieira, 165 — <a href="https://wa.me/5519997530184">WhatsApp</a></p><p>Nova Veneza: Av. da Amizade, 3249 — <a href="https://wa.me/5519991344011">WhatsApp</a></p></div>
  </div>
- <p>© 2026 Bombastic Tabacaria. Prévia de interface.</p>
+ <p>© 2026 Bombastic Tabacaria. Aplicativo Bombastic Tabacaria.</p>
 </footer>
 </div>
 <button id="floatingCart" class="floating-cart hidden" type="button" onclick="goToCart()" aria-label="Abrir carrinho">🛒 <span>Carrinho</span> <strong id="floatingCartCount">0</strong></button>
@@ -144,10 +145,41 @@ function syncCheckoutOptions(){let pickup=document.getElementById('pickup')?.val
 function confirmOrder(){let pickup=document.getElementById('pickup')?.value;if(!pickup){toast('Selecione como deseja receber o pedido.');return}let allowedMethods=pickup==='Delivery'?['Pix']:['Pix','Dinheiro','Cartão'];let selectedMethod=document.getElementById('payMethod')?.value||'Pix';if(!allowedMethods.includes(selectedMethod)){toast('Forma de pagamento inválida para esta modalidade.');return}let method=selectedMethod;let deliveryAddress=document.getElementById('deliveryAddress')?.value.trim()||'';if(pickup==='Delivery'&&!deliveryAddress){toast('Informe o endereço para entrega.');return}let items=Object.entries(cart).map(([id,q])=>{let p=products.find(x=>x.id==id);return {id:Number(id),name:p.name,price:p.price,qty:q}});for(let it of items){let p=products.find(x=>x.id===it.id);if(!p||branchStock(p,branch)<it.qty){toast('Estoque insuficiente para '+it.name+' nesta unidade.');return}}
  let order={id:Date.now(),date:new Date().toISOString(),cpf:client.cpf,customer:client.name,branch,items,total:cartTotal(),payment:method,pickup,deliveryAddress,note:document.getElementById('orderNote').value,status:'Aguardando atendimento',paymentConfirmed:false,assignedTo:null,history:[{status:'Pedido recebido',at:new Date().toISOString(),by:'Cliente'},{status:'Aguardando atendimento',at:new Date().toISOString(),by:'Sistema'}]};orders.unshift(order);save('orders',orders);currentOrder=order;cart={};activeCartProductId=null;renderProducts();renderCart();let box=document.querySelector('#modal .modalbox');if(method==='Pix'){box.innerHTML=`<h2 style="color:var(--gold)">Pedido #${order.id.toString().slice(-6)} registrado</h2><p>Status: <strong>Aguardando atendimento</strong></p><p>Pagamento via Pix: aguardando conferência pela equipe.</p>${showPixForOrder(order)}<button class="btn primary" onclick="closeModal()">Concluir</button>`;drawPixQr()}else{box.innerHTML=`<h2 style="color:var(--gold)">Pedido #${order.id.toString().slice(-6)} registrado</h2><p>Status: ${esc(order.status)}</p><p>Pagamento será conferido pela equipe na loja.</p><button class="btn primary" onclick="closeModal()">Concluir</button>`}toast('Pedido registrado. A equipe poderá visualizá-lo no painel.')}
 function closeModal(){document.getElementById('modal').classList.add('hidden')}
-function staffLogin(){let u=document.getElementById('staffUser').value.trim().toLowerCase(),p=document.getElementById('staffPass').value;if(p!=='123456'||!['vendedor','gerente','caio','proprietario','proprietário'].includes(u)){toast('Usuário ou senha inválidos.');return}role=u==='vendedor'?'Vendedor':u==='gerente'?'Gerente':'Proprietário';staffActor=document.getElementById('staffDisplayName').value.trim();if(!staffActor){toast('Informe seu nome para identificar quem assumiu o pedido.');return}staffBranch=document.getElementById('staffBranch').value;document.getElementById('profile').classList.remove('hidden');document.getElementById('profile-name').textContent=role;document.getElementById('avatar').textContent=role==='Proprietário'?'C':role[0];document.getElementById('staffTitle').textContent='Painel '+role;document.getElementById('staffSubtitle').textContent=staffBranch;let modules=role==='Vendedor'?['Pedidos e atendimento','Consulta de produtos e estoque','Cadastro de produtos e lotes','Clientes e histórico','Resgate de brindes']:role==='Gerente'?['Pedidos e atendimento','Estoque e lotes','Produtos e fornecedores','Compras necessárias','Metas e relatórios operacionais','Cancelar pedido não retirado','Clientes e fidelidade']:['Visão geral das três lojas','Histórico de vendas','Financeiro e relatórios','Estoque e fornecedores','Equipe e metas','Cashback e fidelidade','Vitrine de brindes e resgates','Configurações','Backup e auditoria','Estornar venda'];document.getElementById('staffModules').innerHTML=modules.map(m=>`<button type="button" class="card" onclick='openModule(${JSON.stringify(m)})'><h3>${esc(m)}</h3><p>Abrir módulo →</p></button>`).join('');show('staff')}
+async function staffLogin(){
+ const email=document.getElementById('staffUser').value.trim().toLowerCase();
+ const password=document.getElementById('staffPass').value;
+ const btn=document.getElementById('staffLoginBtn');
+ if(!email||!password){toast('Informe e-mail e senha.');return}
+ btn.disabled=true;btn.textContent='Autenticando...';
+ try{
+  const {data:authData,error:authError}=await supabaseClient.auth.signInWithPassword({email,password});
+  if(authError)throw authError;
+  const {data:profileData,error:profileError}=await supabaseClient.from('funcionarios').select('id,nome,email,cargo,loja_id,ativo').eq('auth_user_id',authData.user.id).eq('ativo',true).single();
+  if(profileError||!profileData)throw new Error('Conta autenticada, mas não há cadastro ativo de funcionário vinculado. Procure o proprietário.');
+  if(!['proprietario','gerente','vendedor'].includes(profileData.cargo))throw new Error('Cargo sem permissão para acessar o aplicativo.');
+  if(profileData.cargo!=='proprietario'&&!profileData.loja_id)throw new Error('Seu usuário ainda não tem uma loja atribuída. Peça ao proprietário para definir sua unidade.');
+  const unit=profileData.loja_id?branchNameById[Number(profileData.loja_id)]:null;
+  if(profileData.loja_id&&!unit)throw new Error('A unidade vinculada ao usuário não foi reconhecida.');
+  role=profileData.cargo==='proprietario'?'Proprietário':profileData.cargo==='gerente'?'Gerente':'Vendedor';
+  staffActor=profileData.nome||email;
+  staffBranch=role==='Proprietário'?'Todas as unidades':unit;
+  window.currentStaffProfile=profileData;
+  if(unit){branch=unit;document.getElementById('branch-label').textContent=unit;document.getElementById('customerBranch').textContent=unit;if(branches[unit]){document.getElementById('branchAddress').textContent=branches[unit].address;document.getElementById('branchWhats').href='https://wa.me/'+branches[unit].phone}}
+  document.getElementById('profile').classList.remove('hidden');
+  document.getElementById('profile-name').textContent=profileData.nome||role;
+  document.getElementById('avatar').textContent=role==='Proprietário'?'P':(profileData.nome||role)[0].toUpperCase();
+  document.getElementById('staffTitle').textContent='Painel '+role;
+  document.getElementById('staffSubtitle').textContent=role==='Proprietário'?'Acesso administrativo às três unidades':unit;
+  let modules=role==='Vendedor'?['Pedidos e atendimento','Consulta de produtos e estoque','Cadastro de produtos e lotes','Clientes e histórico','Resgate de brindes']:role==='Gerente'?['Pedidos e atendimento','Estoque e lotes','Produtos e fornecedores','Compras necessárias','Metas e relatórios operacionais','Cancelar pedido não retirado','Clientes e fidelidade']:['Visão geral das três lojas','Histórico de vendas','Financeiro e relatórios','Estoque e fornecedores','Equipe e funcionários','Equipe e metas','Cashback e fidelidade','Vitrine de brindes e resgates','Configurações','Backup e auditoria','Estornar venda'];
+  document.getElementById('staffModules').innerHTML=modules.map(m=>`<button type="button" class="card" onclick='openModule(${JSON.stringify(m)})'><h3>${esc(m)}</h3><p>Abrir módulo →</p></button>`).join('');
+  show('staff');
+ }catch(error){await supabaseClient.auth.signOut();toast(error.message||'Não foi possível entrar. Confira suas credenciais.')}
+ finally{btn.disabled=false;btn.textContent='Entrar'}
+}
+
 function canManage(){return role==='Gerente'||role==='Proprietário'}
 function stockModuleName(){return role==='Vendedor'?'Cadastro de produtos e lotes':role==='Proprietário'?'Estoque e fornecedores':'Estoque e lotes'}
-function openModule(m){if(role==='Vendedor'&&['Financeiro e relatórios','Estornar venda','Backup e auditoria','Configurações','Cancelar pedido não retirado','Estoque e lotes','Produtos e fornecedores','Compras necessárias'].includes(m)){toast('Você não tem permissão para este módulo.');return}let d=document.getElementById('staffDetail');d.classList.remove('hidden');let html=`<h3>${esc(m)}</h3><p class="muted">Unidade: ${esc(staffBranch)}</p>`;
+async function openModule(m){if(role==='Vendedor'&&['Financeiro e relatórios','Estornar venda','Backup e auditoria','Configurações','Cancelar pedido não retirado','Estoque e lotes','Produtos e fornecedores','Compras necessárias'].includes(m)){toast('Você não tem permissão para este módulo.');return}let d=document.getElementById('staffDetail');d.classList.remove('hidden');let html=`<h3>${esc(m)}</h3><p class="muted">Unidade: ${esc(staffBranch)}</p>`;
  if(m.includes('Consulta de produtos'))html+=stockLookupView();
  else if(m.includes('Pedidos'))html+=ordersView();
  else if(m.includes('Visão geral'))html+=overviewView();
@@ -155,6 +187,7 @@ function openModule(m){if(role==='Vendedor'&&['Financeiro e relatórios','Estorn
  else if(m.includes('Financeiro'))html+=financeView();
  else if(m.includes('Estoque')||m.includes('Produtos e fornecedores')||m.includes('Compras')||m.includes('lotes')||m.includes('Cadastro de produtos'))html+=stockView()+ (canManage()?supplierView():'');
  else if(m.includes('fornecedores'))html+=supplierView();
+ else if(m==='Equipe e funcionários')html+=await teamManagementView();
  else if(m.includes('Clientes'))html+=clientsView();
  else if(m.includes('Resgate')||m.includes('Vitrine'))html+=rewardsView();
  else if(m.includes('Cashback')||m.includes('fidelidade'))html+=loyaltyView();
@@ -164,6 +197,28 @@ function openModule(m){if(role==='Vendedor'&&['Financeiro e relatórios','Estorn
  else if(m.includes('Configurações')){let pc=pixSettings[staffBranch]||{};html+=`<h4>Dados de recebimento Pix — ${esc(staffBranch)}</h4><label>Chave Pix oficial</label><input id="cfgPix" value="${esc(pc.key||'')}" placeholder="CPF, CNPJ, e-mail, telefone ou chave aleatória"><label>Nome do recebedor</label><input id="cfgPixName" maxlength="25" value="${esc(pc.merchant||'BOMBASTIC TABACARIA')}"><label>Cidade do recebedor</label><input id="cfgPixCity" maxlength="15" value="${esc(pc.city||'SUMARE')}"><p class="small muted">Cadastre a chave oficial da conta que recebe os pagamentos desta unidade. A configuração fica salva somente neste navegador de demonstração.</p><button class="btn primary" onclick="savePixSettings()">Salvar dados Pix</button>`;}
  else html+=`<p>Relatórios operacionais e dados consolidados estão disponíveis nos módulos correspondentes.</p>`;
  html+=`<p><button type="button" class="btn" onclick="document.getElementById('staffDetail').classList.add('hidden')">Fechar módulo</button></p>`;d.innerHTML=html;d.scrollIntoView({behavior:"smooth",block:"start"})}
+async function teamManagementView(){
+ if(role!=='Proprietário')return '<p>Apenas o proprietário pode alterar a equipe.</p>';
+ const [{data:team,error:teamError},{data:stores,error:storeError}]=await Promise.all([
+  supabaseClient.from('funcionarios').select('id,nome,email,cargo,loja_id,ativo').order('id'),
+  supabaseClient.from('lojas').select('id,nome,ativo').eq('ativo',true).order('id')
+ ]);
+ if(teamError||storeError)return '<p class="notice">Não foi possível carregar a equipe. Verifique as permissões do banco.</p>';
+ return '<p>Defina o cargo e a unidade de trabalho. O funcionário será direcionado automaticamente para a unidade atribuída no próximo login.</p><div class="table-wrap"><table class="table"><tr><th>Funcionário</th><th>Cargo</th><th>Unidade de trabalho</th><th>Situação</th><th>Ação</th></tr>'+team.map(x=>{
+  const storeOpts='<option value="">Selecione a unidade</option>'+stores.map(st=>'<option value="'+st.id+'" '+(Number(x.loja_id)===Number(st.id)?'selected':'')+'>'+esc(st.nome)+'</option>').join('');
+  return '<tr><td><strong>'+esc(x.nome||'Sem nome')+'</strong><br><small>'+esc(x.email||'Sem e-mail')+'</small></td><td><select id="team-role-'+x.id+'"><option value="vendedor" '+(x.cargo==='vendedor'?'selected':'')+'>Vendedor</option><option value="gerente" '+(x.cargo==='gerente'?'selected':'')+'>Gerente</option><option value="proprietario" '+(x.cargo==='proprietario'?'selected':'')+'>Proprietário</option></select></td><td><select id="team-store-'+x.id+'" '+(x.cargo==='proprietario'?'disabled':'')+'>'+storeOpts+'</select></td><td>'+(x.ativo?'Ativo':'Inativo')+'</td><td><button class="btn primary" onclick="saveTeamAssignment('+x.id+')">Salvar</button></td></tr>';
+ }).join('')+'</table></div><p class="small muted">O proprietário mantém acesso às três unidades. Gerentes e vendedores precisam ter uma unidade definida.</p>';
+}
+async function saveTeamAssignment(id){
+ if(role!=='Proprietário'){toast('Somente o proprietário pode alterar a equipe.');return}
+ const cargo=document.getElementById('team-role-'+id).value;
+ const lojaValue=document.getElementById('team-store-'+id).value;
+ if(cargo!=='proprietario'&&!lojaValue){toast('Escolha a unidade deste funcionário.');return}
+ const {error}=await supabaseClient.from('funcionarios').update({cargo,loja_id:cargo==='proprietario'?null:Number(lojaValue)}).eq('id',id);
+ if(error){toast('Não foi possível salvar: '+error.message);return}
+ toast('Cadastro atualizado. A nova unidade será aplicada no próximo login.');
+ openModule('Equipe e funcionários');
+}
 function overviewView(){let total=sales.reduce((a,s)=>a+s.total,0);return `<div class="grid cards"><div class="card"><p>Pedidos pendentes</p><div class="stat">${orders.filter(o=>!['Retirada concluída','Entrega concluída','Cancelado'].includes(o.status)).length}</div></div><div class="card"><p>Vendas registradas</p><div class="stat">${sales.length}</div></div><div class="card"><p>Faturamento registrado</p><div class="stat">${money(total)}</div></div><div class="card"><p>Produtos cadastrados</p><div class="stat">${products.length}</div></div></div><h4>Unidades</h4><table class="table"><tr><th>Unidade</th><th>Pedidos</th><th>Vendas</th></tr>${Object.keys(branches).map(b=>`<tr><td>${esc(b)}</td><td>${orders.filter(o=>o.branch===b).length}</td><td>${money(sales.filter(s=>s.branch===b).reduce((a,s)=>a+s.total,0))}</td></tr>`).join('')}</table>`}
 function nextOrderAction(o){if(!o.assignedTo)return 'Assumir pedido';if(!o.paymentConfirmed)return 'Pagamento confirmado';if(o.status==='Aguardando conferência')return 'Conferência concluída';if(o.status==='Conferência concluída')return 'Em embalagem';if(o.status==='Em embalagem')return o.pickup==='Delivery'?'Saiu para entrega':'Disponível para retirada';if(o.status==='Disponível para retirada')return 'Retirada concluída';if(o.status==='Saiu para entrega')return 'Entrega concluída';return null}
 function ordersView(cancelOnly=false){let list=orders.filter(o=>o.branch===staffBranch||role==='Proprietário');return `<h4>Pedidos</h4>${list.length?list.map(o=>{let action=nextOrderAction(o),owned=o.assignedTo&&o.assignedTo===staffActor,locked=o.assignedTo&&!owned;let actionButton='';if(!cancelOnly&&action){if(action==='Assumir pedido'&&!o.assignedTo)actionButton=`<button type="button" class="btn assume-order" onclick='updateOrder(${o.id},"Assumir pedido")'>Assumir pedido</button>`;else if(owned)actionButton=`<button type="button" class="btn primary" onclick='updateOrder(${o.id},${JSON.stringify(action)})'>${action}</button>`;else if(locked)actionButton=`<button type="button" class="btn order-claimed" disabled>Pedido assumido por ${esc(o.assignedTo)}</button>`;}let cancelButton=(!cancelOnly&&role!=='Vendedor'&&o.status!=='Retirada concluída'&&o.status!=='Entrega concluída'&&o.status!=='Cancelado')?`<button type="button" class="btn" onclick='updateOrder(${o.id},"Cancelar pedido")'>Cancelar pedido</button>`:'';return `<div class="card"><strong>#${o.id.toString().slice(-6)} — ${esc(o.customer)}</strong><p>${esc(o.branch)} • ${new Date(o.date).toLocaleString('pt-BR')} • ${money(o.total)}</p><p>${o.items.map(i=>`${esc(i.name)} (${i.qty})`).join(', ')}</p><p>Recebimento: <strong>${esc(o.pickup||'Retirar no balcão')}</strong> • Pagamento: ${esc(o.payment)}</p><p>Status: <strong>${esc(o.status)}</strong>${o.assignedTo?` • Responsável: ${esc(o.assignedTo)}`:''}</p><div class="actions">${actionButton}${cancelButton}</div></div>`}).join(''):'<p class="muted">Nenhum pedido registrado.</p>'}`}
@@ -193,7 +248,7 @@ function addReward(){let name=document.getElementById('rewardName').value.trim()
 function redeemReward(id){let cpf=prompt('Digite o CPF do cliente para o resgate:');if(!cpf)return;cpf=cpf.replace(/\D/g,'');let c=clients[cpf],r=rewards.find(x=>x.id===id);if(!c||!r||r.active===false||(r.branch!=='Todas'&&r.branch!==staffBranch)){toast('Cliente ou brinde não encontrado nesta unidade.');return}if(c.points<r.points||r.stock<1){toast('Pontos ou estoque insuficientes.');return}c.points-=r.points;r.stock--;clients[cpf]=c;save('clients',clients);save('rewards',rewards);redemptions.unshift({customer:c.name,reward:r.name,points:r.points,branch:staffBranch,date:new Date().toISOString(),staff:role});save('redemptions',redemptions);toast('Resgate registrado e pontos baixados.');openModule('Vitrine de brindes e resgates')}
 function exportBackup(){let data={products,clients,orders,sales,suppliers,ledger,rewards,redemptions,stockLots};let a=document.createElement('a'),url=URL.createObjectURL(new Blob([JSON.stringify(data,null,2)],{type:'application/json'}));a.href=url;a.download='backup-bombastic.json';a.click();URL.revokeObjectURL(url)}
 function importBackup(e){let f=e.target.files[0];if(!f)return;let reader=new FileReader();reader.onload=()=>{try{let d=JSON.parse(reader.result);for(let k of ['products','clients','orders','sales','suppliers','ledger','rewards','redemptions','stockLots'])if(d[k]){if(k==='clients')clients=d[k];else if(k==='products')products=d[k];else if(k==='orders')orders=d[k];else if(k==='sales')sales=d[k];else if(k==='suppliers')suppliers=d[k];else if(k==='ledger')ledger=d[k];else if(k==='rewards')rewards=d[k];else if(k==='redemptions')redemptions=d[k];else stockLots=d[k];save(k,d[k])}toast('Backup importado.')}catch(err){toast('Arquivo de backup inválido.')}};reader.readAsText(f)}
-function logout(){client=null;role='';staffActor='';cart={};renderCart();document.getElementById('profile').classList.add('hidden');document.getElementById('customerSummary').classList.add('hidden');document.getElementById('staffDetail').classList.add('hidden');show('start')}
+async function logout(){if(window.currentStaffProfile){await supabaseClient.auth.signOut();window.currentStaffProfile=null}client=null;role='';staffActor='';staffBranch='';cart={};renderCart();document.getElementById('profile').classList.add('hidden');document.getElementById('customerSummary').classList.add('hidden');document.getElementById('staffDetail').classList.add('hidden');show('start')}
 
 </script>
 </body></html>
