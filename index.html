@@ -69,7 +69,7 @@ input,select{width:100%;padding:12px;border-radius:10px;background:#0c0a08;borde
  <div class="section-title"><h2>Fale com a unidade</h2></div><div class="card branch-contact"><p id="branchAddress"></p><div class="branch-whats-wrap"><a id="branchWhats" class="btn green" target="_blank" rel="noopener">Abrir WhatsApp da loja</a></div></div>
 </section>
 <section id="staffLogin" class="hidden">
- <div class="hero"><h2>Acesso da equipe</h2><p class="muted">Entre com seu e-mail corporativo e senha. Sua unidade e suas permissões serão carregadas automaticamente.</p><label>E-mail de acesso</label><input id="staffUser" type="email" autocomplete="username" placeholder="seu e-mail cadastrado"><label>Senha</label><input id="staffPass" type="password" autocomplete="current-password" placeholder="Sua senha"><button class="btn primary" id="staffLoginBtn" onclick="staffLogin()">Entrar</button><p class="small muted">A loja é identificada pelo cadastro do funcionário. Não escolha a unidade nesta tela.</p></div>
+ <div class="hero"><h2>Acesso da equipe</h2><p class="muted">Entre com seu e-mail corporativo e senha. Sua unidade e suas permissões serão carregadas automaticamente.</p><label>E-mail de acesso</label><input id="staffUser" type="email" autocomplete="username" placeholder="seu e-mail cadastrado"><label>Senha</label><input id="staffPass" type="password" autocomplete="current-password" placeholder="Sua senha"><button class="btn primary" id="staffLoginBtn" onclick="staffLogin()">Entrar</button><p class="small muted">A loja é identificada pelo cadastro do funcionário. Não escolha a unidade nesta tela.</p><details style="margin-top:14px"><summary>Primeiro acesso? Criar conta do funcionário</summary><label>E-mail cadastrado pelo proprietário</label><input id="staffSignupEmail" type="email" placeholder="seu e-mail"><label>Crie uma senha</label><input id="staffSignupPassword" type="password" minlength="8" placeholder="Mínimo de 8 caracteres"><button class="btn" onclick="createStaffAccount()">Criar acesso</button><p class="small muted">O proprietário precisa cadastrar seu perfil e unidade antes.</p></details></div>
 </section>
 <section id="staff" class="hidden">
  <div class="hero"><h2 id="staffTitle">Painel</h2><p class="muted" id="staffSubtitle"></p><div id="staffModules" class="grid cards"></div></div>
@@ -191,7 +191,7 @@ async function staffLogin(){
  try{
   const {data:authData,error:authError}=await supabaseClient.auth.signInWithPassword({email,password});
   if(authError)throw authError;
-  const {data:profileData,error:profileError}=await supabaseClient.from('funcionarios').select('id,nome,email,cargo,loja_id,ativo').eq('auth_user_id',authData.user.id).eq('ativo',true).single();
+  const {error:linkError}=await supabaseClient.rpc('vincular_funcionario_por_email');if(linkError)throw linkError;const {data:profileData,error:profileError}=await supabaseClient.from('funcionarios').select('id,nome,email,cargo,loja_id,ativo,foto_url,telefone').eq('auth_user_id',authData.user.id).eq('ativo',true).single();
   if(profileError||!profileData)throw new Error('Conta autenticada, mas não há cadastro ativo de funcionário vinculado. Procure o proprietário.');
   if(!['proprietario','gerente','vendedor'].includes(profileData.cargo))throw new Error('Cargo sem permissão para acessar o aplicativo.');
   if(profileData.cargo!=='proprietario'&&!profileData.loja_id)throw new Error('Seu usuário ainda não tem uma loja atribuída. Peça ao proprietário para definir sua unidade.');
@@ -358,6 +358,54 @@ async function manageRedemption(id,action){let {error}=await supabaseClient.rpc(
 function renderCustomerRewards(){let box=document.getElementById('customerRewards');if(!box||!clientAuthUser)return;supabaseClient.from('brindes').select('id,nome,descricao,foto_url,pontos_necessarios,estoque').eq('ativo',true).gt('estoque',0).then(({data,error})=>{if(error){box.innerHTML='';return}box.innerHTML='<h3>Troque seus pontos por brindes</h3>'+(data||[]).map(r=>'<div class="card">'+(r.foto_url?'<img src="'+esc(r.foto_url)+'" style="width:90px;height:90px;object-fit:cover;border-radius:10px" alt="">':'')+'<strong>'+esc(r.nome)+'</strong><p>'+esc(r.descricao||'')+' • '+r.pontos_necessarios+' pontos</p><button class="btn primary" '+((client.points||0)<r.pontos_necessarios?'disabled':'')+' onclick="requestCustomerReward('+r.id+')">Solicitar resgate</button></div>').join('')||'<p>Nenhum brinde disponível.</p>'})}
 async function requestCustomerReward(id){if(!clientAuthUser||!client)return;let storeId=branches[branch]?.id;if(!storeId){toast('Selecione uma loja.');return}let {error}=await supabaseClient.rpc('solicitar_resgate_bombastic',{p_brinde_id:id,p_loja_id:storeId});if(error){toast(error.message);return}toast('Solicitação enviada à equipe.');renderCustomerRewards()}
 function exportStockAudit(mode){let unit=role==='Proprietário'?(document.getElementById('auditBranch')?.value||'all'):String(branches[staffBranch]?.id||''),names=Object.entries(branches).filter(([n,b])=>unit==='all'||String(b.id)===String(unit)),rows=names.flatMap(([name])=>products.map(p=>({store:name,name:p.name,barcode:p.barcode||'',shelf:p.shelf||'',qty:branchStock(p,name),unit:p.unit||'unidades'}))).filter(x=>mode==='owner'||x.qty>0),w=window.open('','_blank');if(!w){toast('Permita pop-ups para gerar o PDF.');return}w.document.write('<html><head><title>Auditoria de estoque Bombastic</title><style>body{font:12px Arial;padding:24px;color:#111}h1{font-size:20px}table{width:100%;border-collapse:collapse}th,td{border:1px solid #777;padding:7px;text-align:left}th{background:#eee}.qty{text-align:center;width:90px}@media print{button{display:none}}</style></head><body><h1>Bombastic Tabacaria — Auditoria física de estoque</h1><p>Unidade(s): '+names.map(x=>esc(x[0])).join(', ')+'</p><p>Data: '+new Date().toLocaleDateString('pt-BR')+'</p><table><tr><th>Unidade</th><th>Produto</th><th>Código</th><th>Prateleira</th><th>Unidade</th><th>Saldo sistema</th><th>Contagem física</th></tr>'+rows.map(x=>'<tr><td>'+esc(x.store)+'</td><td>'+esc(x.name)+'</td><td>'+esc(x.barcode)+'</td><td>'+esc(x.shelf)+'</td><td>'+esc(x.unit)+'</td><td class="qty">'+(mode==='owner'?x.qty:'')+'</td><td class="qty"></td></tr>').join('')+'</table><p>Responsável: ____________________________________</p><p>Assinatura: ____________________________________</p><script>window.onload=()=>window.print()<\/script></body></html>');w.document.close()}
+
+
+
+async function createStaffAccount(){
+ const email=(document.getElementById('staffSignupEmail')?.value||'').trim().toLowerCase();
+ const password=document.getElementById('staffSignupPassword')?.value||'';
+ if(!email||password.length<8){toast('Informe o e-mail cadastrado e uma senha de pelo menos 8 caracteres.');return}
+ const {data,error}=await supabaseClient.auth.signUp({email,password});
+ if(error){toast('Não foi possível criar o acesso: '+error.message);return}
+ if(data.session){const link=await supabaseClient.rpc('vincular_funcionario_por_email');if(link.error){toast(link.error.message);return}toast('Acesso criado e perfil vinculado. Entre com seu e-mail e senha.')}
+ else toast('Cadastro iniciado. Confirme o e-mail e depois entre com sua senha.');
+}
+async function teamManagementView(){
+ if(role!=='Proprietário')return '<p>Apenas o proprietário pode gerenciar a equipe.</p>';
+ const [{data:team,error:te},{data:stores,error:se}]=await Promise.all([
+  supabaseClient.from('funcionarios').select('id,nome,email,cargo,loja_id,ativo,foto_url,telefone').order('id'),
+  supabaseClient.from('lojas').select('id,nome,ativo').eq('ativo',true).order('id')
+ ]);
+ if(te||se)return '<p class="notice">Erro ao carregar equipe: '+esc((te||se).message)+'</p>';
+ const opts='<option value="">Selecione a unidade</option>'+stores.map(s=>'<option value="'+s.id+'">'+esc(s.nome)+'</option>').join('');
+ return '<h4>Adicionar funcionário</h4><label>Nome completo</label><input id="newEmpName" placeholder="Nome do funcionário"><label>E-mail de acesso</label><input id="newEmpEmail" type="email" placeholder="E-mail usado no login"><label>WhatsApp</label><input id="newEmpPhone" type="tel" placeholder="Telefone"><label>Cargo</label><select id="newEmpRole"><option value="vendedor">Vendedor</option><option value="gerente">Gerente</option></select><label>Unidade</label><select id="newEmpStore">'+opts+'</select><button class="btn primary" onclick="createEmployeeProfile()">Cadastrar funcionário</button><p class="small muted">Depois do cadastro, o funcionário cria seu acesso com o mesmo e-mail em “Primeiro acesso”.</p><hr><h4>Equipe cadastrada</h4>'+team.map(x=>'<div class="card">'+(x.foto_url?'<img src="'+esc(x.foto_url)+'" style="width:64px;height:64px;object-fit:cover;border-radius:50%" alt="">':'')+'<strong>'+esc(x.nome||'Sem nome')+'</strong><p>'+esc(x.email||'Sem e-mail')+' • '+esc(x.cargo)+' • '+esc(branchNameById[Number(x.loja_id)]||'Todas as unidades')+'</p><p>'+(x.auth_user_id?'Acesso vinculado':'Aguardando primeiro acesso')+' • '+(x.ativo?'Ativo':'Inativo')+'</p><button class="btn primary" onclick="editEmployeeProfile('+x.id+')">Editar perfil e foto</button> <button class="btn" onclick="toggleEmployeeActive('+x.id+','+(!x.ativo)+')">'+(x.ativo?'Desativar':'Reativar')+'</button></div>').join('');
+}
+async function createEmployeeProfile(){
+ if(role!=='Proprietário')return;
+ const nome=document.getElementById('newEmpName').value.trim(),email=document.getElementById('newEmpEmail').value.trim().toLowerCase(),telefone=document.getElementById('newEmpPhone').value.replace(/\D/g,''),cargo=document.getElementById('newEmpRole').value,loja_id=Number(document.getElementById('newEmpStore').value);
+ if(!nome||!email.includes('@')||!loja_id){toast('Preencha nome, e-mail e unidade.');return}
+ const {error}=await supabaseClient.from('funcionarios').insert({nome,email,telefone:telefone||null,cargo,loja_id,ativo:true});
+ if(error){toast('Não foi possível cadastrar: '+error.message);return}
+ toast('Perfil cadastrado. O funcionário já pode criar o acesso com este e-mail.');openModule('Equipe e funcionários');
+}
+async function editEmployeeProfile(id){
+ const {data,error}=await supabaseClient.from('funcionarios').select('*').eq('id',id).single();
+ if(error){toast(error.message);return}
+ const modal=document.getElementById('modal'),box=modal.querySelector('.modalbox');
+ box.innerHTML='<h2 style="color:var(--gold)">Editar funcionário</h2><label>Nome</label><input id="editEmpName" value="'+esc(data.nome||'')+'"><label>E-mail</label><input id="editEmpEmail" type="email" value="'+esc(data.email||'')+'"><label>Telefone</label><input id="editEmpPhone" value="'+esc(data.telefone||'')+'"><label>Cargo</label><select id="editEmpRole"><option value="vendedor" '+(data.cargo==='vendedor'?'selected':'')+'>Vendedor</option><option value="gerente" '+(data.cargo==='gerente'?'selected':'')+'>Gerente</option><option value="proprietario" '+(data.cargo==='proprietario'?'selected':'')+'>Proprietário</option></select><label>Unidade</label><select id="editEmpStore">'+Object.entries(branches).map(([n,b])=>'<option value="'+b.id+'" '+(Number(data.loja_id)===Number(b.id)?'selected':'')+'>'+esc(n)+'</option>').join('')+'</select><label>Foto</label><input id="editEmpPhoto" type="file" accept="image/*"><button class="btn primary" onclick="saveEmployeeProfile('+id+')">Salvar perfil</button> <button class="btn" onclick="closeModal()">Cancelar</button>';
+ modal.classList.remove('hidden');
+}
+async function saveEmployeeProfile(id){
+ if(role!=='Proprietário')return;
+ const patch={nome:document.getElementById('editEmpName').value.trim(),email:document.getElementById('editEmpEmail').value.trim().toLowerCase(),telefone:document.getElementById('editEmpPhone').value.replace(/\D/g,'')||null,cargo:document.getElementById('editEmpRole').value,loja_id:Number(document.getElementById('editEmpStore').value)};
+ const file=document.getElementById('editEmpPhoto').files?.[0];
+ if(!patch.nome||!patch.email.includes('@')||!patch.loja_id){toast('Confira nome, e-mail e unidade.');return}
+ if(file){if(file.size>5*1024*1024){toast('A foto deve ter até 5 MB.');return}const ext=(file.name.split('.').pop()||'jpg').toLowerCase(),path='funcionarios/'+id+'/'+Date.now()+'.'+ext;const {error:up}=await supabaseClient.storage.from('bombastic-perfis').upload(path,file,{upsert:true,contentType:file.type||'image/jpeg'});if(up){toast('Falha ao enviar a foto: '+up.message);return}patch.foto_url=supabaseClient.storage.from('bombastic-perfis').getPublicUrl(path).data.publicUrl}
+ const {error}=await supabaseClient.from('funcionarios').update(patch).eq('id',id);
+ if(error){toast(error.message);return}
+ closeModal();toast('Perfil atualizado.');openModule('Equipe e funcionários');
+}
+async function toggleEmployeeActive(id,active){if(role!=='Proprietário')return;const {error}=await supabaseClient.from('funcionarios').update({ativo:active}).eq('id',id);if(error){toast(error.message);return}toast(active?'Funcionário reativado.':'Funcionário desativado.');openModule('Equipe e funcionários')}
 
 
 async function logout(){stopBarcodeScanner();stopStaffOrderNotifications();if(window.currentStaffProfile){await supabaseClient.auth.signOut();window.currentStaffProfile=null}client=null;role='';staffActor='';staffBranch='';cart={};renderCart();document.getElementById('profile').classList.add('hidden');document.getElementById('customerSummary').classList.add('hidden');document.getElementById('staffDetail').classList.add('hidden');show('start')}
