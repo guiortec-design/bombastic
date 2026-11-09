@@ -48,6 +48,9 @@ input,select{width:100%;padding:12px;border-radius:10px;background:#0c0a08;borde
  </div>
  <div class="notice">Bombastic Tabacaria — selecione sua unidade para acessar o catálogo, estoque e pedidos.</div>
 </section>
+<section id="ageGate" class="hidden">
+ <div class="hero"><h2>Confirmação de maioridade</h2><p>Para continuar na Bombastic Tabacaria, confirme que você tem <strong>18 anos ou mais</strong>.</p><p class="small muted">A confirmação é uma declaração de maioridade. O acesso ao catálogo ficará bloqueado se você não confirmar.</p><button class="btn primary" onclick="confirmAdultAccess()">Confirmo que tenho 18 anos ou mais</button><button class="btn" onclick="denyAdultAccess()">Não tenho 18 anos</button></div>
+</section>
 <section id="cpfLogin" class="hidden">
  <div class="hero"><h2>Acesse sua conta</h2><p class="muted">Informe seu CPF e sua senha para entrar.</p><label>CPF</label><input id="cpf" inputmode="numeric" autocomplete="username" placeholder="000.000.000-00" maxlength="14" oninput="formatCPF(this)"><label>Senha</label><input id="clientPassword" type="password" autocomplete="current-password" placeholder="Sua senha"><button class="btn primary" onclick="clientLogin()">Entrar</button><button class="btn" onclick="show('register')">Primeiro acesso? Criar cadastro</button><button class="btn" onclick="requestClientPasswordReset()">Esqueci minha senha</button><button class="btn" onclick="openTemporaryCodeForm()">Já tenho um código da equipe</button><button class="btn" onclick="show('start')">Voltar à seleção de loja</button><p class="small muted">Acesso por CPF e senha. Não pedimos confirmação por e-mail.</p></div>
 </section>
@@ -90,7 +93,7 @@ const SUPABASE_URL="https://mxbmzpnoawfbwpbjkbcw.supabase.co";
 const SUPABASE_ANON_KEY="sb_publishable_-zBTfhTld23BHReZ4huWyQ_zWO-xPIj";
 const supabaseClient=window.supabase.createClient(SUPABASE_URL,SUPABASE_ANON_KEY);
 let products=[],clients={},orders=[],sales=[],suppliers=[],ledger=[],rewards=[],redemptions=[],stockLots=[];
-let branch='',client=null,cart={},role='',staffBranch='',staffActor='',activeFilter='Todos',currentOrder=null,activeCartProductId=null,pendingClientCpf='',pendingClientEmail='',clientAuthUser=null,pendingTemporaryCpf='',purchaseDraftItems=[],orderChannel=null,orderAlarmTimer=null,ignoredSuggestions=[],barcodeStream=null,barcodeDetector=null,barcodeScanActive=false,barcodeFrame=null,barcodeTargetId=null,storeGoals={},loyaltyRules={cashback_percent:5,cashback_minimo:100,cashback_validade_dias:90,pontos_a_cada:10,prata_minimo:500,ouro_minimo:1500},staffDirectory=[];
+let branch='',client=null,cart={},role='',staffBranch='',staffActor='',activeFilter='Todos',currentOrder=null,activeCartProductId=null,pendingClientCpf='',pendingClientEmail='',clientAuthUser=null,pendingTemporaryCpf='',purchaseDraftItems=[],orderChannel=null,orderAlarmTimer=null,ignoredSuggestions=[],barcodeStream=null,barcodeDetector=null,barcodeScanActive=false,barcodeFrame=null,barcodeTargetId=null,storeGoals={},loyaltyRules={cashback_percent:5,cashback_minimo:100,cashback_validade_dias:90,pontos_a_cada:10,prata_minimo:500,ouro_minimo:1500},staffDirectory=[],adultConfirmed=false;
 const money=n=>Number(n||0).toLocaleString('pt-BR',{style:'currency',currency:'BRL'});
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 function branchStock(p,b=staffBranch||branch){if(!p)return 0;let lots=stockLots.filter(l=>Number(l.productId)===Number(p.id)&&l.branch===b);if(lots.length)return lots.filter(l=>!l.expiryDate||l.expiryDate>=new Date().toISOString().slice(0,10)).reduce((a,l)=>a+Math.max(0,Number(l.quantity)||0),0);let map=p.stockByBranch||{};if(Object.keys(map).length)return Math.max(0,Number(map[b])||0);return Math.max(0,Number(p.stock)||0)}
@@ -123,15 +126,26 @@ async function chooseBranch(b){
  document.getElementById('cpf').value='';
  document.getElementById('clientPassword').value='';
  document.getElementById('newCpf').value='';
- // Mostra o login imediatamente; o carregamento remoto não pode bloquear a entrada.
- show('cpfLogin');
- document.getElementById('cpf').focus();
+ // A confirmação de maioridade vem antes do login; o carregamento remoto não bloqueia a navegação.
+ adultConfirmed=false;
+ show('ageGate');
  try{
   await Promise.all([loadStorePixSettings(),loadProductsFromSupabase(false)]);
  }catch(e){
   console.error('Falha ao carregar dados da unidade:',e);
   toast('A tela de acesso está disponível, mas não foi possível carregar os dados da loja. Verifique a conexão.');
  }
+}
+function confirmAdultAccess(){
+ adultConfirmed=true;
+ show('cpfLogin');
+ document.getElementById('cpf')?.focus();
+}
+function denyAdultAccess(){
+ adultConfirmed=false;branch='';
+ document.getElementById('branch-label').textContent='Selecione sua loja';
+ show('start');
+ toast('O acesso ao catálogo é permitido somente para maiores de 18 anos.');
 }
 const validBrazilDDDs=new Set([11,12,13,14,15,16,17,18,19,21,22,24,27,28,31,32,33,34,35,37,38,41,42,43,44,45,46,47,48,49,51,53,54,55,61,62,63,64,65,66,67,68,69,71,73,74,75,77,79,81,82,83,84,85,86,87,88,89,91,92,93,94,95,96,97,98,99]);
 function formatBrazilPhoneValue(value){let d=String(value||'').replace(/\D/g,'');if(d.length===13&&d.startsWith('55'))d=d.slice(2);d=d.slice(0,11);if(!d)return '';if(d.length<=2)return '('+d;if(d.length<=7)return '('+d.slice(0,2)+') '+d.slice(2);return '('+d.slice(0,2)+') '+d.slice(2,d.length-4)+'-'+d.slice(-4)}
@@ -178,6 +192,7 @@ async function applyCustomerSession(result){
  await openCustomer();
 }
 async function clientLogin(){
+ if(!adultConfirmed){toast('Confirme que você tem 18 anos ou mais para continuar.');show('ageGate');return}
  const cpf=document.getElementById('cpf').value.replace(/\D/g,'');
  const password=document.getElementById('clientPassword').value;
  if(!validCPF(cpf)){toast('Informe um CPF válido.');return}
@@ -189,6 +204,7 @@ async function clientLogin(){
  }catch(e){toast('Não foi possível entrar: '+(e.message||'tente novamente.'))}
 }
 async function registerClient(){
+ if(!adultConfirmed){toast('Confirme que você tem 18 anos ou mais para continuar.');show('ageGate');return}
  const cpf=document.getElementById('newCpf').value.replace(/\D/g,'');
  const name=document.getElementById('newName').value.trim(),phoneInput=document.getElementById('newPhone');
  const password=document.getElementById('newClientPassword').value,confirmPassword=document.getElementById('confirmClientPassword').value;
@@ -542,7 +558,7 @@ async function logout(){
  try{await supabaseClient.auth.signOut({scope:'local'})}
  catch(error){console.warn('Encerrando a sessão local apesar da falha de rede:',error)}
  finally{
-  window.currentStaffProfile=null;clientAuthUser=null;client=null;role='';staffActor='';staffBranch='';branch='';cart={};currentOrder=null;pendingTemporaryCpf='';pendingClientCpf='';pendingClientEmail='';
+  window.currentStaffProfile=null;clientAuthUser=null;client=null;role='';staffActor='';staffBranch='';branch='';adultConfirmed=false;cart={};currentOrder=null;pendingTemporaryCpf='';pendingClientCpf='';pendingClientEmail='';
   document.getElementById('profile').classList.add('hidden');
   document.getElementById('customerSummary').classList.add('hidden');
   document.getElementById('staffDetail').classList.add('hidden');
