@@ -312,7 +312,7 @@ async function staffLogin(){
   document.getElementById('avatar').textContent=role==='Proprietário'?'P':(profileData.nome||role)[0].toUpperCase();
   document.getElementById('staffTitle').textContent='Painel '+role;
   document.getElementById('staffSubtitle').textContent=role==='Proprietário'?'Acesso administrativo às três unidades':unit;
-  let modules=['Visão geral','Estoque','Financeiro','Configurações'];
+  let modules=role==='Vendedor'?['Visão geral','Estoque','Financeiro']:['Visão geral','Estoque','Financeiro','Configurações'];
   document.getElementById('staffModules').innerHTML=modules.map(m=>`<button type="button" class="admin-category-btn" onclick='openModule(${JSON.stringify(m)})'>${esc(m)}<small>Abrir opções</small></button>`).join('');
   show('staff');startStaffOrderNotifications();
  }catch(error){await supabaseClient.auth.signOut();toast(error.message||'Não foi possível entrar. Confira suas credenciais.')}
@@ -357,7 +357,7 @@ function showAdminCategory(category){
  d.scrollIntoView({behavior:'smooth',block:'start'});
 }
 async function openModule(m){
- if(role==='Vendedor'&&(m==='Financeiro'||m==='Fluxo de caixa'||m.includes('Estornar')||m==='Relatórios'||m==='Backup e auditoria'||m.includes('Configurações')||m==='Cancelar pedido não retirado'||m==='Estoque e lotes'||m==='Fornecedores'||m.includes('Compras'))){toast('Você não tem permissão para este módulo.');return}
+ if(role==='Vendedor'&&(m==='Fluxo de caixa'||m.includes('Estornar')||m==='Relatórios'||m==='Backup e auditoria'||m.includes('Configurações')||m==='Cancelar pedido não retirado'||m==='Estoque e lotes'||m==='Fornecedores'||m.includes('Compras'))){toast('Você não tem permissão para este módulo.');return}
  if(['Visão geral','Estoque','Financeiro','Configurações'].includes(m)){showAdminCategory(m);return}
  let d=document.getElementById('staffDetail');d.classList.remove('hidden');let html='<h3>'+esc(m)+'</h3><p class="muted">Unidade: '+esc(staffBranch)+'</p>';
  if(m==='Redefinição de senha')html+=await passwordResetRequestsView();
