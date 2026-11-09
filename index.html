@@ -471,7 +471,7 @@ function salesView(refund=false){let opts=role==='Proprietário'?'<label>Unidade
 function filterSales(){let q=(document.getElementById('salesSearch')?.value||'').toLowerCase(),branchId=document.getElementById('salesBranch')?.value||'all';document.getElementById('salesRows').innerHTML=sales.filter(s=>(branchId==='all'||String(branches[s.branch]?.id)===String(branchId))&&(s.customer+' '+s.cpf+' '+s.items.map(i=>i.name).join(' ')).toLowerCase().includes(q)).map(s=>saleRow(s,role==='Proprietário')).join('')||'<p>Nenhuma venda encontrada.</p>'}
 
 
-async function logout(){stopBarcodeScanner();stopStaffOrderNotifications();if(window.currentStaffProfile){await supabaseClient.auth.signOut();window.currentStaffProfile=null}client=null;role='';staffActor='';staffBranch='';cart={};renderCart();document.getElementById('profile').classList.add('hidden');document.getElementById('customerSummary').classList.add('hidden');document.getElementById('staffDetail').classList.add('hidden');show('start')}
+async function logout(){stopBarcodeScanner();stopStaffOrderNotifications();if(window.currentStaffProfile||clientAuthUser){await supabaseClient.auth.signOut();window.currentStaffProfile=null;clientAuthUser=null}client=null;role='';staffActor='';staffBranch='';cart={};renderCart();document.getElementById('profile').classList.add('hidden');document.getElementById('customerSummary').classList.add('hidden');document.getElementById('staffDetail').classList.add('hidden');show('start')}
 
 </script>
 </body></html>
