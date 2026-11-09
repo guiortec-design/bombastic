@@ -84,12 +84,17 @@ input,select{width:100%;padding:12px;border-radius:10px;background:#0c0a08;borde
 <button id="floatingCart" class="floating-cart hidden" type="button" onclick="goToCart()" aria-label="Abrir carrinho">🛒 <span>Carrinho</span> <strong id="floatingCartCount">0</strong></button>
 <div id="toast" class="toast hidden"></div>
 <div id="modal" class="modal hidden"><div class="modalbox"><h2 style="color:var(--gold);margin-top:0">Pedido demonstrativo</h2><p>Seu pedido foi registrado apenas nesta demonstração. O Pix real, envio de comprovante e confirmação pela equipe exigem integração com servidor.</p><button class="btn primary" onclick="closeModal()">Entendi</button></div></div>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
 const branches={
- "Sumaré — Av. Fuad Assef Maluf":{address:"Av. Fuad Assef Maluf, 07",phone:"5519991937346"},
- "Sumaré — Rua Generoso Alves Vieira":{address:"Rua Generoso Alves Vieira, 165",phone:"5519997530184"},
- "Nova Veneza":{address:"Av. da Amizade, 3249",phone:"5519991344011"}
+ "Sumaré — Av. Fuad Assef Maluf":{id:2,address:"Av. Fuad Assef Maluf, 07",phone:"5519991937346"},
+ "Sumaré — Rua Generoso Alves Vieira":{id:1,address:"Rua Generoso Alves Vieira, 165",phone:"5519997530184"},
+ "Nova Veneza":{id:3,address:"Av. da Amizade, 3249",phone:"5519991344011"}
 };
+const branchNameById={1:"Sumaré — Rua Generoso Alves Vieira",2:"Sumaré — Av. Fuad Assef Maluf",3:"Nova Veneza"};
+const SUPABASE_URL="https://mxbmzpnoawfbwpbjkbcw.supabase.co";
+const SUPABASE_ANON_KEY="sb_publishable_-zBTfhTld23BHReZ4huWyQ_zWO-xPIj";
+const supabaseClient=window.supabase.createClient(SUPABASE_URL,SUPABASE_ANON_KEY);
 const seedProducts=[
  {id:1,name:"Essência ZIG Melancia",category:"Essência",shelf:"Prateleira A1",price:24.90,emoji:"🍉",tag:"Oferta Especial",stock:30},
  {id:2,name:"Essência ZIG Maracujá",category:"Essência",shelf:"Prateleira A1",price:24.90,emoji:"🥭",tag:"Todos",stock:25},
