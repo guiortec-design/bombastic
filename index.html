@@ -239,21 +239,26 @@ button:focus-visible,.btn:focus-visible{outline:2px solid #f9d328!important;outl
 .customer-store-line{font-size:12px;color:var(--muted);margin-top:2px}
 .customer-store-line strong{color:var(--gold)}
 #customerShop>.section-title{display:block;text-align:center;font-size:24px;margin:20px 0 14px;color:var(--gold)}
-/* Menu vertical suspenso de categorias, preso à lateral direita */
-.category-menu-toggle{position:fixed;right:0;top:42%;z-index:80;border:1px solid var(--gold);border-right:0;border-radius:12px 0 0 12px;background:linear-gradient(160deg,var(--gold),var(--orange));color:#17100a;font-weight:900;padding:13px 9px;writing-mode:vertical-rl;box-shadow:0 0 16px rgba(255,190,0,.25);cursor:pointer}
-.category-menu-panel{position:fixed;right:42px;top:50%;transform:translateY(-50%);z-index:79;display:flex;flex-direction:column;gap:7px;padding:9px;background:rgba(12,10,8,.97);border:1px solid var(--gold);border-radius:13px;box-shadow:0 8px 28px rgba(0,0,0,.55);min-width:138px}
-.category-menu-panel[hidden]{display:none!important}
-.category-menu-panel .btn{width:100%;padding:9px 11px;font-size:12px;text-align:left;white-space:nowrap}
+/* Filtros fixos na lateral esquerda, dentro da área do catálogo */
+#productCatalogLayout{display:grid;grid-template-columns:190px minmax(0,1fr);gap:14px;align-items:start}
+#products{min-width:0}
+.category-menu-panel{position:sticky;top:104px;align-self:start;display:flex;flex-direction:column;gap:7px;padding:10px;background:rgba(12,10,8,.97);border:1px solid var(--gold);border-radius:13px;box-shadow:0 8px 22px rgba(0,0,0,.4);min-width:0;width:100%;max-height:calc(100vh - 125px);overflow-y:auto}
+.category-menu-panel .btn{width:100%;padding:9px 8px;font-size:12px;text-align:left;white-space:normal}
 .category-menu-panel .btn.active{background:linear-gradient(100deg,var(--gold),var(--orange));color:#17100a;border-color:transparent}
+.category-filter-group{min-width:0}
+.category-filter-group select{font-size:11px;padding:8px 5px}
 @media(max-width:600px){
  .customer-greeting h2{font-size:16px!important}
  .customer-store-line,.customer-greeting #customerWelcomeHelp{font-size:11px}
  #customerShop>.section-title{font-size:22px;margin:17px 0 12px}
- .category-menu-toggle{top:40%;padding:12px 7px;font-size:11px}
- .category-menu-panel{right:38px;min-width:128px}
+ #productCatalogLayout{grid-template-columns:116px minmax(0,1fr);gap:8px}
+ .category-menu-panel{top:88px;padding:7px;border-radius:10px;max-height:calc(100vh - 105px)}
+ .category-menu-panel .btn{font-size:10px;padding:8px 5px}
+ .category-filter-group>strong,.category-filter-group>label{font-size:10px}
+ .category-filter-group select{font-size:10px;padding:7px 3px}
+ #productCatalogLayout #products.cards{grid-template-columns:minmax(0,1fr);gap:8px}
+ #productCatalogLayout #products .card{padding:8px}
 }
-
-.category-menu-panel{max-height:min(76vh,620px);overflow-y:auto}
 .category-filter-group{display:flex;flex-direction:column;gap:6px;padding:3px 0 9px;border-bottom:1px solid rgba(255,220,0,.18)}
 .category-filter-group:last-child{border-bottom:0;padding-bottom:2px}
 .category-filter-group>strong,.category-filter-group>label{font-size:11px;color:var(--gold);font-weight:800}
@@ -309,13 +314,14 @@ button:focus-visible,.btn:focus-visible{outline:2px solid #f9d328!important;outl
 </section>
 <section id="customer" class="hidden">
  <div id="customerShop"><h3 class="section-title">Produtos</h3>
-  <div id="products" class="grid cards"></div>
-  <button id="categoryMenuToggle" class="category-menu-toggle" type="button" onclick="toggleCategoryMenu()" aria-expanded="false">Categorias ☰</button>
-  <div id="categoryMenuPanel" class="category-menu-panel" hidden>
-   <div class="category-filter-group"><strong>Vitrine</strong><button class="btn active" data-tag="Todos" onclick="selectProductTag('Todos')">Todos</button><button class="btn" data-tag="Oferta Especial" onclick="selectProductTag('Oferta Especial')">Oferta especial</button><button class="btn" data-tag="Promoção" onclick="selectProductTag('Promoção')">Promoção</button></div>
-   <div class="category-filter-group"><strong>Categoria</strong><div id="categoryFilterOptions"></div></div>
-   <div class="category-filter-group"><label for="brandFilter">Marca</label><select id="brandFilter" onchange="setProductBrand(this.value)"><option value="Todas">Todas as marcas</option></select></div>
-   <div class="category-filter-group"><label for="productSort">Ordenar por preço</label><select id="productSort" onchange="setProductSort(this.value)"><option value="padrao">Mais relevantes</option><option value="menor">Menor preço</option><option value="maior">Maior preço</option></select></div>
+  <div id="productCatalogLayout">
+   <aside id="categoryMenuPanel" class="category-menu-panel" aria-label="Filtros do catálogo">
+    <div class="category-filter-group"><strong>Vitrine</strong><button class="btn active" data-tag="Todos" onclick="selectProductTag('Todos')">Todos</button><button class="btn" data-tag="Oferta Especial" onclick="selectProductTag('Oferta Especial')">Oferta especial</button><button class="btn" data-tag="Promoção" onclick="selectProductTag('Promoção')">Promoção</button></div>
+    <div class="category-filter-group"><strong>Categoria</strong><div id="categoryFilterOptions"></div></div>
+    <div class="category-filter-group"><label for="brandFilter">Marca</label><select id="brandFilter" onchange="setProductBrand(this.value)"><option value="Todas">Todas as marcas</option></select></div>
+    <div class="category-filter-group"><label for="productSort">Ordenar por preço</label><select id="productSort" onchange="setProductSort(this.value)"><option value="padrao">Mais relevantes</option><option value="menor">Menor preço</option><option value="maior">Maior preço</option></select></div>
+   </aside>
+   <div id="products" class="grid cards"></div>
   </div>
   <div class="card" style="margin-top:22px"><h3 class="section-title">Meu carrinho</h3><p><strong id="cartCount">0 unidades</strong> • Total: <strong id="cartTotal">R$ 0,00</strong></p><div id="cartItems">Seu carrinho está vazio.</div><div class="row" style="display:flex;gap:8px;flex-wrap:wrap;margin-top:12px"><button class="btn" id="clearCartBtn" onclick="clearCart(event)" disabled>Limpar carrinho</button><button class="btn primary" onclick="checkout()">Finalizar pedido</button></div></div>
  </div>
@@ -441,7 +447,7 @@ async function openCustomer(){
  document.getElementById('customerStoreName').textContent=branch;document.getElementById('customerSummary').classList.remove('hidden');document.getElementById('welcome').textContent='Bem-vindo, '+(client.name||'cliente')+'!';
  try{await loadCustomerLoyalty()}catch(e){console.warn('Não foi possível carregar a fidelidade:',e)}
  document.getElementById('points').textContent=(client.points||0)+' pts';document.getElementById('customerTier').textContent=customerTier(client);document.getElementById('cashback').textContent=money((client.cashbackLots||[]).reduce((a,x)=>a+Number(x.amount||0),0));
- show('customer');renderProducts();renderCart();renderCustomerRewards();
+ show('customer');refreshProductFilters();renderProducts();renderCart();renderCustomerRewards();
 }
 async function checkCustomerCpf(){
  const cpf=document.getElementById('cpf').value.replace(/\D/g,'');if(!validCPF(cpf)){toast('Informe um CPF válido.');return}
