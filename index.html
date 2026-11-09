@@ -58,7 +58,7 @@ input,select{width:100%;padding:12px;border-radius:10px;background:#0c0a08;borde
  <div class="hero"><h2>Crie seu acesso</h2><p class="muted">Preencha seus dados e escolha uma senha.</p><label>CPF</label><input id="newCpf" inputmode="numeric" placeholder="000.000.000-00" maxlength="14" oninput="formatCPF(this)"><label>Nome completo</label><input id="newName" autocomplete="name" placeholder="Seu nome"><label>WhatsApp (opcional)</label><input id="newPhone" type="tel" inputmode="numeric" autocomplete="tel-national" maxlength="15" placeholder="(19) 99999-9999" oninput="formatBrazilPhone(this)" onblur="checkBrazilPhone(this)"><label>Crie uma senha</label><input id="newClientPassword" type="password" autocomplete="new-password" minlength="8" placeholder="Mínimo de 8 caracteres"><label>Confirme sua senha</label><input id="confirmClientPassword" type="password" autocomplete="new-password" minlength="8" placeholder="Repita sua senha"><button class="btn primary" onclick="registerClient()">Criar cadastro</button><button class="btn" onclick="show('cpfLogin')">Voltar ao login</button></div>
 </section>
 <section id="forceClientPassword" class="hidden">
- <div class="hero"><h2>Crie uma nova senha</h2><p class="muted">Sua senha foi redefinida pela equipe. Por segurança, escolha uma nova senha antes de continuar.</p><label>Nova senha</label><input id="forcedPassword" type="password" autocomplete="new-password" minlength="8" placeholder="Mínimo de 8 caracteres"><label>Confirme a nova senha</label><input id="forcedPasswordConfirm" type="password" autocomplete="new-password" minlength="8" placeholder="Repita sua senha"><button class="btn primary" onclick="saveForcedClientPassword()">Salvar nova senha</button></div>
+ <div class="hero"><h2>Crie uma nova senha</h2><p class="muted">Informe o código temporário fornecido pela equipe e escolha uma nova senha. O código expira em 30 minutos.</p><label>CPF</label><input id="forcedCpf" inputmode="numeric" placeholder="000.000.000-00" maxlength="14" oninput="formatCPF(this)"><label>Código temporário</label><input id="forcedCode" inputmode="numeric" autocomplete="one-time-code" maxlength="8" placeholder="Código de 8 dígitos"><label>Nova senha</label><input id="forcedPassword" type="password" autocomplete="new-password" minlength="8" placeholder="Mínimo de 8 caracteres"><label>Confirme a nova senha</label><input id="forcedPasswordConfirm" type="password" autocomplete="new-password" minlength="8" placeholder="Repita sua senha"><button class="btn primary" onclick="saveForcedClientPassword()">Salvar nova senha</button></div>
 </section>
 <section id="staffLogin" class="hidden">
  <div class="hero"><h2>Acesso da equipe</h2><p class="muted">Entre com seu e-mail corporativo e senha. Sua unidade e suas permissões serão carregadas automaticamente.</p><label>E-mail de acesso</label><input id="staffUser" type="email" autocomplete="username" placeholder="seu e-mail cadastrado"><label>Senha</label><input id="staffPass" type="password" autocomplete="current-password" placeholder="Sua senha"><button class="btn primary" id="staffLoginBtn" onclick="staffLogin()">Entrar</button><p class="small muted">A loja é identificada pelo cadastro do funcionário. Não escolha a unidade nesta tela.</p><details style="margin-top:14px"><summary>Primeiro acesso? Criar conta do funcionário</summary><label>E-mail cadastrado pelo proprietário</label><input id="staffSignupEmail" type="email" placeholder="seu e-mail"><label>Crie uma senha</label><input id="staffSignupPassword" type="password" minlength="8" placeholder="Mínimo de 8 caracteres"><button class="btn" onclick="createStaffAccount()">Criar acesso</button><p class="small muted">O proprietário precisa cadastrar seu perfil e unidade antes.</p></details></div>
@@ -153,7 +153,7 @@ function formatCPF(input){const d=input.value.replace(/\D/g,'').slice(0,11);inpu
 async function applyCustomerSession(result){
  const customer=result?.customer;
  if(!customer)throw new Error('O servidor não retornou os dados do cliente.');
- if(result.forcePasswordChange){pendingTemporaryCpf=customer.cpf;show('forceClientPassword');toast('Antes de continuar, cadastre uma nova senha.');return}
+ if(result.forcePasswordChange){pendingTemporaryCpf=customer.cpf;show('forceClientPassword');document.getElementById('forcedCpf').value=customer.cpf||'';toast('Informe o código temporário fornecido pela equipe e crie uma nova senha.');return}
  const session=result?.session;if(!session)throw new Error('O servidor não retornou uma sessão válida.');
  const {data,error}=await supabaseClient.auth.setSession({access_token:session.access_token,refresh_token:session.refresh_token});
  if(error)throw error;
@@ -197,11 +197,13 @@ async function requestClientPasswordReset(){
  }catch(e){toast('Não foi possível solicitar a redefinição: '+(e.message||'tente novamente.'))}
 }
 async function saveForcedClientPassword(){
+ const cpf=document.getElementById('forcedCpf').value.replace(/\\D/g,''),temporaryCode=document.getElementById('forcedCode').value.trim();
  const password=document.getElementById('forcedPassword').value,confirmPassword=document.getElementById('forcedPasswordConfirm').value;
+ if(!validCPF(cpf)||!/^\\d{8}$/.test(temporaryCode)){toast('Informe um CPF válido e o código de 8 dígitos.');return}
  if(password.length<8){toast('A nova senha deve ter pelo menos 8 caracteres.');return}
  if(password!==confirmPassword){toast('As senhas não conferem.');return}
  try{
-  const {data,error}=await supabaseClient.functions.invoke('customer-access',{body:{action:'change_temporary_password',cpf:pendingTemporaryCpf,currentPassword:'123456',password}});
+  const {data,error}=await supabaseClient.functions.invoke('customer-access',{body:{action:'change_temporary_password',cpf,temporaryCode,password}});
   if(error)throw error;if(data?.error)throw new Error(data.error);
   toast('Senha atualizada com sucesso!');pendingTemporaryCpf='';await applyCustomerSession(data);
  }catch(e){toast('Não foi possível atualizar a senha: '+(e.message||'tente novamente.'))}
@@ -275,8 +277,8 @@ async function approveClientReset(id){
  try{
   const {data,error}=await supabaseClient.functions.invoke('customer-access',{body:{action:'approve_reset',requestId:id}});
   if(error)throw error;if(data?.error)throw new Error(data.error);
-  toast(data.message||'Redefinição aprovada.');
-  const detail=document.getElementById('staffDetail');detail.innerHTML='<h3>Redefinição de senha</h3>'+await passwordResetRequestsView();
+  toast((data.message||'Redefinição aprovada.')+(data.temporaryCode?' Código temporário: '+data.temporaryCode:''));
+  const detail=document.getElementById('staffDetail');detail.innerHTML='<h3>Redefinição de senha</h3>'+(data.temporaryCode?'<div class="card"><strong>Código temporário do cliente</strong><h2>'+esc(data.temporaryCode)+'</h2><p class="small muted">Válido até '+new Date(data.expiresAt).toLocaleString('pt-BR')+'. Entregue este código ao cliente. Ele não é a senha definitiva.</p></div>':'')+await passwordResetRequestsView();
  }catch(e){toast('Não foi possível aprovar: '+(e.message||'tente novamente.'))}
 }
 async function openModule(m){
