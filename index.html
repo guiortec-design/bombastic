@@ -59,7 +59,12 @@ input,select{width:100%;padding:12px;border-radius:10px;background:#0c0a08;borde
  <div class="hero"><h2>Confirmação de maioridade</h2><p>Para continuar na Bombastic Tabacaria, confirme que você tem <strong>18 anos ou mais</strong>.</p><p class="small muted">A confirmação é uma declaração de maioridade. O acesso ao catálogo ficará bloqueado se você não confirmar.</p><button class="btn primary" onclick="confirmAdultAccess()">Confirmo que tenho 18 anos ou mais</button><button class="btn" onclick="denyAdultAccess()">Não tenho 18 anos</button></div>
 </section>
 <section id="cpfLogin" class="hidden">
- <div class="hero"><h2>Acesse sua conta</h2><p class="muted">Informe seu CPF e sua senha para entrar.</p><label>CPF</label><input id="cpf" inputmode="numeric" autocomplete="username" placeholder="000.000.000-00" maxlength="14" oninput="formatCPF(this)"><label>Senha</label><input id="clientPassword" type="password" autocomplete="current-password" placeholder="Sua senha"><button class="btn primary" onclick="clientLogin()">Entrar</button><button class="btn hidden" id="clientResetRequestBtn" onclick="requestClientPasswordReset()">Esqueci minha senha — solicitar reset</button><button class="btn" onclick="show('start')">Voltar à seleção de loja</button><p class="small muted">Acesso por CPF e senha. Não pedimos confirmação por e-mail.</p></div>
+ <div class="hero"><h2>Acesse a Bombastic</h2><p class="muted">Digite seu CPF para localizar seu cadastro.</p>
+  <label>CPF</label><input id="cpf" inputmode="numeric" autocomplete="username" placeholder="000.000.000-00" maxlength="14" oninput="formatCPF(this);document.getElementById('customerPasswordStep').classList.add('hidden');document.getElementById('clientResetRequestBtn').classList.add('hidden')" onkeydown="if(event.key==='Enter')checkCustomerCpf()">
+  <button class="btn primary" id="checkCpfBtn" onclick="checkCustomerCpf()">Continuar</button>
+  <div id="customerPasswordStep" class="hidden"><hr><p class="muted">Cadastro localizado. Agora informe sua senha.</p><label>Senha</label><input id="clientPassword" type="password" autocomplete="current-password" placeholder="Sua senha" onkeydown="if(event.key==='Enter')clientLogin()"><button class="btn primary" id="clientLoginBtn" onclick="clientLogin()">Entrar</button><button class="btn hidden" id="clientResetRequestBtn" onclick="requestClientPasswordReset()">Esqueci minha senha — solicitar redefinição</button></div>
+  <button class="btn" onclick="show('start')">Voltar à seleção de loja</button><p class="small muted">Se ainda não tiver cadastro, vamos abrir o formulário para criar sua conta.</p>
+ </div>
 </section>
 <section id="register" class="hidden">
  <div class="hero"><h2>Crie seu acesso</h2><p class="muted">Preencha seus dados e escolha uma senha.</p><label>CPF</label><input id="newCpf" inputmode="numeric" placeholder="000.000.000-00" maxlength="14" oninput="formatCPF(this)"><label>Nome completo</label><input id="newName" autocomplete="name" placeholder="Seu nome"><label>WhatsApp (opcional)</label><input id="newPhone" type="tel" inputmode="numeric" autocomplete="tel-national" maxlength="15" placeholder="(19) 99999-9999" oninput="formatBrazilPhone(this)" onblur="checkBrazilPhone(this)"><label>Crie uma senha</label><input id="newClientPassword" type="password" autocomplete="new-password" minlength="8" placeholder="Mínimo de 8 caracteres"><label>Confirme sua senha</label><input id="confirmClientPassword" type="password" autocomplete="new-password" minlength="8" placeholder="Repita sua senha"><p class="small muted">Seu CPF será seu usuário de acesso. Use-o junto com a senha para entrar nas próximas visitas.</p><button class="btn primary" onclick="registerClient()">Criar cadastro</button><button class="btn" onclick="show('cpfLogin')">Voltar ao login</button></div>
@@ -69,6 +74,14 @@ input,select{width:100%;padding:12px;border-radius:10px;background:#0c0a08;borde
 </section>
 <section id="staffLogin" class="hidden">
  <div class="hero"><h2>Acesso da equipe</h2><p class="muted">Entre com seu e-mail e senha de acesso.</p><label>E-mail</label><input id="staffUser" type="email" autocomplete="username" placeholder="seu e-mail cadastrado"><label>Senha</label><input id="staffPass" type="password" autocomplete="current-password" placeholder="Sua senha"><button class="btn primary" id="staffLoginBtn" onclick="staffLogin()">Entrar</button><button class="btn" id="staffResetBtn" onclick="requestStaffPasswordReset()">Solicitar reset de senha</button><button class="btn" onclick="show('start')">Voltar</button><p class="small muted">A unidade e as permissões são identificadas pelo cadastro feito pelo proprietário.</p></div>
+</section>
+<section id="customer" class="hidden">
+ <div class="hero"><h2 id="customerHeading">Bem-vindo à Bombastic!</h2><p class="muted">Escolha seus produtos e confira a localização nas prateleiras.</p><div class="small muted">Unidade selecionada: <strong id="customerStoreName"></strong></div></div>
+ <div id="customerShop"><h3 class="section-title">Produtos</h3>
+  <div class="row" style="display:flex;gap:8px;flex-wrap:wrap;margin:12px 0"><button class="btn" onclick="filterProducts('Todos')">Todos</button><button class="btn" onclick="filterProducts('Oferta Especial')">Oferta Especial</button><button class="btn" onclick="filterProducts('Promoção')">Promoção</button></div>
+  <div id="products" class="grid cards"></div>
+  <div class="card" style="margin-top:22px"><h3 class="section-title">Meu carrinho</h3><p><strong id="cartCount">0 unidades</strong> • Total: <strong id="cartTotal">R$ 0,00</strong></p><div id="cartItems">Seu carrinho está vazio.</div><div class="row" style="display:flex;gap:8px;flex-wrap:wrap;margin-top:12px"><button class="btn" id="clearCartBtn" onclick="clearCart(event)" disabled>Limpar carrinho</button><button class="btn primary" onclick="checkout()">Finalizar pedido</button></div></div>
+ </div>
 </section>
 <section id="staff" class="hidden">
  <div class="hero"><h2 id="staffTitle">Painel</h2><p class="muted" id="staffSubtitle"></p><div id="staffModules" class="grid cards"></div></div>
@@ -125,35 +138,20 @@ function copyPixKey(key){if(navigator.clipboard?.writeText){navigator.clipboard.
 function copyPixPayload(){let el=document.getElementById('pixPayload');if(!el)return;el.select();document.execCommand('copy');toast('Código Pix copiado.')}
 async function chooseBranch(b){
  if(!branches[b]){toast('Selecione uma loja válida.');return}
- branch=b;
+ branch=b;adultConfirmed=false;pendingCustomerCatalog=false;
  document.getElementById('branch-label').textContent=b;
- document.getElementById('customerBranch').textContent=b;
- document.getElementById('branchAddress').textContent=branches[b].address;
- document.getElementById('branchWhats').href='https://wa.me/'+branches[b].phone+'?text='+encodeURIComponent('Olá! Estou fazendo um pedido na Bombastic '+b+'.');
- document.getElementById('cpf').value='';
- document.getElementById('clientPassword').value='';
+ document.getElementById('customerStoreName').textContent=b;
+ document.getElementById('cpf').value='';document.getElementById('clientPassword').value='';
+ document.getElementById('customerPasswordStep').classList.add('hidden');
+ document.getElementById('clientResetRequestBtn').classList.add('hidden');
  document.getElementById('newCpf').value='';
- // A confirmação de maioridade vem antes do login; o carregamento remoto não bloqueia a navegação.
- adultConfirmed=false;
- show('ageGate');
- try{
-  await Promise.all([loadStorePixSettings(),loadProductsFromSupabase(false)]);
- }catch(e){
-  console.error('Falha ao carregar dados da unidade:',e);
-  toast('A tela de acesso está disponível, mas não foi possível carregar os dados da loja. Verifique a conexão.');
- }
+ show('cpfLogin');document.getElementById('cpf').focus();
+ try{await Promise.all([loadStorePixSettings(),loadProductsFromSupabase(false)])}
+ catch(e){console.error('Falha ao carregar dados da unidade:',e);toast('Não foi possível carregar os dados da loja. Verifique a conexão.')}
 }
-function confirmAdultAccess(){
- adultConfirmed=true;
- show('cpfLogin');
- document.getElementById('cpf')?.focus();
-}
-function denyAdultAccess(){
- adultConfirmed=false;branch='';
- document.getElementById('branch-label').textContent='Selecione sua loja';
- show('start');
- toast('O acesso ao catálogo é permitido somente para maiores de 18 anos.');
-}
+let pendingCustomerCatalog=false;
+function confirmAdultAccess(){adultConfirmed=true;if(pendingCustomerCatalog){pendingCustomerCatalog=false;openCustomer();return}show('cpfLogin');document.getElementById('cpf')?.focus()}
+async function denyAdultAccess(){adultConfirmed=false;pendingCustomerCatalog=false;try{await supabaseClient.auth.signOut({scope:'local'})}catch(e){}clientAuthUser=null;client=null;cart={};document.getElementById('profile').classList.add('hidden');document.getElementById('customerSummary').classList.add('hidden');document.getElementById('branch-label').textContent='Selecione sua loja';branch='';show('start');toast('O catálogo é permitido somente para maiores de 18 anos.')}
 const validBrazilDDDs=new Set([11,12,13,14,15,16,17,18,19,21,22,24,27,28,31,32,33,34,35,37,38,41,42,43,44,45,46,47,48,49,51,53,54,55,61,62,63,64,65,66,67,68,69,71,73,74,75,77,79,81,82,83,84,85,86,87,88,89,91,92,93,94,95,96,97,98,99]);
 function formatBrazilPhoneValue(value){let d=String(value||'').replace(/\D/g,'');if(d.length===13&&d.startsWith('55'))d=d.slice(2);d=d.slice(0,11);if(!d)return '';if(d.length<=2)return '('+d;if(d.length<=7)return '('+d.slice(0,2)+') '+d.slice(2);return '('+d.slice(0,2)+') '+d.slice(2,d.length-4)+'-'+d.slice(-4)}
 function formatBrazilPhone(input){let digits=String(input.value||'').replace(/\D/g,'');if(digits.length===13&&digits.startsWith('55'))digits=digits.slice(2);digits=digits.slice(0,11);input.value=formatBrazilPhoneValue(digits);input.setCustomValidity('')}
@@ -188,33 +186,42 @@ async function loadOrdersFromSupabase(){const {data,error}=await supabaseClient.
 function validCPF(v){let s=String(v||'').replace(/\D/g,'');if(s.length!==11||/^([0-9])\1+$/.test(s))return false;let sum=0;for(let i=0;i<9;i++)sum+=Number(s[i])*(10-i);let d=(sum*10)%11;if(d===10)d=0;if(d!==Number(s[9]))return false;sum=0;for(let i=0;i<10;i++)sum+=Number(s[i])*(11-i);d=(sum*10)%11;if(d===10)d=0;return d===Number(s[10])}
 function formatCPF(input){const d=input.value.replace(/\D/g,'').slice(0,11);input.value=d.replace(/(\d{3})(\d)/,'$1.$2').replace(/(\d{3})(\d)/,'$1.$2').replace(/(\d{3})(\d{1,2})$/,'$1-$2')}
 async function applyCustomerSession(result){
- const customer=result?.customer;
- if(!customer)throw new Error('O servidor não retornou os dados do cliente.');
+ const customer=result?.customer;if(!customer)throw new Error('O servidor não retornou os dados do cliente.');
  if(result.forcePasswordChange){pendingTemporaryCpf=customer.cpf;show('forceClientPassword');document.getElementById('forcedCpf').value=customer.cpf||'';toast('Informe o código temporário fornecido pela equipe e crie uma nova senha.');return}
  const session=result?.session;if(!session)throw new Error('O servidor não retornou uma sessão válida.');
- const {data,error}=await supabaseClient.auth.setSession({access_token:session.access_token,refresh_token:session.refresh_token});
- if(error)throw error;
- clientAuthUser=data.user;
- client={id:customer.id,cpf:customer.cpf,name:customer.nome||'',phone:customer.telefone||'',email:'',address:'',neighborhood:'',city:'',complement:'',reference:'',points:0,cashbackLots:[],spent12m:0,history:[]};
- await openCustomer();
+ const {data,error}=await supabaseClient.auth.setSession({access_token:session.access_token,refresh_token:session.refresh_token});if(error)throw error;
+ clientAuthUser=data.user;client={id:customer.id,cpf:customer.cpf,name:customer.nome||'',phone:customer.telefone||'',email:'',address:'',neighborhood:'',city:'',complement:'',reference:'',points:0,cashbackLots:[],spent12m:0,history:[]};
+ pendingCustomerCatalog=true;adultConfirmed=false;show('ageGate');
+}
+async function openCustomer(){
+ if(!clientAuthUser||!client||!branch)return;
+ document.getElementById('profile').classList.remove('hidden');document.getElementById('profile-name').textContent=client.name||'Cliente';document.getElementById('avatar').textContent=(client.name||'C').trim().charAt(0).toUpperCase();
+ document.getElementById('customerHeading').textContent='Olá, '+(client.name||'cliente')+'!';document.getElementById('customerStoreName').textContent=branch;document.getElementById('customerSummary').classList.remove('hidden');document.getElementById('welcome').textContent='Bem-vindo, '+(client.name||'cliente')+'!';
+ try{await loadCustomerLoyalty()}catch(e){console.warn('Não foi possível carregar a fidelidade:',e)}
+ document.getElementById('points').textContent=(client.points||0)+' pts';document.getElementById('cashback').textContent=money((client.cashbackLots||[]).reduce((a,x)=>a+Number(x.amount||0),0));
+ show('customer');renderProducts();renderCart();renderCustomerRewards();
+}
+async function checkCustomerCpf(){
+ const cpf=document.getElementById('cpf').value.replace(/\D/g,'');if(!validCPF(cpf)){toast('Informe um CPF válido.');return}
+ const btn=document.getElementById('checkCpfBtn');btn.disabled=true;btn.textContent='Consultando...';
+ try{
+  const {data,error}=await supabaseClient.functions.invoke('customer-access',{body:{action:'check_cpf',cpf}});if(error)throw error;if(data?.error)throw new Error(data.error);
+  if(data.needsStaffLink){toast('Seu cadastro já existe, mas precisa ser vinculado pela equipe. Procure a loja.');return}
+  if(data.canLogin){document.getElementById('customerPasswordStep').classList.remove('hidden');document.getElementById('clientPassword').value='';document.getElementById('clientResetRequestBtn').classList.add('hidden');document.getElementById('clientPassword').focus();return}
+  if(!data.registered){document.getElementById('newCpf').value=document.getElementById('cpf').value;show('register');document.getElementById('newName').focus();return}
+  toast('Este cadastro não está ativo. Procure a equipe da loja.');
+ }catch(e){toast('Não foi possível localizar o CPF: '+(e.message||'verifique a conexão.'))}
+ finally{btn.disabled=false;btn.textContent='Continuar'}
 }
 async function clientLogin(){
- if(!adultConfirmed){toast('Confirme que você tem 18 anos ou mais para continuar.');show('ageGate');return}
- const cpf=document.getElementById('cpf').value.replace(/\D/g,'');
- const password=document.getElementById('clientPassword').value;
- if(!validCPF(cpf)){toast('Informe um CPF válido.');return}
- if(!password){toast('Informe sua senha.');return}
- try{
-  const {data,error}=await supabaseClient.functions.invoke('customer-access',{body:{action:'login',cpf,password}});
-  if(error)throw error;if(data?.error)throw new Error(data.error);
-  await applyCustomerSession(data);
- }catch(e){
-  document.getElementById('clientResetRequestBtn')?.classList.remove('hidden');
-  toast('CPF ou senha incorretos. Se esqueceu a senha, solicite a redefinição.');
- }
+ const cpf=document.getElementById('cpf').value.replace(/\D/g,''),password=document.getElementById('clientPassword').value;
+ if(!validCPF(cpf)){toast('Informe um CPF válido.');return}if(!password){toast('Informe sua senha.');return}
+ const btn=document.getElementById('clientLoginBtn');btn.disabled=true;btn.textContent='Entrando...';
+ try{const {data,error}=await supabaseClient.functions.invoke('customer-access',{body:{action:'login',cpf,password}});if(error)throw error;if(data?.error)throw new Error(data.error);await applyCustomerSession(data)}
+ catch(e){document.getElementById('clientResetRequestBtn')?.classList.remove('hidden');toast('Senha incorreta. Confira e tente novamente ou solicite a redefinição.')}
+ finally{btn.disabled=false;btn.textContent='Entrar'}
 }
 async function registerClient(){
- if(!adultConfirmed){toast('Confirme que você tem 18 anos ou mais para continuar.');show('ageGate');return}
  const cpf=document.getElementById('newCpf').value.replace(/\D/g,'');
  const name=document.getElementById('newName').value.trim(),phoneInput=document.getElementById('newPhone');
  const password=document.getElementById('newClientPassword').value,confirmPassword=document.getElementById('confirmClientPassword').value;
