@@ -270,10 +270,10 @@ async function passwordResetRequestsView(){
  if(error)throw error;if(data?.error)throw new Error(data.error);
  const rows=data.requests||[];
  if(!rows.length)return '<p class="muted">Não há solicitações pendentes de redefinição de senha.</p>';
- return '<p class="muted">Aprovar redefine a senha para 123456. O cliente será obrigado a criar outra senha no próximo acesso.</p>'+rows.map(r=>'<div class="card"><strong>'+esc(r.clientes?.nome||'Cliente')+'</strong><p>CPF: '+esc(r.clientes?.cpf||'')+'</p><p class="small muted">Solicitado em '+new Date(r.solicitado_em).toLocaleString('pt-BR')+'</p><button class="btn primary" onclick="approveClientReset('+Number(r.id)+')">Aprovar redefinição</button></div>').join('');
+ return '<p class="muted">A aprovação gera um código aleatório de 8 dígitos, válido por 30 minutos. Entregue o código ao cliente para que ele cadastre uma nova senha.</p>'+rows.map(r=>'<div class="card"><strong>'+esc(r.clientes?.nome||'Cliente')+'</strong><p>CPF: '+esc(r.clientes?.cpf||'')+'</p><p class="small muted">Solicitado em '+new Date(r.solicitado_em).toLocaleString('pt-BR')+'</p><button class="btn primary" onclick="approveClientReset('+Number(r.id)+')">Aprovar redefinição</button></div>').join('');
 }
 async function approveClientReset(id){
- if(!confirm('Aprovar a redefinição? A senha temporária será 123456 e o cliente terá de trocá-la no próximo acesso.'))return;
+ if(!confirm('Gerar um código temporário aleatório, válido por 30 minutos, para o cliente cadastrar uma nova senha?'))return;
  try{
   const {data,error}=await supabaseClient.functions.invoke('customer-access',{body:{action:'approve_reset',requestId:id}});
   if(error)throw error;if(data?.error)throw new Error(data.error);
