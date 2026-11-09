@@ -683,8 +683,8 @@ async function staffLogin(){
   document.getElementById('staffSubtitle').textContent=role==='Proprietário'?'Acesso administrativo às três unidades':role==='Vendedor'?'':unit;
   let modules=role==='Vendedor'?['Visão geral','Estoque','Financeiro']:['Visão geral','Estoque','Financeiro','Configurações'];
   document.getElementById('staffModules').innerHTML=modules.map(m=>`<button type="button" class="admin-category-btn" onclick='openModule(${JSON.stringify(m)})'>${esc(m)}</button>`).join('');
-  show('staff');startStaffOrderNotifications();
- }catch(error){await supabaseClient.auth.signOut();toast(error.message||'Não foi possível entrar. Confira suas credenciais.')}
+  show('staff');startStaffOrderNotifications();startStaffIdleTimer();
+  }catch(error){await supabaseClient.auth.signOut();toast(error.message||'Não foi possível entrar. Confira suas credenciais.')}
  finally{btn.disabled=false;btn.textContent='Entrar'}
 }
 
@@ -1078,8 +1078,8 @@ function salesView(refund=false){let opts=role==='Proprietário'?'<label>Unidade
 function filterSales(){let q=(document.getElementById('salesSearch')?.value||'').toLowerCase(),branchId=document.getElementById('salesBranch')?.value||'all';document.getElementById('salesRows').innerHTML=sales.filter(s=>(branchId==='all'||String(branches[s.branch]?.id)===String(branchId))&&(s.customer+' '+s.cpf+' '+s.items.map(i=>i.name).join(' ')).toLowerCase().includes(q)).map(s=>saleRow(s,role==='Proprietário')).join('')||'<p>Nenhuma venda encontrada.</p>'}
 
 
-async function logout(){
- stopBarcodeScanner();stopStaffOrderNotifications();
+async function logout(idleExpired=false){
+ stopStaffIdleTimer();stopBarcodeScanner();stopStaffOrderNotifications();
  try{await supabaseClient.auth.signOut({scope:'local'})}
  catch(error){console.warn('Encerrando a sessão local apesar da falha de rede:',error)}
  finally{
@@ -1091,6 +1091,7 @@ async function logout(){
   document.getElementById('floatingCart').classList.add('hidden');
   show('start');
   try{renderCart()}catch(renderError){console.warn('Carrinho visual não pôde ser redesenhado:',renderError)}
+  if(idleExpired)toast('Sessão encerrada após 10 minutos sem atividade. Entre novamente para continuar.')
  }
 }
 
@@ -1122,6 +1123,27 @@ async function restoreCustomerSession(){
   console.warn('Não foi possível restaurar a sessão do cliente:',error);
  }
 }
-window.addEventListener('load',restoreCustomerSession,{once:true});
+async function restoreStaffSession(){
+ try{
+  const {data,error}=await supabaseClient.auth.getSession();if(error)throw error;const user=data?.session?.user;if(!user)return;
+  const {data:profileData,error:profileError}=await supabaseClient.from('funcionarios').select('id,nome,email,cargo,loja_id,ativo,foto_url,telefone').eq('auth_user_id',user.id).eq('ativo',true).maybeSingle();
+  if(profileError)throw profileError;if(!profileData)return;
+  if(!['proprietario','gerente','vendedor'].includes(profileData.cargo))return;
+  const unit=profileData.loja_id?branchNameById[Number(profileData.loja_id)]:null;if(profileData.cargo!=='proprietario'&&!unit)return;
+  role=profileData.cargo==='proprietario'?'Proprietário':profileData.cargo==='gerente'?'Gerente':'Vendedor';staffActor=profileData.nome||user.email||'';staffBranch=role==='Proprietário'?'Todas as unidades':unit;window.currentStaffProfile=profileData;
+  renderStaffAvatar(profileData.foto_url,staffActor);
+  if(unit){branch=unit;const branchLabel=document.getElementById('branch-label');if(branchLabel)branchLabel.textContent=unit;const customerBranchLabel=document.getElementById('customerBranch');if(customerBranchLabel)customerBranchLabel.textContent=unit;if(branches[unit]){const branchAddress=document.getElementById('branchAddress');if(branchAddress)branchAddress.textContent=branches[unit].address;const branchWhats=document.getElementById('branchWhats');if(branchWhats)branchWhats.href='https://wa.me/'+branches[unit].phone}}
+  await Promise.all([loadStorePixSettings(),loadProductsFromSupabase(true),loadOrdersFromSupabase(),loadStaffData(),loadOwnerSettings()]);
+  document.getElementById('profile').classList.remove('hidden');document.getElementById('profile-name').textContent=profileData.nome||role;document.getElementById('avatar').textContent=role==='Proprietário'?'P':(profileData.nome||role)[0].toUpperCase();
+  const staffTitle=document.getElementById('staffTitle');staffTitle.textContent=role==='Vendedor'?'':'Painel '+role;staffTitle.classList.toggle('hidden',role==='Vendedor');document.getElementById('staffSubtitle').textContent=role==='Proprietário'?'Acesso administrativo às três unidades':role==='Vendedor'?'':unit;
+  let modules=role==='Vendedor'?['Visão geral','Estoque','Financeiro']:['Visão geral','Estoque','Financeiro','Configurações'];document.getElementById('staffModules').innerHTML=modules.map(m=>`<button type="button" class="admin-category-btn" onclick='openModule(${JSON.stringify(m)})'>${esc(m)}</button>`).join('');
+  show('staff');startStaffOrderNotifications();startStaffIdleTimer();
+ }catch(error){console.warn('Não foi possível restaurar a sessão administrativa:',error)}
+}
+let staffIdleTimer=null,staffLastActivity=Date.now();
+function stopStaffIdleTimer(){if(staffIdleTimer){clearTimeout(staffIdleTimer);staffIdleTimer=null}['pointerdown','pointermove','keydown','scroll','touchstart','click'].forEach(ev=>document.removeEventListener(ev,registerStaffActivity,true))}
+function registerStaffActivity(){if(!['Proprietário','Gerente','Vendedor'].includes(role))return;staffLastActivity=Date.now();if(staffIdleTimer)clearTimeout(staffIdleTimer);staffIdleTimer=setTimeout(()=>{if(Date.now()-staffLastActivity>=600000)logout(true);else registerStaffActivity()},600000)}
+function startStaffIdleTimer(){stopStaffIdleTimer();if(!['Proprietário','Gerente','Vendedor'].includes(role))return;staffLastActivity=Date.now();['pointerdown','pointermove','keydown','scroll','touchstart','click'].forEach(ev=>document.addEventListener(ev,registerStaffActivity,{capture:true,passive:true}));staffIdleTimer=setTimeout(()=>logout(true),600000)}
+window.addEventListener('load',async()=>{await restoreCustomerSession();if(!clientAuthUser)await restoreStaffSession()},{once:true});
 </script>
 </body></html>
