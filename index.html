@@ -54,6 +54,21 @@ input,select{width:100%;padding:12px;border-radius:10px;background:#0c0a08;borde
 
 .employee-action-btn{padding:4px 7px!important;font-size:10px!important;line-height:1.05!important;border-radius:6px!important;min-height:0}
 .floating-cart{right:12px;bottom:12px;padding:10px 13px;font-size:13px}.branch-whats-wrap{margin-top:16px}.top{align-items:center;gap:8px}.brand{gap:8px}.brand .logo{width:44px;height:44px}.brand h1{font-size:18px}.brand small{font-size:10px}.profile{gap:6px}.profile .avatar{width:32px;height:32px}.profile span.name{display:none}.hero{padding:15px}.row{flex-direction:column;align-items:stretch}.top .customer-summary{margin:0;padding:8px 9px;display:block}.customer-greeting h2{font-size:17px}.customer-greeting span{font-size:11px}.loyalty-mini{margin-top:9px;gap:8px}.loyalty-item{min-width:0;flex:1;padding:7px 8px;border:1px solid rgba(255,220,0,.18);border-radius:10px;background:rgba(0,0,0,.2)}.loyalty-item strong{font-size:13px}.customer-summary{gap:8px}.loyalty-item{padding:6px 7px}#products.cards{grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}#products .card{padding:9px;border-radius:12px}#products .product .emoji{height:auto!important;aspect-ratio:1/1;flex-basis:auto;font-size:34px;min-height:0}#products .card h3{font-size:13px}#products .card p{font-size:11px}#products .price{font-size:16px}#products .product button{font-size:10px;padding:7px 4px;border-radius:8px}#products .product-qty{gap:6px}#products .product-qty .btn{font-size:12px;padding:8px 4px}#products .product-qty strong{font-size:13px}#products .product-remove{font-size:11px;padding:9px 6px!important}}
+
+/* Histórico de compras: hierarquia clara e valores alinhados à direita */
+.customer-order-card{display:flex;flex-direction:column;gap:10px;margin:10px 0;padding:13px}
+.customer-order-head{display:flex;align-items:center;justify-content:space-between;gap:10px;padding-bottom:8px;border-bottom:1px solid rgba(255,220,0,.22)}
+.customer-order-head>strong{font-weight:900;color:#fff}.customer-order-head>strong b{color:var(--gold)}
+.customer-order-meta{display:flex;align-items:center;justify-content:flex-start;gap:8px;margin:0;padding:0;color:var(--muted);font-size:12px}
+.customer-order-products{display:flex;flex-direction:column;gap:0;margin-top:2px}
+.customer-order-product{display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:center;gap:12px;padding:8px 0;border-bottom:1px solid rgba(255,220,0,.12);font-size:12px}
+.customer-order-product-name{min-width:0;overflow-wrap:anywhere;color:#fff}.customer-order-product-name small{white-space:nowrap;color:var(--muted);font-size:11px}
+.customer-order-product>strong{min-width:92px;text-align:right;color:#fff;font-variant-numeric:tabular-nums}
+.customer-order-address{margin:0;color:var(--muted);font-size:11px;overflow-wrap:anywhere}
+.customer-order-total-row{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-top:2px;padding-top:10px;border-top:1px solid var(--line);font-size:13px;font-weight:800}
+.customer-order-total{min-width:105px;text-align:right;color:var(--gold);font-size:16px;font-variant-numeric:tabular-nums}
+@media(max-width:600px){.customer-order-card{gap:8px;padding:10px}.customer-order-product{gap:8px;padding:7px 0;font-size:11px}.customer-order-product>strong{min-width:82px;font-size:11px}.customer-order-total{font-size:15px}}
+
  .btn-close-module{background:#272727;border:1px solid #f9d328;color:#f9d328;border-radius:12px;padding:11px 16px;font-weight:700}.btn-close-module:hover{background:#f9d328;color:#111}
  
  .admin-category-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(145px,1fr));gap:10px;margin:16px 0}
@@ -707,10 +722,10 @@ async function openMyOrders(){
   list.sort((a,b)=>customerOrderPriority(a.status)-customerOrderPriority(b.status)||new Date(b.created_at||0)-new Date(a.created_at||0));
   const orderCards=list.map(o=>{
    const status=String(o.status||'Aguardando atendimento');
-   const items=Array.isArray(o.itens)?o.itens.map(i=>'<div class="customer-order-product"><span>'+esc(i.nome)+' × '+Number(i.quantidade||0)+'</span><strong>'+money(i.subtotal)+'</strong></div>').join(''):'';
+   const items=Array.isArray(o.itens)?o.itens.map(i=>'<div class="customer-order-product"><span class="customer-order-product-name">'+esc(i.nome)+' <small>× '+Number(i.quantidade||0)+'</small></span><strong>'+money(i.subtotal)+'</strong></div>').join(''):'';
    const canConfirm=o.tipo_recebimento==='Delivery'&&status==='Em entrega';
    const pickupCode=o.tipo_recebimento==='Retirar na loja'&&['Em separação','Em embalagem','Aguardando retirada'].includes(status);
-   return '<article class="card customer-order-card"><div class="customer-order-head"><strong>Pedido #'+String(o.id).slice(-6)+'</strong><span class="customer-order-status">'+esc(status)+'</span></div><div class="customer-order-meta"><span>Recebimento: '+esc(o.tipo_recebimento||'Retirar na loja')+'</span><strong class="customer-order-total">'+money(o.total)+'</strong></div>'+(pickupCode?'<div class="notice"><strong>Código de retirada: '+esc(o.codigo_publico||'Consulte a equipe')+'</strong><p>Informe seu nome e este código ao funcionário quando chegar à loja.</p></div>':'')+(o.endereco_entrega?'<p class="small muted">Endereço: '+esc(o.endereco_entrega)+'</p>':'')+'<div class="customer-order-products">'+(items||'<span class="small muted">Produtos não informados.</span>')+'</div>'+(canConfirm?'<div class="customer-order-actions"><button class="btn primary" onclick="confirmDeliveryReceipt('+Number(o.id)+')">Confirmar recebimento</button></div>':'')+'</article>';
+   return '<article class="card customer-order-card"><div class="customer-order-head"><strong>Pedido <b>#'+String(o.id).slice(-6)+'</b></strong><span class="customer-order-status">'+esc(status)+'</span></div><div class="customer-order-meta"><span><strong>Recebimento:</strong> '+esc(o.tipo_recebimento||'Retirar na loja')+'</span></div>'+(o.endereco_entrega?'<p class="customer-order-address"><strong>Endereço:</strong> '+esc(o.endereco_entrega)+'</p>':'')+(pickupCode?'<div class="notice"><strong>Código de retirada: '+esc(o.codigo_publico||'Consulte a equipe')+'</strong><p>Informe seu nome e este código ao funcionário quando chegar à loja.</p></div>':'')+'<div class="customer-order-products">'+(items||'<span class="small muted">Produtos não informados.</span>')+'</div><div class="customer-order-total-row"><span>Valor total</span><strong class="customer-order-total">'+money(o.total)+'</strong></div>'+(canConfirm?'<div class="customer-order-actions"><button class="btn primary" onclick="confirmDeliveryReceipt('+Number(o.id)+')">Confirmar recebimento</button></div>':'')+'</article>';
   }).join('');
   const redemptions=Array.isArray(redemptionsResult.data)?redemptionsResult.data:[];
   const redemptionCards=redemptions.map(r=>{
