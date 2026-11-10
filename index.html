@@ -802,7 +802,7 @@ async function staffLogin(){
   window.currentStaffProfile=profileData;
   renderStaffAvatar(profileData.foto_url,staffActor);
   if(unit){branch=unit;const branchLabel=document.getElementById('branch-label');if(branchLabel)branchLabel.textContent=unit;const customerBranchLabel=document.getElementById('customerBranch');if(customerBranchLabel)customerBranchLabel.textContent=unit;if(branches[unit]){const branchAddress=document.getElementById('branchAddress');if(branchAddress)branchAddress.textContent=branches[unit].address;const branchWhats=document.getElementById('branchWhats');if(branchWhats)branchWhats.href='https://wa.me/'+branches[unit].phone}}
-  try{await loadStorePixSettings();await loadProductsFromSupabase(true);await loadOrdersFromSupabase();await loadStaffData();await loadOwnerSettings()}catch(loadError){throw new Error('Login efetuado, mas não foi possível sincronizar catálogo e pedidos: '+loadError.message)}
+  const syncTasks=[['configurações da loja',loadStorePixSettings],['catálogo',()=>loadProductsFromSupabase(true)],['pedidos',loadOrdersFromSupabase],['dados da equipe',loadStaffData],['metas e configurações',loadOwnerSettings]];const syncResults=await Promise.allSettled(syncTasks.map(([,task])=>task()));const syncFailures=syncResults.map((result,index)=>result.status==='rejected'?syncTasks[index][0]+': '+(result.reason?.message||'erro desconhecido'):null).filter(Boolean);
   document.getElementById('profile').classList.remove('hidden');
   document.getElementById('profile-name').textContent=profileData.nome||role;
   document.getElementById('avatar').textContent=role==='Proprietário'?'P':(profileData.nome||role)[0].toUpperCase();
@@ -810,8 +810,8 @@ async function staffLogin(){
   document.getElementById('staffSubtitle').textContent=role==='Proprietário'?'Acesso administrativo às três unidades':role==='Vendedor'?'':unit;
   let modules=role==='Vendedor'?['Visão geral','Estoque','Financeiro']:['Visão geral','Estoque','Financeiro','Configurações'];
   document.getElementById('staffModules').innerHTML=modules.map(m=>`<button type="button" class="admin-category-btn" onclick='openModule(${JSON.stringify(m)})'>${esc(m)}</button>`).join('');
-  show('staff');startStaffOrderNotifications();startStaffIdleTimer();
-  }catch(error){await supabaseClient.auth.signOut();toast(error.message||'Não foi possível entrar. Confira suas credenciais.')}
+  show('staff');startStaffOrderNotifications();startStaffIdleTimer();if(syncFailures.length){console.error('Falhas na sincronização após autenticação:',syncFailures);toast('Acesso confirmado. Alguns dados não carregaram: '+syncFailures.join(' | '))}
+  }catch(error){console.error('Falha na autenticação do funcionário:',error);toast(error.message||'Não foi possível entrar. Confira suas credenciais.')}
  finally{btn.disabled=false;btn.textContent='Entrar'}
 }
 
