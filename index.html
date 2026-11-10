@@ -567,6 +567,16 @@ button:focus-visible,.btn:focus-visible{outline:2px solid #f9d328!important;outl
 .customer-loyalty-summary{margin:14px 0 18px;padding:14px;border:1px solid var(--border);border-radius:14px;background:rgba(249,211,40,.055)}.customer-loyalty-summary h4{margin:0 0 12px;color:var(--gold)}.customer-loyalty-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:9px}.customer-loyalty-metric{min-width:0;padding:10px;border:1px solid var(--border);border-radius:10px;background:var(--card)}.customer-loyalty-metric span{display:block;font-size:11px;color:var(--muted);margin-bottom:5px}.customer-loyalty-metric strong{display:block;font-size:15px;overflow-wrap:anywhere}.customer-tier{color:var(--gold)}@media(max-width:390px){.customer-loyalty-grid{grid-template-columns:1fr}}
 </style>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js" defer></script>
+<style>
+.staff-notification-badge,.customer-notification-badge{display:inline-flex;align-items:center;justify-content:center;min-width:20px;height:20px;padding:0 6px;margin-left:8px;border-radius:20px;background:#d92d20;color:#fff;font-size:11px;font-weight:900;line-height:1;vertical-align:middle}
+.admin-category-btn{position:relative}.admin-category-btn .staff-notification-badge{position:absolute;top:7px;right:8px;margin:0}
+.admin-shortcut{position:relative;padding-right:36px!important}.admin-shortcut .staff-notification-badge{position:absolute;top:50%;right:8px;transform:translateY(-50%);margin:0}
+.staff-order-tab strong.has-notification{background:#d92d20;color:#fff}
+.customer-welcome-actions #myOrdersBtn{display:inline-flex;align-items:center;gap:5px}.customer-notification-badge{margin-left:3px;min-width:18px;height:18px;font-size:10px}
+.customer-benefit-overlay{position:fixed;inset:0;z-index:10050;display:flex;align-items:center;justify-content:center;padding:18px;background:rgba(0,0,0,.78)}
+.customer-benefit-box{position:relative;width:min(100%,390px);padding:25px 20px 18px;border:1px solid #f9d328;border-radius:18px;background:#151515;color:#fff;text-align:center;box-shadow:0 18px 55px #000b}
+.customer-benefit-box h2{margin:8px 0 14px;color:#f9d328;font-size:21px}.customer-benefit-box p{margin:10px 0;padding:11px;border-radius:10px;background:#242424;font-size:14px;line-height:1.5}.customer-benefit-box .btn{display:block;width:100%;margin-top:9px}.customer-benefit-icon{font-size:42px}.customer-benefit-close{position:absolute;top:8px;right:11px;border:0;background:none;color:#fff;font-size:28px;cursor:pointer}
+</style>
 </head>
 <body>
 <div class="wrap">
@@ -733,7 +743,7 @@ function startStaffOrderNotifications(){
   .on('postgres_changes',config,async payload=>{
    try{
     await loadOrdersFromSupabase();
-    refreshOrderAlarmState();
+    refreshOrderAlarmState();updateStaffNotificationBadges();
     const panel=document.getElementById('staffDetail');
     if(panel&&!panel.classList.contains('hidden')&&panel.textContent.includes('Pedidos')){
      await openModule('Pedidos e atendimento');
@@ -765,7 +775,7 @@ async function loadStaffData(){
  if(role!=='Vendedor'){const l=await supabaseClient.from('lancamentos_financeiros').select('id,loja_id,funcionario_id,beneficiario_funcionario_id,tipo,categoria,descricao,valor,data_lancamento,status').order('data_lancamento',{ascending:false});if(l.error)throw l.error;ledger=(l.data||[]).map(x=>({id:x.id,type:x.tipo,category:x.categoria||'',description:x.descricao,total:(x.tipo==='Saída'||x.tipo==='Estorno'?-1:1)*(Number(String(x.valor||'0').replace(',','.'))||0),branch:branchNameById[Number(x.loja_id)]||'Unidade',branchId:x.loja_id,date:x.data_lancamento,status:x.status,beneficiaryId:x.beneficiario_funcionario_id,beneficiary:staffDirectory.find(s=>Number(s.id)===Number(x.beneficiario_funcionario_id))?.nome||''}))}
 }
 async function loadOwnerSettings(){const [m,r,em]=await Promise.all([supabaseClient.from('metas_loja').select('loja_id,meta_diaria,meta_semanal,meta_mensal,meta_pedidos'),supabaseClient.from('regras_fidelidade').select('*').eq('id',1).maybeSingle(),supabaseClient.from('metas_funcionarios').select('loja_id,funcionario_id,mes_referencia,meta_mensal,comissao_percentual,bonus_meta')]);if(m.error)throw m.error;if(r.error)throw r.error;if(em.error)throw em.error;storeGoals={};ownerGoalSettings={};(m.data||[]).forEach(x=>{const id=Number(x.loja_id);ownerGoalSettings[id]={meta_diaria:Number(x.meta_diaria)||0,meta_semanal:Number(x.meta_semanal)||0,meta_mensal:Number(x.meta_mensal)||0,meta_pedidos:Number(x.meta_pedidos)||0};storeGoals[id]=Number(x.meta_mensal)||0});const monthKey=new Date().getFullYear()+'-'+String(new Date().getMonth()+1).padStart(2,'0')+'-01';employeeGoalSettings={};(em.data||[]).filter(x=>String(x.mes_referencia).slice(0,10)===monthKey).forEach(x=>employeeGoalSettings[Number(x.funcionario_id)]= {loja_id:Number(x.loja_id),meta_mensal:Number(x.meta_mensal)||0,comissao_percentual:Number(x.comissao_percentual)||0,bonus_meta:Number(x.bonus_meta)||0});if(r.data)loyaltyRules=r.data}
-async function loadOrdersFromSupabase(){const {data,error}=await supabaseClient.from('pedidos').select('*,itens_pedido(id,produto_id,quantidade,preco_unitario,subtotal,produtos(nome))').order('created_at',{ascending:false});if(error)throw error;orders=(data||[]).map(o=>({id:o.id,date:o.created_at,completedAt:o.data_conclusao||null,cpf:o.cpf_cliente||'',customer:o.nome_cliente||'Cliente',branch:o.unidade_nome||branchNameById[Number(o.loja_id)]||'Unidade',items:(o.itens_pedido||[]).map(i=>({id:i.produto_id,name:i.produtos?.nome||products.find(p=>Number(p.id)===Number(i.produto_id))?.name||'Produto',price:Number(i.preco_unitario)||0,qty:Number(i.quantidade)||0})),total:Number(o.total??o.valor_total??0),payment:o.forma_pagamento||'Pix',pickup:o.tipo_recebimento||'Retirar na loja',deliveryAddress:o.endereco_entrega||'',note:o.observacoes||o.observacao_cliente||'',status:o.status||'Aguardando atendimento',paymentConfirmed:!!o.pagamento_confirmado,assignedTo:o.responsavel||null,assignedRole:o.cargo_responsavel||null,history:Array.isArray(o.status_historico)?o.status_historico:[]}));sales=orders.filter(o=>o.completedAt||['Retirada concluída','Entrega concluída'].includes(o.status)).map(o=>({...o,orderId:o.id,saleDate:o.completedAt||o.date}))}
+async function loadOrdersFromSupabase(){const {data,error}=await supabaseClient.from('pedidos').select('*,itens_pedido(id,produto_id,quantidade,preco_unitario,subtotal,produtos(nome))').order('created_at',{ascending:false});if(error)throw error;orders=(data||[]).map(o=>({id:o.id,date:o.created_at,completedAt:o.data_conclusao||null,cpf:o.cpf_cliente||'',customer:o.nome_cliente||'Cliente',branch:o.unidade_nome||branchNameById[Number(o.loja_id)]||'Unidade',items:(o.itens_pedido||[]).map(i=>({id:i.produto_id,name:i.produtos?.nome||products.find(p=>Number(p.id)===Number(i.produto_id))?.name||'Produto',price:Number(i.preco_unitario)||0,qty:Number(i.quantidade)||0})),total:Number(o.total??o.valor_total??0),payment:o.forma_pagamento||'Pix',pickup:o.tipo_recebimento||'Retirar na loja',deliveryAddress:o.endereco_entrega||'',note:o.observacoes||o.observacao_cliente||'',status:o.status||'Aguardando atendimento',paymentConfirmed:!!o.pagamento_confirmado,assignedTo:o.responsavel||null,assignedRole:o.cargo_responsavel||null,history:Array.isArray(o.status_historico)?o.status_historico:[]}));sales=orders.filter(o=>o.completedAt||['Retirada concluída','Entrega concluída'].includes(o.status)).map(o=>({...o,orderId:o.id,saleDate:o.completedAt||o.date}));updateStaffNotificationBadges()}
 function validCPF(v){let s=String(v||'').replace(/\D/g,'');if(s.length!==11||/^([0-9])\1+$/.test(s))return false;let sum=0;for(let i=0;i<9;i++)sum+=Number(s[i])*(10-i);let d=(sum*10)%11;if(d===10)d=0;if(d!==Number(s[9]))return false;sum=0;for(let i=0;i<10;i++)sum+=Number(s[i])*(11-i);d=(sum*10)%11;if(d===10)d=0;return d===Number(s[10])}
 function formatCPF(input){const d=input.value.replace(/\D/g,'').slice(0,11);input.value=d.replace(/(\d{3})(\d)/,'$1.$2').replace(/(\d{3})(\d)/,'$1.$2').replace(/(\d{3})(\d{1,2})$/,'$1-$2')}
 async function applyCustomerSession(result){
@@ -778,12 +788,12 @@ async function applyCustomerSession(result){
 }
 async function openCustomer(){
  if(!clientAuthUser||!client||!branch)return;
- document.getElementById('myOrdersBtn')?.classList.remove('hidden');
+ document.getElementById('myOrdersBtn')?.classList.remove('hidden');refreshCustomerOrderBadge();
  document.getElementById('profile').classList.remove('hidden');document.getElementById('profile-name').textContent=customerProfileLabel();await loadClientProfilePhoto();renderClientAvatar(client.photoUrl,client.name);
  document.getElementById('customerStoreName').textContent=branch;try{localStorage.setItem('bombastic_customer_branch',branch);sessionStorage.setItem('bombastic_customer_branch',branch)}catch(e){}activeFilter='Todos';activeProductCategory='Todas';activeProductBrand='Todas';productSort='padrao';document.getElementById('customerSummary').classList.remove('hidden');document.getElementById('welcome').textContent='Bem-vindo, '+((client.name||'cliente').trim().split(/\s+/)[0])+'!';
  try{await loadCustomerLoyalty()}catch(e){console.warn('Não foi possível carregar a fidelidade:',e)}
  document.getElementById('points').textContent=(client.points||0)+' pts';const tier=customerTier(client);const tierProgress=document.getElementById('customerTierProgress');if(tierProgress){const spent=Number(client.spent12m)||0,prata=Number(loyaltyRules.prata_minimo)||500,ouro=Number(loyaltyRules.ouro_minimo)||1500,each=Number(loyaltyRules.pontos_a_cada)||10;let target=0,next='';if(tier==='Bronze'){target=prata;next='Prata'}else if(tier==='Prata'){target=ouro;next='Ouro'}if(next){const missingMoney=Math.max(0,target-spent),missingPoints=Math.ceil(missingMoney/each);tierProgress.textContent=missingPoints===1?'Falta 1 ponto para o nível '+next:'Faltam '+missingPoints+' pontos para o nível '+next}else{tierProgress.textContent='Você já chegou ao nível máximo'} }const giftPoints=document.getElementById('customerRewardPoints');if(giftPoints)giftPoints.textContent='Seus pontos: '+(client.points||0);const tierEl=document.getElementById('customerTier');tierEl.textContent=tier;tierEl.classList.remove('tier-bronze','tier-prata','tier-ouro');tierEl.classList.add('tier-'+tier.toLocaleLowerCase('pt-BR'));document.getElementById('cashback').textContent=money(cashbackBalance(client));
- show('customer');refreshProductFilters();renderProducts();renderCart();renderCustomerRewards();
+ show('customer');refreshProductFilters();renderProducts();renderCart();renderCustomerRewards();refreshCustomerOrderBadge();
 }
 async function checkCustomerCpf(){
  const cpf=document.getElementById('cpf').value.replace(/\D/g,'');
@@ -1116,7 +1126,7 @@ async function staffLogin(){
   const staffTitle=document.getElementById('staffTitle');staffTitle.textContent=role==='Vendedor'?'':'Painel '+role;staffTitle.classList.toggle('hidden',role==='Vendedor');
   document.getElementById('staffSubtitle').textContent=role==='Proprietário'?'Acesso administrativo às três unidades':role==='Vendedor'?'':unit;
   let modules=['Visão geral','Estoque','Financeiro','Relacionamento','Configurações'];
-  document.getElementById('staffModules').innerHTML=modules.map(m=>`<button type="button" class="admin-category-btn" onclick='openModule(${JSON.stringify(m)})'>${esc(m)}</button>`).join('');
+  document.getElementById('staffModules').innerHTML=modules.map(renderStaffCategoryButton).join('');
   show('staff');startStaffOrderNotifications();startStaffIdleTimer();if(syncFailures.length){console.error('Falhas na sincronização após autenticação:',syncFailures);toast('Acesso confirmado. Alguns dados não carregaram: '+syncFailures.join(' | '))}
   }catch(error){console.error('Falha na autenticação do funcionário:',error);toast(error.message||'Não foi possível entrar. Confira suas credenciais.')}
  finally{btn.disabled=false;btn.textContent='Entrar'}
@@ -1207,6 +1217,14 @@ async function customerAdminAction(customerId,action){
   }
  }catch(e){toast('Não foi possível concluir: '+(e.message||'tente novamente.'))}
 }
+function staffVisibleOrders(){return (orders||[]).filter(o=>role==='Proprietário'||o.branch===staffBranch)}
+function staffNotificationCount(label){const visible=staffVisibleOrders();if(label==='Financeiro')return visible.filter(o=>orderStage(o)===0||orderStage(o)===1).length;if(label==='Pedidos e atendimento')return visible.filter(o=>!['Retirada concluída','Entrega concluída','Concluído e entregue','Concluído','Cancelado','Estornado'].includes(String(o.status||''))&&!o.completedAt).length;if(label==='Aguardando atendimento')return visible.filter(o=>orderStage(o)===0).length;return 0}
+function staffNotificationBadge(label){const count=staffNotificationCount(label);return count>0?'<span class="staff-notification-badge" aria-label="'+count+' notificações">'+(count>99?'99+':count)+'</span>':''}
+function renderStaffCategoryButton(label){return '<button type="button" class="admin-category-btn" onclick="openModule('+JSON.stringify(label).replace(/"/g,'&quot;')+')">'+esc(label)+staffNotificationBadge(label)+'</button>'}
+function updateStaffNotificationBadges(){document.querySelectorAll('#staffModules .admin-category-btn').forEach(btn=>{const label=(btn.getAttribute('onclick')||'').match(/openModule\(['"]([^'"]+)/)?.[1];if(!label)return;const old=btn.querySelector('.staff-notification-badge');if(old)old.remove();const html=staffNotificationBadge(label);if(html)btn.insertAdjacentHTML('beforeend',html)});document.querySelectorAll('#staffDetail .admin-shortcut').forEach(btn=>{const label=btn.textContent.replace(/\s*\d+\s*$/,'').trim();const old=btn.querySelector('.staff-notification-badge');if(old)old.remove();const html=staffNotificationBadge(label);if(html)btn.insertAdjacentHTML('beforeend',html)})}
+async function refreshCustomerOrderBadge(){const btn=document.getElementById('myOrdersBtn');if(!btn||!clientAuthUser)return;try{const {data,error}=await supabaseClient.rpc('meus_pedidos_bombastic');if(error)throw error;const active=(Array.isArray(data)?data:[]).filter(o=>!['Retirada concluída','Entrega concluída','Concluído e entregue','Concluído','Cancelado','Estornado'].includes(String(o.status||''))&&!o.data_conclusao).length;btn.innerHTML='Meus pedidos'+(active?'<span class="customer-notification-badge">'+(active>99?'99+':active)+'</span>':'')}catch(e){btn.innerHTML='Meus pedidos'}}
+function closeCustomerBenefitPopup(){const modal=document.getElementById('customerBenefitPopup');if(modal)modal.remove()}
+function showCustomerBenefitPopup(birthdayCount,rewardCount){if(!client||(!birthdayCount&&!rewardCount))return;const key='bombastic-benefits-seen-'+client.id+'-'+new Date().toISOString().slice(0,10);try{if(sessionStorage.getItem(key))return;sessionStorage.setItem(key,'1')}catch(e){}closeCustomerBenefitPopup();const lines=[];if(birthdayCount)lines.push('<p>🎂 Você tem <strong>'+birthdayCount+'</strong> brinde(s) de aniversário disponível(is) para retirar.</p>');if(rewardCount)lines.push('<p>⭐ Você já tem pontos suficientes para trocar por <strong>'+rewardCount+'</strong> brinde(s) disponível(is).</p>');document.body.insertAdjacentHTML('beforeend','<div id="customerBenefitPopup" class="customer-benefit-overlay" role="dialog" aria-modal="true" aria-labelledby="customerBenefitTitle"><div class="customer-benefit-box"><button type="button" class="customer-benefit-close" aria-label="Fechar" onclick="closeCustomerBenefitPopup()">×</button><div class="customer-benefit-icon">🎁</div><h2 id="customerBenefitTitle">Você tem benefícios disponíveis!</h2>'+lines.join('')+'<button type="button" class="btn primary" onclick="closeCustomerBenefitPopup();showCustomerShopTab(\'brindes\')">Ver meus brindes</button><button type="button" class="btn" onclick="closeCustomerBenefitPopup()">Agora não</button></div></div>')}
 function showAdminCategory(category){
  staffPanelHistory=[];
  const owner=role==='Proprietário',manager=role==='Gerente',seller=role==='Vendedor';
@@ -1225,7 +1243,7 @@ function showAdminCategory(category){
  }
  const d=document.getElementById('staffDetail');d.classList.remove('hidden');
  if(category==='Visão geral'){d.innerHTML=ownerDashboardView(owner?'Todas as lojas':staffBranch);d.scrollIntoView({behavior:'smooth',block:'start'});updateFloatingPanelBack();return}
- d.innerHTML=(category==='Visão geral'?'':'<h3>'+esc(category)+'</h3>')+(category==='Visão geral'?'':'<p class="muted">Escolha uma opção para abrir sua página.</p>')+'<div class="'+(category==='Visão geral'?'overview-store-grid':'admin-shortcut-grid')+'">'+items.map(x=>'<button type="button" class="'+(category==='Visão geral'?'overview-store-btn':'admin-shortcut')+'" onclick="openModule('+JSON.stringify(x).replace(/"/g,'&quot;')+')">'+esc(x)+'</button>').join('')+'</div><p><button type="button" class="btn btn-close-module" onclick="goBackStaffPanel()">← Voltar às abas</button></p>';
+ d.innerHTML=(category==='Visão geral'?'':'<h3>'+esc(category)+'</h3>')+(category==='Visão geral'?'':'<p class="muted">Escolha uma opção para abrir sua página.</p>')+'<div class="'+(category==='Visão geral'?'overview-store-grid':'admin-shortcut-grid')+'">'+items.map(x=>'<button type="button" class="'+(category==='Visão geral'?'overview-store-btn':'admin-shortcut')+'" onclick="openModule('+JSON.stringify(x).replace(/"/g,'&quot;')+')">'+esc(x)+staffNotificationBadge(x)+'</button>').join('')+'</div><p><button type="button" class="btn btn-close-module" onclick="goBackStaffPanel()">← Voltar às abas</button></p>';
  d.scrollIntoView({behavior:'smooth',block:'start'});updateFloatingPanelBack();
 }
 async function openModule(m){
@@ -1336,7 +1354,7 @@ function ordersView(cancelOnly=false){
  const counts=tabs.map(t=>all.filter(o=>orderStage(o)===t.stage).length);
  const list=all.filter(o=>orderStage(o)===active);
  const inProgress=all.filter(o=>{const stage=orderStage(o);return stage>=1&&stage<=6}).length;
- const tabHtml='<div class="order-queue-summary"><span><strong>'+counts[0]+'</strong> na fila</span><span><strong>'+inProgress+'</strong> em atendimento</span><span><strong>'+(counts[7]+counts[8])+'</strong> concluídos</span></div><nav class="staff-order-tabs" aria-label="Etapas dos pedidos">'+tabs.map((t,i)=>'<button type="button" class="staff-order-tab '+(active===i?'active':'')+'" onclick="selectOrderTab('+i+')" aria-pressed="'+(active===i?'true':'false')+'"><span>'+esc(t.label)+'</span><strong>'+counts[i]+'</strong></button>').join('')+'</nav>';
+ const tabHtml='<div class="order-queue-summary"><span><strong>'+counts[0]+'</strong> na fila</span><span><strong>'+inProgress+'</strong> em atendimento</span><span><strong>'+(counts[7]+counts[8])+'</strong> concluídos</span></div><nav class="staff-order-tabs" aria-label="Etapas dos pedidos">'+tabs.map((t,i)=>'<button type="button" class="staff-order-tab '+(active===i?'active':'')+'" onclick="selectOrderTab('+i+')" aria-pressed="'+(active===i?'true':'false')+'"><span>'+esc(t.label)+'</span><strong class="'+(counts[i]?'has-notification':'')+'">'+counts[i]+'</strong></button>').join('')+'</nav>';
  const cards=list.map(o=>{
   const action=nextOrderAction(o),owned=(o.assignedTo&&o.assignedTo===staffActor)||role==='Proprietário',locked=o.assignedTo&&!owned;
   let actionButton='';
@@ -1870,6 +1888,7 @@ async function deliverBirthdayGift(attendanceId,branchId){
 function redemptionOrdersView(){let list=redemptions.filter(r=>role==='Proprietário'||r.branch===staffBranch).sort((a,b)=>new Date(b.date)-new Date(a.date));return '<h4>Pedidos de resgate de brindes</h4>'+list.map(r=>'<div class="card"><strong>#R'+r.id+' — '+esc(r.customer)+' — '+esc(r.reward)+'</strong>'+(r.isTest?'<span class="pill">PEDIDO DE TESTE</span>':'')+'<p>'+esc(r.branch)+' • '+new Date(r.date).toLocaleString('pt-BR')+' • '+r.points+' pontos • '+esc(r.status)+'</p>'+(r.status==='Solicitado'?'<button class="btn primary" onclick="manageRedemption('+r.id+',\'Aprovar\')">Aprovar e reservar brinde</button>':'')+(r.status==='Aprovado - aguardando retirada'?'<button class="btn primary" onclick="manageRedemption('+r.id+',\'Entregar\')">Confirmar entrega</button>':'')+((r.status==='Solicitado'||r.status==='Aprovado - aguardando retirada')?'<button class="btn" onclick="manageRedemption('+r.id+',\'Cancelar\')">Cancelar</button>':'')+'</div>').join('')||'<p>Nenhuma solicitação.</p>'}
 async function manageRedemption(id,action){let {error}=await supabaseClient.rpc('gerenciar_resgate_bombastic',{p_resgate_id:id,p_acao:action});if(error){toast(error.message);return}await loadStaffData();toast('Resgate atualizado.');openModule('Pedidos de resgate')}
 async function renderCustomerRewards(){
+ let availableBirthdayGifts=[];
  const box=document.getElementById('customerRewards');if(!box||!clientAuthUser||!client)return;
  const birthdayBox=document.getElementById('customerBirthdayGifts');
  if(birthdayBox){
@@ -1877,7 +1896,7 @@ async function renderCustomerRewards(){
   try{
    const {data,error}=await supabaseClient.functions.invoke('birthday-management',{body:{action:'list_my_birthday_gifts'}});
    if(error)throw error;if(data?.error)throw new Error(data.error);
-   const birthdayGifts=data.gifts||[];
+   const birthdayGifts=data.gifts||[];availableBirthdayGifts=birthdayGifts.filter(x=>x.status==='Aguardando retirada');
    birthdayBox.innerHTML='<h4>🎂 Meus brindes de aniversário</h4>'+(birthdayGifts.length?birthdayGifts.map(x=>{
     const gift=x.gift||{},pending=x.status==='Aguardando retirada',date=x.deliveredAt?new Date(x.deliveredAt).toLocaleDateString('pt-BR'):'';
     return '<article class="customer-birthday-gift-card">'+(gift.foto_url?'<img src="'+esc(gift.foto_url)+'" alt="'+esc(gift.nome||'Brinde')+'">':'<div class="customer-birthday-gift-placeholder">🎁</div>')+'<div class="customer-birthday-gift-info"><strong>'+esc(gift.nome||'Brinde de aniversário')+'</strong><p>'+esc(gift.descricao||'Presente especial de aniversário da Bombastic Tabacaria.')+'</p><small>Retirada em: '+esc(x.store||'Unidade Bombastic')+'</small><span class="pill '+(pending?'':'success')+'">'+(pending?'Disponível para retirada':'Brinde recebido')+'</span>'+(date?'<small>Entregue em '+date+'</small>':'')+'</div></article>';
@@ -1900,6 +1919,9 @@ async function renderCustomerRewards(){
   return '<div class="card reward-card">'+(r.foto_url?'<img src="'+esc(r.foto_url)+'" alt="'+esc(r.nome)+'">':'<div class="reward-placeholder">🎁</div>')+'<strong>'+esc(r.nome)+'</strong><p>'+esc(r.descricao||'')+'</p><span class="reward-points">'+cost+' pontos</span><small class="muted">Disponíveis na loja: '+r.estoque+'</small>'+button+'</div>';
  }).join('');
  box.innerHTML='<div class="grid cards reward-showcase-grid">'+(cards||'<p class="muted">Nenhum brinde disponível no momento.</p>')+'</div>';
+ const openRequest=history.some(x=>['Solicitado','Aprovado - aguardando retirada'].includes(x.status));
+ const redeemableCount=openRequest?0:(gifts.data||[]).filter(g=>Number(g.pontos_necessarios)>0&&available>=Number(g.pontos_necessarios)).length;
+ showCustomerBenefitPopup(availableBirthdayGifts.length,redeemableCount);
 }
 async function requestCustomerReward(id){
  if(!clientAuthUser||!client)return;
@@ -2289,7 +2311,7 @@ async function restoreStaffSession(){
   const syncFailures=syncResults.map((result,index)=>result.status==='rejected'?syncTasks[index][0]+': '+(result.reason?.message||'erro desconhecido'):null).filter(Boolean);
   document.getElementById('profile').classList.remove('hidden');document.getElementById('myOrdersBtn')?.classList.add('hidden');document.getElementById('profile-name').textContent=profileData.nome||role;document.getElementById('avatar').textContent=role==='Proprietário'?'P':(profileData.nome||role)[0].toUpperCase();
   const staffTitle=document.getElementById('staffTitle');staffTitle.textContent=role==='Vendedor'?'':'Painel '+role;staffTitle.classList.toggle('hidden',role==='Vendedor');document.getElementById('staffSubtitle').textContent=role==='Proprietário'?'Acesso administrativo às três unidades':role==='Vendedor'?'':unit;
-  let modules=['Visão geral','Estoque','Financeiro','Relacionamento','Configurações'];document.getElementById('staffModules').innerHTML=modules.map(m=>`<button type="button" class="admin-category-btn" onclick='openModule(${JSON.stringify(m)})'>${esc(m)}</button>`).join('');
+  let modules=['Visão geral','Estoque','Financeiro','Relacionamento','Configurações'];document.getElementById('staffModules').innerHTML=modules.map(renderStaffCategoryButton).join('');
   show('staff');startStaffOrderNotifications();startStaffIdleTimer();
   if(syncFailures.length){console.error('Falhas na sincronização ao restaurar sessão:',syncFailures);toast('Acesso confirmado. Alguns dados não carregaram: '+syncFailures.join(' | '))}
  }catch(error){console.warn('Não foi possível restaurar a sessão administrativa:',error)}
