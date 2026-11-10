@@ -1093,7 +1093,7 @@ async function staffLogin(){
   document.getElementById('avatar').textContent=role==='Proprietário'?'P':(profileData.nome||role)[0].toUpperCase();
   const staffTitle=document.getElementById('staffTitle');staffTitle.textContent=role==='Vendedor'?'':'Painel '+role;staffTitle.classList.toggle('hidden',role==='Vendedor');
   document.getElementById('staffSubtitle').textContent=role==='Proprietário'?'Acesso administrativo às três unidades':role==='Vendedor'?'':unit;
-  let modules=role==='Vendedor'?['Visão geral','Estoque','Financeiro']:['Visão geral','Estoque','Financeiro','Relacionamento','Configurações'];
+  let modules=['Visão geral','Estoque','Financeiro','Relacionamento','Configurações'];
   document.getElementById('staffModules').innerHTML=modules.map(m=>`<button type="button" class="admin-category-btn" onclick='openModule(${JSON.stringify(m)})'>${esc(m)}</button>`).join('');
   show('staff');startStaffOrderNotifications();startStaffIdleTimer();if(syncFailures.length){console.error('Falhas na sincronização após autenticação:',syncFailures);toast('Acesso confirmado. Alguns dados não carregaram: '+syncFailures.join(' | '))}
   }catch(error){console.error('Falha na autenticação do funcionário:',error);toast(error.message||'Não foi possível entrar. Confira suas credenciais.')}
@@ -1197,7 +1197,6 @@ function showAdminCategory(category){
   items=seller?['Pedidos e atendimento','Pedidos de resgate','Histórico de clientes']:['Fluxo de caixa','Pedidos e atendimento','Pedidos de resgate','Estornar vendas'];
   if(manager)items.push('Cancelar pedido não retirado');
  }else if(category==='Relacionamento'){
-  if(!owner&&!manager){toast('Acesso exclusivo do Proprietário ou Gerente.');return}
   items=['Aniversariantes do dia','Brindes de Aniversário','Clientes Inativos'];
  }else if(category==='Configurações'){
   items=manager?['Histórico de clientes','Redefinição de senha']:['Redefinição de senha','Configurar Pix loja','Histórico de clientes','Cashback e fidelidade'];
@@ -1219,7 +1218,7 @@ async function openModule(m){
  else if(Object.prototype.hasOwnProperty.call(branches,m))html+=ownerDashboardView(m);
  else if(m==='Aniversariantes do dia')html+=await birthdayView();
  else if(m==='Clientes Inativos')html+=inactiveCustomersView();
- else if(m==='Brindes de Aniversário'){if(!['Gerente','Proprietário'].includes(role)){toast('Acesso exclusivo do Proprietário ou Gerente.');return}html+=await birthdayGiftAdminView();}
+ else if(m==='Brindes de Aniversário'){html+=await birthdayGiftAdminView();}
  else if(m.includes('Pedidos de resgate'))html+=redemptionOrdersView();
  else if(m.includes('Pedidos'))html+=ordersView()+redemptionOrdersView();
  else if(m.includes('mais vendidos'))html+=bestSellersView();
@@ -1730,7 +1729,7 @@ async function saveRewardEdit(id){
 async function archiveReward(id){if(!confirm('Desativar este brinde da vitrine?'))return;let {error}=await supabaseClient.from('brindes').update({ativo:false}).eq('id',id);if(error){toast(error.message);return}await loadStaffData();openModule('Vitrine de Brindes')}
 
 async function birthdayGiftAdminView(){
- if(!['Gerente','Proprietário'].includes(role))return '<p class="notice">Acesso exclusivo do Proprietário ou Gerente.</p>';
+
  const entries=Object.entries(branches||{}).filter(([,b])=>Number(b.id)>0),defaultEntry=entries.find(([name])=>name===staffBranch)||entries[0];
  const selectedId=role==='Proprietário'?Number(defaultEntry?.[1]?.id||0):Number(branches[staffBranch]?.id||0);
  const selector=role==='Proprietário'?'<label>Unidade</label><select id="birthdayGiftBranch" onchange="reloadBirthdayGiftAdmin()">'+entries.map(([name,b])=>'<option value="'+Number(b.id)+'" '+(Number(b.id)===selectedId?'selected':'')+'>'+esc(name)+'</option>').join('')+'</select>':'';
@@ -1759,7 +1758,7 @@ async function setBirthdayGiftAuthorization(giftId,authorized){
  }catch(e){toast(e.message||'Não foi possível actualizar a autorização.')}
 }
 function inactiveCustomersView(){
- if(!['Gerente','Proprietário'].includes(role))return '<p class="notice">Acesso exclusivo do Proprietário ou Gerente.</p>';
+
  const now=new Date();
  const demo=[30,45,60].map((days,i)=>({id:'demo-'+days,name:['Ana Demonstração','Bruno Teste','Carla Exemplo'][i],days,lastLogin:new Date(now.getTime()-days*86400000).toISOString(),demo:true,phone:''}));
  const real=Object.values(clients||{}).filter(c=>c&&c.cpf&&c.lastLogin&&c.active!==false).map(c=>{
