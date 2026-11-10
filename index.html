@@ -937,13 +937,28 @@ function showStockAttention(branchName){
  stockLots.filter(l=>l.branch===branchName&&Number(l.quantity)>0).forEach(l=>{
   const p=products.find(x=>Number(x.id)===Number(l.productId));if(!p)return;
   const expiry=dateOnly(l.expiryDate),received=dateOnly(l.receivedAt);
-  if(expiry){const days=Math.ceil((expiry-today)/86400000);if(days<=30)attention.push({kind:days<0?'Vencido':'Próximo do vencimento',priority:days<0?0:1,product:p.name,lot:l.lotNumber||'Não informado',qty:l.quantity,unit:p.unit||'unidades',date:l.expiryDate,days,reason:days<0?'Vencido há '+Math.abs(days)+' dia(s)':days===0?'Vence hoje':'Vence em '+days+' dia(s)'})}
-  if(received){const days=daysBetween(received);if(days>=90)attention.push({kind:'Muito tempo em estoque',priority:2,product:p.name,lot:l.lotNumber||'Não informado',qty:l.quantity,unit:p.unit||'unidades',date:l.receivedAt,days,reason:'Recebido há '+days+' dia(s)'})}
+  if(expiry){const days=Math.ceil((expiry-today)/86400000);if(days<=30)attention.push({productId:p.id,kind:days<0?'Vencido':'Próximo do vencimento',priority:days<0?0:1,product:p.name,lot:l.lotNumber||'Não informado',qty:l.quantity,unit:p.unit||'unidades',date:l.expiryDate,days,reason:days<0?'Vencido há '+Math.abs(days)+' dia(s)':days===0?'Vence hoje':'Vence em '+days+' dia(s)'})}
+  if(received){const days=daysBetween(received);if(days>=90)attention.push({productId:p.id,kind:'Muito tempo em estoque',priority:2,product:p.name,lot:l.lotNumber||'Não informado',qty:l.quantity,unit:p.unit||'unidades',date:l.receivedAt,days,reason:'Recebido há '+days+' dia(s)'})}
  });
  attention.sort((a,b)=>a.priority-b.priority||a.days-b.days);
  const modal=document.getElementById('modal');
- const rows=attention.length?attention.map(a=>'<article class="stock-item-card"><div class="stock-item-main"><strong>'+esc(a.product)+'</strong><small>'+esc(a.kind)+' • Lote: '+esc(a.lot)+'</small><div class="stock-item-meta"><span class="pill">Saldo: '+Number(a.qty)+' '+esc(a.unit)+'</span><span class="pill">'+esc(a.reason)+'</span></div><small>'+ (a.kind==='Muito tempo em estoque'?'Entrada: ':'Validade: ')+lotDateLabel(a.date)+'</small></div></article>').join(''):'<p class="muted">Nenhum lote com saldo foi encontrado nessas condições nesta loja.</p>';
+ const rows=attention.length?attention.map(a=>{const p=products.find(x=>Number(x.id)===Number(a.productId)),isPromo=p?.tag==='Promoção';return '<article class="stock-item-card"><div class="stock-item-main"><strong>'+esc(a.product)+'</strong><small>'+esc(a.kind)+' • Lote: '+esc(a.lot)+'</small><div class="stock-item-meta"><span class="pill">Saldo: '+Number(a.qty)+' '+esc(a.unit)+'</span><span class="pill">'+esc(a.reason)+'</span></div><small>'+ (a.kind==='Muito tempo em estoque'?'Entrada: ':'Validade: ')+lotDateLabel(a.date)+'</small><div class="stock-item-actions"><button type="button" class="btn primary" onclick="addAttentionProductPromotion('+Number(a.productId)+',\''+esc(branchName)+'\')" '+(isPromo?'disabled':'')+'>'+(isPromo?'Já está em promoção':'⭐ Adicionar à promoção')+'</button><button type="button" class="btn" onclick="prepareAttentionGift('+Number(a.productId)+',\''+esc(branchName)+'\')">🎁 Adicionar como brinde</button></div></div></article>'}).join(''):'<p class="muted">Nenhum lote com saldo foi encontrado nessas condições nesta loja.</p>';
  modal.innerHTML='<div class="modalbox stock-edit-modal"><h2>Produtos que precisam de atenção</h2><p class="small muted">'+esc(branchName)+' • Vencimento em até 30 dias ou estoque há 90 dias ou mais</p><div class="stock-attention-summary"><strong>'+attention.length+'</strong><span>registro(s) para verificar</span></div>'+rows+'<div class="stock-edit-actions"><button type="button" class="btn primary" onclick="closeModal()">Fechar</button></div></div>';
+ modal.classList.remove('hidden');
+}
+async function addAttentionProductPromotion(productId,branchName){
+ if(role!=='Proprietário'&&role!=='Gerente'){toast('Somente proprietário ou gerente pode alterar promoções.');return}
+ const product=products.find(p=>Number(p.id)===Number(productId));if(!product)return;
+ if(product.tag==='Promoção'){toast('Este produto já está na promoção.');return}
+ const {error}=await supabaseClient.from('produtos').update({etiqueta:'Promoção'}).eq('id',productId);
+ if(error){toast('Não foi possível adicionar à promoção: '+error.message);return}
+ product.tag='Promoção';toast(product.name+' foi adicionado à vitrine de Promoção.');
+ await loadProductsFromSupabase(true);showStockAttention(branchName);
+}
+function prepareAttentionGift(productId,branchName){
+ const product=products.find(p=>Number(p.id)===Number(productId));if(!product)return;
+ const modal=document.getElementById('modal');
+ modal.innerHTML='<div class="modalbox stock-edit-modal"><h2>Adicionar como brinde</h2><p><strong>'+esc(product.name)+'</strong></p><p class="small muted">Este produto está na unidade '+esc(branchName)+'. Antes de disponibilizá-lo na vitrine de brindes, precisamos reservar as unidades do estoque de venda para evitar que a mesma unidade seja vendida e oferecida como resgate.</p><p>O brinde deve ficar disponível somente para clientes desta unidade ou para clientes de todas as unidades?</p><div class="stock-edit-actions"><button type="button" class="btn primary" onclick="closeModal()">Entendi</button><button type="button" class="btn" onclick="closeModal()">Cancelar</button></div></div>';
  modal.classList.remove('hidden');
 }
 function stockView(){
