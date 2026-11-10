@@ -823,10 +823,11 @@ function orderFlowRank(o){
  const status=String(o.status||'').trim().toLocaleLowerCase('pt-BR');
  if(['cancelado','cancelada'].includes(status))return -1;
  if(['retirada concluída','entrega concluída','concluído','concluída','finalizado','finalizada'].includes(status))return 8;
- if(['saiu para entrega','em rota de entrega','disponível para retirada','aguardando retirada'].includes(status))return 7;
- if(['em embalagem','embalagem','embalando'].includes(status))return 6;
- if(['conferência concluída','conferencia concluida','em conferência','em conferencia'].includes(status))return 5;
- if(['em separação','em separacao','separação','separacao','aguardando conferência','aguardando conferencia'].includes(status))return 4;
+ if(['saiu para entrega','em rota de entrega','disponível para retirada','aguardando retirada'].includes(status))return 8;
+ if(['em embalagem','embalagem','embalando'].includes(status))return 7;
+ if(['conferência concluída','conferencia concluida'].includes(status))return 6;
+ if(['aguardando conferência','aguardando conferencia','em conferência','em conferencia'].includes(status))return 5;
+ if(['em separação','em separacao','separação','separacao'].includes(status))return 4;
  if(o.paymentConfirmed)return 3;
  if(o.assignedTo)return 2;
  return 0;
