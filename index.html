@@ -455,6 +455,33 @@ button:focus-visible,.btn:focus-visible{outline:2px solid #f9d328!important;outl
 .customer-redemption-info p{margin:0;font-size:9px;line-height:1.2;color:var(--muted)}
 .customer-redemption-status{font-size:9px;font-weight:800;color:var(--gold);overflow-wrap:anywhere}
 
+
+/* Catálogo compacto: abas superiores e filtros alinhados */
+#productCatalogLayout{display:block!important}
+#customerProductsTitle.section-title{display:flex!important;align-items:flex-end;justify-content:space-between;gap:12px;flex-wrap:wrap}
+.product-heading{display:flex;flex-direction:column;gap:8px;min-width:0}
+.product-heading h3{margin:0;color:var(--gold);font-size:22px}
+.customer-product-tabs{display:flex;align-items:center;gap:5px;flex-wrap:wrap}
+.customer-product-tabs button{border:1px solid rgba(255,220,0,.28);background:#17120c;color:#eee;border-radius:8px;padding:6px 10px;font-size:11px;font-weight:800;white-space:nowrap}
+.customer-product-tabs button.active{background:linear-gradient(100deg,var(--gold),var(--orange));color:#17100a;border-color:transparent}
+.product-top-filters{display:flex;align-items:flex-end;gap:6px;flex:1;justify-content:flex-end}
+.product-top-filter{min-width:100px;flex:1;max-width:180px}
+.product-top-filter label{font-size:9px}
+.product-top-filter select{font-size:11px;padding:7px 6px}
+.reward-back-btn{display:inline-flex;width:auto;margin:0 0 12px;padding:7px 10px;font-size:12px}
+#customerRewardsSection .reward-showcase-heading{display:block}
+@media(max-width:600px){
+ #customerProductsTitle.section-title{align-items:stretch;gap:9px}
+ .product-heading{width:100%;gap:7px}
+ .product-heading h3{font-size:18px}
+ .customer-product-tabs{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:4px}
+ .customer-product-tabs button{padding:7px 3px;font-size:9px;white-space:normal}
+ .product-top-filters{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));width:100%;gap:5px}
+ .product-top-filter{min-width:0;max-width:none}
+ .product-top-filter label{font-size:8px}
+ .product-top-filter select{font-size:9px;padding:7px 3px}
+ .reward-back-btn{font-size:11px;padding:7px 9px}
+}
 </style>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js" defer></script>
 </head>
@@ -503,14 +530,22 @@ button:focus-visible,.btn:focus-visible{outline:2px solid #f9d328!important;outl
  <div class="hero staff-login-card"><h2>Acesso da equipe</h2><p class="muted">Entre com seu e-mail e senha de acesso.</p><label for="staffUser">E-mail</label><input id="staffUser" type="email" autocomplete="username" placeholder="seu e-mail cadastrado"><label for="staffPass">Senha</label><input id="staffPass" type="password" autocomplete="current-password" placeholder="Sua senha"><div class="staff-login-actions"><button class="btn primary" id="staffLoginBtn" onclick="staffLogin()">Entrar</button><button class="btn" id="staffResetBtn" onclick="requestStaffPasswordReset()">Solicitar reset de senha</button><button class="btn staff-login-back" onclick="show('start')">Voltar</button></div><p class="small muted staff-login-note">A unidade e as permissões são identificadas pelo cadastro feito pelo proprietário.</p></div>
 </section>
 <section id="customer" class="hidden">
- <div id="customerShop"><section id="customerRewardsSection" class="card reward-showcase hidden"><div class="reward-showcase-heading"><div><h3>🎁 Brindes disponíveis</h3><p>Escolha um brinde e solicite a liberação no balcão.</p><strong id="customerRewardPoints" class="reward-points">Seus pontos: 0</strong></div><span class="pill">Clube Bombastic</span></div><div id="customerRewards" class="grid cards reward-showcase-grid"><p class="muted">Carregando brindes disponíveis...</p></div><div id="customerRedemptionHistory"></div></section><div id="customerProductsTitle" class="section-title"><h3>Produtos</h3><div class="product-top-filters"><div class="product-top-filter"><label for="brandFilter">Marca</label><select id="brandFilter" onchange="setProductBrand(this.value)"><option value="Todas">Todas as marcas</option></select></div><div class="product-top-filter"><label for="productSort">Ordenar por preço</label><select id="productSort" onchange="setProductSort(this.value)"><option value="padrao">Mais relevantes</option><option value="menor">Menor preço</option><option value="maior">Maior preço</option></select></div></div></div>
-  <div id="productCatalogLayout">
-   <aside id="categoryMenuPanel" class="category-menu-panel" aria-label="Filtros do catálogo">
-    <div class="category-filter-group"><strong>Vitrine</strong><button class="btn active" data-tag="Todos" onclick="selectProductTag('Todos')">Todos</button><button class="btn" data-tag="Oferta Especial" onclick="selectProductTag('Oferta Especial')">Oferta especial</button><button class="btn" data-tag="Promoção" onclick="selectProductTag('Promoção')">Promoção</button><button class="btn" id="customerGiftsTab" onclick="showCustomerShopTab('brindes')">🎁 Brindes</button></div>
-    <div class="category-filter-group"><strong>Categoria</strong><div id="categoryFilterOptions"></div></div>
-   </aside>
-   <div id="products" class="grid cards"></div>
+ <div id="customerShop"><section id="customerRewardsSection" class="card reward-showcase hidden"><div class="reward-showcase-heading"><button type="button" class="btn reward-back-btn" onclick="showCustomerShopTab('produtos')">← Voltar para produtos</button><div><h3>🎁 Brindes disponíveis</h3><p>Escolha um brinde e solicite a liberação no balcão.</p><strong id="customerRewardPoints" class="reward-points">Seus pontos: 0</strong></div><span class="pill">Clube Bombastic</span></div><div id="customerRewards" class="grid cards reward-showcase-grid"><p class="muted">Carregando brindes disponíveis...</p></div><div id="customerRedemptionHistory"></div></section><div id="customerProductsTitle" class="section-title">
+  <div class="product-heading"><h3>Produtos</h3>
+   <nav class="customer-product-tabs" aria-label="Seções de produtos">
+    <button type="button" class="active" data-shop-tab="Todos" onclick="selectProductTag('Todos')">Todos</button>
+    <button type="button" data-shop-tab="Oferta Especial" onclick="selectProductTag('Oferta Especial')">Oferta especial</button>
+    <button type="button" data-shop-tab="Promoção" onclick="selectProductTag('Promoção')">Promoção</button>
+    <button type="button" data-shop-tab="Brindes" onclick="showCustomerShopTab('brindes')">Brindes</button>
+   </nav>
   </div>
+  <div class="product-top-filters">
+   <div class="product-top-filter"><label for="categoryFilter">Categoria</label><select id="categoryFilter" onchange="selectProductCategory(this.value)"><option value="Todas">Todas</option></select></div>
+   <div class="product-top-filter"><label for="brandFilter">Marca</label><select id="brandFilter" onchange="setProductBrand(this.value)"><option value="Todas">Todas as marcas</option></select></div>
+   <div class="product-top-filter"><label for="productSort">Ordenar por preço</label><select id="productSort" onchange="setProductSort(this.value)"><option value="padrao">Relevância</option><option value="menor">Menor preço</option><option value="maior">Maior preço</option></select></div>
+  </div>
+ </div>
+ <div id="productCatalogLayout"><div id="products" class="grid cards"></div></div>
   <div id="customerCartSection" class="card" style="margin-top:22px"><h3 class="section-title">Meu carrinho</h3><p><strong id="cartCount">0 unidades</strong> • Total: <strong id="cartTotal">R$ 0,00</strong></p><div id="cartItems">Seu carrinho está vazio.</div><div class="row" style="display:flex;gap:8px;flex-wrap:wrap;margin-top:12px"><button class="btn" id="clearCartBtn" onclick="clearCart(event)" disabled>Limpar carrinho</button><button class="btn primary" onclick="checkout()">Finalizar pedido</button></div></div>
   <section class="customer-benefits card" aria-label="Informações sobre cashback e fidelidade"><button class="btn customer-benefits-toggle" id="customerBenefitsToggle" type="button" aria-expanded="false" onclick="toggleCustomerBenefits()">Saiba mais sobre cashback e plano de fidelidade</button><div id="customerBenefitsInfo" class="customer-benefits-info hidden"><h3>Cashback</h3><ul><li>Você acumula 5% de cashback em compras a partir de R$ 100,00.</li><li>Cada crédito tem validade de 90 dias.</li><li>Quando a opção de utilização estiver disponível no checkout, será possível usar parte ou todo o saldo, limitado a 50% do valor da compra.</li></ul><p class="small muted">A utilização do cashback como desconto ainda não está ativa no checkout.</p><h3>Plano de fidelidade</h3><ul><li>Você acumula 1 ponto a cada R$ 10,00 em compras, conforme a regra cadastrada.</li><li><strong>Bronze:</strong> abaixo de R$ 500,00 em compras nos últimos 12 meses.</li><li><strong>Prata:</strong> a partir de R$ 500,00.</li><li><strong>Ouro:</strong> a partir de R$ 1.500,00.</li><li>Os pontos podem ser trocados por brindes disponíveis na vitrine, conforme saldo de pontos e estoque.</li></ul><p class="small muted">Pontos e cashback são benefícios diferentes. A categoria considera o total comprado nos últimos 12 meses.</p></div></section>
  </div>
@@ -583,7 +618,7 @@ function copyPixKey(key){if(navigator.clipboard?.writeText){navigator.clipboard.
 function copyPixPayload(){let el=document.getElementById('pixPayload');if(!el)return;el.select();document.execCommand('copy');toast('Código Pix copiado.')}
 async function chooseBranch(b){
  if(!branches[b]){toast('Selecione uma loja válida.');return}
- branch=b;try{localStorage.setItem('bombastic_customer_branch',b)}catch(e){}adultConfirmed=false;pendingCustomerCatalog=false;
+ branch=b;try{localStorage.setItem('bombastic_customer_branch',b);sessionStorage.setItem('bombastic_customer_branch',b)}catch(e){}adultConfirmed=false;pendingCustomerCatalog=false;
  document.getElementById('branch-label').textContent=b;
  document.getElementById('customerStoreName').textContent=b;
  document.getElementById('cpf').value='';document.getElementById('clientPassword').value='';
@@ -655,16 +690,16 @@ async function applyCustomerSession(result){
  if(result.forcePasswordChange){pendingTemporaryCpf=customer.cpf;show('forceClientPassword');document.getElementById('forcedCpf').value=customer.cpf||'';toast('Informe o código temporário fornecido pela equipe e crie uma nova senha.');return}
  const session=result?.session;if(!session)throw new Error('O servidor não retornou uma sessão válida.');
  const {data,error}=await supabaseClient.auth.setSession({access_token:session.access_token,refresh_token:session.refresh_token});if(error)throw error;
- clientAuthUser=data.user;client={id:customer.id,cpf:customer.cpf,name:customer.nome||'',phone:customer.telefone||'',email:'',photoUrl:'',address:'',neighborhood:'',city:'',complement:'',reference:'',points:0,cashbackLots:[],spent12m:0,history:[]};try{if(branch)localStorage.setItem('bombastic_customer_branch',branch)}catch(e){}
+ clientAuthUser=data.user;client={id:customer.id,cpf:customer.cpf,name:customer.nome||'',phone:customer.telefone||'',email:'',photoUrl:'',address:'',neighborhood:'',city:'',complement:'',reference:'',points:0,cashbackLots:[],spent12m:0,history:[]};try{if(branch){localStorage.setItem('bombastic_customer_branch',branch);sessionStorage.setItem('bombastic_customer_branch',branch)}}catch(e){}
  pendingCustomerCatalog=true;adultConfirmed=false;show('ageGate');
 }
 async function openCustomer(){
  if(!clientAuthUser||!client||!branch)return;
  document.getElementById('myOrdersBtn')?.classList.remove('hidden');
  document.getElementById('profile').classList.remove('hidden');document.getElementById('profile-name').textContent=client.name||'Cliente';await loadClientProfilePhoto();renderClientAvatar(client.photoUrl,client.name);
- document.getElementById('customerStoreName').textContent=branch;document.getElementById('customerSummary').classList.remove('hidden');document.getElementById('welcome').textContent='Bem-vindo, '+((client.name||'cliente').trim().split(/\s+/)[0])+'!';
+ document.getElementById('customerStoreName').textContent=branch;try{localStorage.setItem('bombastic_customer_branch',branch);sessionStorage.setItem('bombastic_customer_branch',branch)}catch(e){}activeFilter='Todos';activeProductCategory='Todas';activeProductBrand='Todas';productSort='padrao';document.getElementById('customerSummary').classList.remove('hidden');document.getElementById('welcome').textContent='Bem-vindo, '+((client.name||'cliente').trim().split(/\s+/)[0])+'!';
  try{await loadCustomerLoyalty()}catch(e){console.warn('Não foi possível carregar a fidelidade:',e)}
- document.getElementById('points').textContent=(client.points||0)+' pts';const tierProgress=document.getElementById('customerTierProgress');if(tierProgress){const spent=Number(client.spent12m)||0,prata=Number(loyaltyRules.prata_minimo)||500,ouro=Number(loyaltyRules.ouro_minimo)||1500,each=Number(loyaltyRules.pontos_a_cada)||10;let target=0,next='';if(tier==='Bronze'){target=prata;next='Prata'}else if(tier==='Prata'){target=ouro;next='Ouro'}if(next){const missingMoney=Math.max(0,target-spent),missingPoints=Math.ceil(missingMoney/each);tierProgress.textContent=missingPoints===1?'Falta 1 ponto para o nível '+next:'Faltam '+missingPoints+' pontos para o nível '+next}else{tierProgress.textContent='Você já chegou ao nível máximo'} }const giftPoints=document.getElementById('customerRewardPoints');if(giftPoints)giftPoints.textContent='Seus pontos: '+(client.points||0);const tier=customerTier(client),tierEl=document.getElementById('customerTier');tierEl.textContent=tier;tierEl.classList.remove('tier-bronze','tier-prata','tier-ouro');tierEl.classList.add('tier-'+tier.toLocaleLowerCase('pt-BR'));document.getElementById('cashback').textContent=money(cashbackBalance(client));
+ document.getElementById('points').textContent=(client.points||0)+' pts';const tierProgress=document.getElementById('customerTierProgress');if(tierProgress){const spent=Number(client.spent12m)||0,prata=Number(loyaltyRules.prata_minimo)||500,ouro=Number(loyaltyRules.ouro_minimo)||1500,each=Number(loyaltyRules.pontos_a_cada)||10;let target=0,next='';if(tier==='Bronze'){target=prata;next='Prata'}else if(tier==='Prata'){target=ouro;next='Ouro'}if(next){const missingMoney=Math.max(0,target-spent),missingPoints=Math.ceil(missingMoney/each);tierProgress.textContent=missingPoints===1?'Falta 1 ponto para o nível '+next:'Faltam '+missingPoints+' pontos para o nível '+next}else{tierProgress.textContent='Você já chegou ao nível máximo'} }const giftPoints=document.getElementById('customerRewardPoints');if(giftPoints)giftPoints.textContent='Seus pontos: '+(client.points||0);const tierEl=document.getElementById('customerTier');tierEl.textContent=tier;tierEl.classList.remove('tier-bronze','tier-prata','tier-ouro');tierEl.classList.add('tier-'+tier.toLocaleLowerCase('pt-BR'));document.getElementById('cashback').textContent=money(cashbackBalance(client));
  show('customer');refreshProductFilters();renderProducts();renderCart();renderCustomerRewards();
 }
 async function checkCustomerCpf(){
@@ -900,22 +935,32 @@ document.getElementById('modal').classList.remove('hidden')}
 async function saveClientProfile(){if(!client)return;var name=document.getElementById('editClientName').value.trim(),phone=document.getElementById('editClientPhone').value.trim(),photoFile=document.getElementById('editClientPhoto')?.files?.[0]||null;if(!name){toast('Informe seu nome completo.');return}if(!checkBrazilPhone(document.getElementById('editClientPhone')))return;if(photoFile&&(!photoFile.type.startsWith('image/')||photoFile.size>5*1024*1024)){toast('Selecione uma imagem de até 5 MB.');return}let photoUrl=client.photoUrl||null;if(photoFile){const ext=(photoFile.name.split('.').pop()||'jpg').toLowerCase().replace(/[^a-z0-9]/g,'')||'jpg',path='clientes/'+clientAuthUser.id+'/'+Date.now()+'.'+ext;const {error:uploadError}=await supabaseClient.storage.from('bombastic-perfis').upload(path,photoFile,{upsert:false,contentType:photoFile.type||'image/jpeg'});if(uploadError){toast('Não foi possível enviar a foto: '+uploadError.message);return}photoUrl=supabaseClient.storage.from('bombastic-perfis').getPublicUrl(path).data.publicUrl}const updated={nome:name,telefone:phone.replace(/\D/g,''),endereco:document.getElementById('editClientAddress').value.trim(),bairro:document.getElementById('editClientNeighborhood').value.trim(),cidade:document.getElementById('editClientCity').value.trim(),complemento:document.getElementById('editClientComplement').value.trim(),referencia:document.getElementById('editClientReference').value.trim(),foto_url:photoUrl};const {error}=await supabaseClient.from('clientes').update(updated).eq('auth_user_id',clientAuthUser.id);if(error){toast('Não foi possível salvar o perfil: '+error.message);return}Object.assign(client,{name:updated.nome,phone:updated.telefone,address:updated.endereco,neighborhood:updated.bairro,city:updated.cidade,complement:updated.complemento,reference:updated.referencia,photoUrl:photoUrl||''});document.getElementById('profile-name').textContent=client.name;renderClientAvatar(client.photoUrl,client.name);document.getElementById('welcome').textContent='Bem-vindo, '+((client.name||'cliente').trim().split(/\s+/)[0])+'!';closeModal();toast('Perfil atualizado e sincronizado.')}
 function cashbackBalance(c){return (c.cashbackLots||[]).filter(x=>new Date(x.expires)>new Date()).reduce((a,x)=>a+x.amount,0)}
 function toggleCustomerBenefits(){const panel=document.getElementById("customerBenefitsInfo"),button=document.getElementById("customerBenefitsToggle");if(!panel||!button)return;const opening=panel.classList.contains("hidden");panel.classList.toggle("hidden",!opening);button.setAttribute("aria-expanded",String(opening))}
-function toggleCategoryMenu(){const panel=document.getElementById('categoryMenuPanel'),btn=document.getElementById('categoryMenuToggle');const opening=panel.hidden;panel.hidden=!opening;btn.setAttribute('aria-expanded',String(opening));if(opening)refreshProductFilters()}
-function showCustomerShopTab(tab){const gifts=tab==='brindes',s=document.getElementById('customerRewardsSection'),t=document.getElementById('customerProductsTitle'),l=document.getElementById('productCatalogLayout'),cart=document.getElementById('customerCartSection'),btn=document.getElementById('customerGiftsTab');if(s)s.classList.toggle('hidden',!gifts);if(t)t.classList.toggle('hidden',gifts);if(l)l.classList.toggle('hidden',gifts);if(cart)cart.classList.toggle('hidden',gifts);if(btn)btn.classList.toggle('active',gifts);if(gifts){renderCustomerRewards();s&&s.scrollIntoView({behavior:'smooth',block:'start'})}}function selectProductTag(f){showCustomerShopTab('produtos');activeFilter=f;renderProducts();syncProductFilterButtons()}
+function toggleCategoryMenu(){refreshProductFilters()}
+function showCustomerShopTab(tab){
+ const gifts=tab==='brindes',section=document.getElementById('customerRewardsSection'),title=document.getElementById('customerProductsTitle'),layout=document.getElementById('productCatalogLayout'),cartSection=document.getElementById('customerCartSection');
+ if(section)section.classList.toggle('hidden',!gifts);
+ if(title)title.classList.toggle('hidden',gifts);
+ if(layout)layout.classList.toggle('hidden',gifts);
+ if(cartSection)cartSection.classList.toggle('hidden',gifts);
+ document.querySelectorAll('[data-shop-tab]').forEach(btn=>btn.classList.toggle('active',gifts?btn.dataset.shopTab==='Brindes':btn.dataset.shopTab===activeFilter));
+ if(gifts){renderCustomerRewards();section&&section.scrollIntoView({behavior:'smooth',block:'start'})}
+ else{window.scrollTo({top:0,behavior:'smooth'});renderProducts()}
+}
+function selectProductTag(tag){activeFilter=tag;activeProductCategory='Todas';activeProductBrand='Todas';productSort='padrao';showCustomerShopTab('produtos');renderProducts()}
 function productTagList(p){return String(p?.tag||'Todos').split(',').map(x=>x.trim()).filter(Boolean)}
-function selectProductCategory(f){activeProductCategory=f;renderProducts();syncProductFilterButtons()}
+function selectProductCategory(f){activeProductCategory=f;renderProducts()}
 function setProductBrand(v){activeProductBrand=v;renderProducts()}
 function setProductSort(v){productSort=v;renderProducts()}
 function filterProducts(f){selectProductTag(f)}
-function syncProductFilterButtons(){document.querySelectorAll('#categoryMenuPanel [data-tag]').forEach(b=>b.classList.toggle('active',b.dataset.tag===activeFilter));document.querySelectorAll('#categoryMenuPanel [data-product-category]').forEach(b=>b.classList.toggle('active',b.dataset.productCategory===activeProductCategory))}
+function syncProductFilterButtons(){document.querySelectorAll('[data-shop-tab]').forEach(b=>b.classList.toggle('active',b.dataset.shopTab===activeFilter))}
 function refreshProductFilters(){
  const categories=[...new Set(products.map(p=>String(p.category||'Outros').trim()).filter(Boolean))].sort((a,b)=>a.localeCompare(b,'pt-BR'));
  const brands=[...new Set(products.map(p=>String(p.brand||'').trim()).filter(Boolean))].sort((a,b)=>a.localeCompare(b,'pt-BR'));
- const categoryBox=document.getElementById('categoryFilterOptions'),brandSelect=document.getElementById('brandFilter'),sortSelect=document.getElementById('productSort');
- if(categoryBox)categoryBox.innerHTML='<button class="btn '+(activeProductCategory==='Todas'?'active':'')+'" data-product-category="Todas" onclick="selectProductCategory(\'Todas\')">Todas as categorias</button>'+categories.map(c=>'<button class="btn '+(activeProductCategory===c?'active':'')+'" data-product-category="'+esc(c)+'" onclick="selectProductCategory(\''+esc(c).replace(/\\'/g,"\\\\'")+'\')">'+esc(c)+'</button>').join('');
+ const categorySelect=document.getElementById('categoryFilter'),brandSelect=document.getElementById('brandFilter'),sortSelect=document.getElementById('productSort');
+ if(categorySelect){const keep=activeProductCategory;categorySelect.innerHTML='<option value="Todas">Todas</option>'+categories.map(c=>'<option value="'+esc(c)+'">'+esc(c)+'</option>').join('');categorySelect.value=categories.includes(keep)?keep:'Todas';if(categorySelect.value!==keep)activeProductCategory='Todas'}
  if(brandSelect){const keep=activeProductBrand;brandSelect.innerHTML='<option value="Todas">Todas as marcas</option>'+brands.map(b=>'<option value="'+esc(b)+'">'+esc(b)+'</option>').join('');brandSelect.value=brands.includes(keep)?keep:'Todas';if(brandSelect.value!==keep)activeProductBrand='Todas'}
  if(sortSelect)sortSelect.value=productSort;
- syncProductFilterButtons()
+ document.querySelectorAll('[data-shop-tab]').forEach(btn=>btn.classList.toggle('active',btn.dataset.shopTab===activeFilter));
 }
 function renderProducts(){
  let list=products.filter(p=>branchStock(p,branch)>0&&(activeFilter==='Todos'||productTagList(p).includes(activeFilter))&&(activeProductCategory==='Todas'||String(p.category||'Outros').trim()===activeProductCategory)&&(activeProductBrand==='Todas'||String(p.brand||'').trim()===activeProductBrand));
@@ -1886,7 +1931,7 @@ async function restoreCustomerSession(){
   if(profileError)throw profileError;
   if(!profileData||profileData.ativo===false)return;
   let savedBranch='';
-  try{savedBranch=localStorage.getItem('bombastic_customer_branch')||''}catch(e){}
+  try{savedBranch=localStorage.getItem('bombastic_customer_branch')||sessionStorage.getItem('bombastic_customer_branch')||''}catch(e){}
   if(!branches[savedBranch])return;
   clientAuthUser=session.user;
   client={id:profileData.id,cpf:profileData.cpf,name:profileData.nome||'',phone:profileData.telefone||'',email:profileData.email||'',photoUrl:'',address:profileData.endereco||'',neighborhood:profileData.bairro||'',city:profileData.cidade||'',complement:profileData.complemento||'',reference:profileData.referencia||'',points:0,cashbackLots:[],spent12m:0,history:[]};
