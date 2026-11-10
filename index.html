@@ -581,12 +581,36 @@ async function openMyOrders(){
   const cards=list.map(o=>{
    const items=Array.isArray(o.itens)?o.itens.map(i=>'<li>'+esc(i.nome)+' • '+Number(i.quantidade||0)+' un. • '+money(i.subtotal)+'</li>').join(''):'';
    const canConfirm=o.tipo_recebimento==='Delivery'&&o.status==='Em entrega';
-   return '<div class="card" style="margin:10px 0"><strong>Pedido #'+String(o.id).slice(-6)+'</strong><p>Status: <strong>'+esc(o.status)+'</strong></p><p>Recebimento: '+esc(o.tipo_recebimento||'Retirar na loja')+' • Total: '+money(o.total)+'</p>'+(o.endereco_entrega?'<p>Endereço: '+esc(o.endereco_entrega)+'</p>':'')+'<ul>'+items+'</ul>'+(canConfirm?'<button class="btn primary" onclick="confirmDeliveryReceipt('+Number(o.id)+')">Confirmar que recebi o pedido</button>':'')+'</div>';
+   const pickupCode=o.tipo_recebimento==='Retirar na loja'&&['Em separação','Em embalagem','Aguardando retirada'].includes(o.status);
+   return '<div class="card" style="margin:10px 0"><strong>Pedido #'+String(o.id).slice(-6)+'</strong><p>Status: <strong>'+esc(o.status)+'</strong></p><p>Recebimento: '+esc(o.tipo_recebimento||'Retirar na loja')+' • Total: '+money(o.total)+'</p>'+(pickupCode?'<div class="notice"><strong>Código para retirar na loja: '+esc(o.codigo_publico||'Consulte a equipe')+'</strong><p>Quando chegar à loja, informe seu nome e este código ao funcionário.</p></div>':'')+(o.endereco_entrega?'<p>Endereço: '+esc(o.endereco_entrega)+'</p>':'')+'<ul>'+items+'</ul>'+(canConfirm?'<button class="btn primary" onclick="confirmDeliveryReceipt('+Number(o.id)+')">Confirmar que recebi o pedido</button>':'')+'</div>';
   }).join('');
   const box=document.querySelector('#modal .modalbox');
   box.innerHTML='<h2 style="color:var(--gold)">Meus pedidos</h2>'+(cards||'<p>Você ainda não tem pedidos registrados.</p>')+'<button class="btn" onclick="closeModal()">Fechar</button>';
   document.getElementById('modal').classList.remove('hidden');
  }catch(e){toast('Não foi possível carregar seus pedidos: '+(e.message||'tente novamente.'))}
+}
+
+async function confirmStorePickup(id){
+ if(!['Proprietário','Gerente','Vendedor'].includes(role)){toast('Somente funcionários podem confirmar a retirada.');return}
+ const o=orders.find(x=>Number(x.id)===Number(id));
+ if(!o||o.pickup!=='Retirar na loja'||o.status!=='Aguardando retirada'){toast('Este pedido não está aguardando retirada na loja.');return}
+ const code=prompt('Peça ao cliente o código de retirada:');
+ if(code===null)return;
+ const name=prompt('Confirme o nome completo do cliente:');
+ if(name===null)return;
+ if(!code.trim()||!name.trim()){toast('Informe o código e o nome do cliente.');return}
+ if(!confirm('Confirma que o cliente '+name.trim()+' retirou o pedido #'+String(id).slice(-6)+'?'))return;
+ try{
+  const {data,error}=await supabaseClient.rpc('confirmar_retirada_loja',{p_pedido_id:Number(id),p_codigo:code.trim(),p_nome:name.trim()});
+  if(error)throw error;
+  if(data?.success!==true)throw new Error('O banco não confirmou a retirada.');
+  await loadProductsFromSupabase(true);
+  await loadOrdersFromSupabase();
+  window.bombasticOrderTab=7;
+  refreshOrderAlarmState();
+  toast('Retirada confirmada. Pedido concluído e entregue ao cliente.');
+  await openModule('Pedidos e atendimento');
+ }catch(e){toast('Não foi possível confirmar a retirada: '+(e.message||'tente novamente.'))}
 }
 async function confirmDeliveryReceipt(id){
  if(!clientAuthUser||!client){toast('Entre na sua conta para confirmar o recebimento.');return}
@@ -871,42 +895,46 @@ async function saveTeamAssignment(id){
 }
 function overviewView(){let total=sales.reduce((a,s)=>a+s.total,0);return `<div class="grid cards"><div class="card"><p>Pedidos pendentes</p><div class="stat">${orders.filter(o=>!['Retirada concluída','Entrega concluída','Cancelado'].includes(o.status)).length}</div></div><div class="card"><p>Vendas registradas</p><div class="stat">${sales.length}</div></div><div class="card"><p>Faturamento registrado</p><div class="stat">${money(total)}</div></div><div class="card"><p>Produtos cadastrados</p><div class="stat">${products.length}</div></div></div><h4>Unidades</h4><table class="table"><tr><th>Unidade</th><th>Pedidos</th><th>Vendas</th></tr>${Object.keys(branches).map(b=>`<tr><td>${esc(b)}</td><td>${orders.filter(o=>o.branch===b).length}</td><td>${money(sales.filter(s=>s.branch===b).reduce((a,s)=>a+s.total,0))}</td></tr>`).join('')}</table>`}
 function nextOrderAction(o){
- const status=String(o.status||'').trim(),delivery=o.pickup==='Delivery';
+ const status=String(o.status||'').trim(),pickup=o.pickup||'Retirar na loja';
  if(['Cancelado','Estornado','Retirada concluída','Entrega concluída','Concluído e entregue'].includes(status)||o.completedAt)return null;
  if(status==='Aguardando atendimento'&&!o.assignedTo)return 'Assumir pedido';
  if(status==='Aguardando confirmação de pagamento'&&o.assignedTo&&!o.paymentConfirmed)return 'Pagamento confirmado';
- if(status==='Em preparação'&&o.assignedTo&&o.paymentConfirmed)return 'Preparação concluída';
- if((status==='Em embalagem'||status==='Aguardando retirada')&&!delivery&&o.assignedTo&&o.paymentConfirmed)return 'Concluir embalagem';
- if((status==='Aguardando motoboy'||status==='Aguardando retirada')&&delivery&&o.assignedTo&&o.paymentConfirmed)return 'Iniciar entrega';
+ if(status==='Em separação'&&pickup==='Retirar na loja'&&o.assignedTo&&o.paymentConfirmed)return 'Separação concluída';
+ if(status==='Em preparação'&&pickup!=='Retirar na loja'&&o.assignedTo&&o.paymentConfirmed)return 'Preparação concluída';
+ if(status==='Em embalagem'&&pickup==='Retirar na loja'&&o.assignedTo&&o.paymentConfirmed)return 'Embalagem concluída';
+ if(status==='Em embalagem'&&pickup==='Comprar na loja'&&o.assignedTo&&o.paymentConfirmed)return 'Concluir embalagem';
+ if(status==='Aguardando motoboy'&&pickup==='Delivery'&&o.assignedTo&&o.paymentConfirmed)return 'Iniciar entrega';
  return null;
 }
 function orderFlowRank(o){
  const s=String(o.status||'').trim().toLocaleLowerCase('pt-BR');
  if(['cancelado','cancelada','estornado'].includes(s))return -1;
- if(['concluído e entregue','retirada concluída','entrega concluída'].includes(s))return 6;
- if(s==='em entrega')return 5;
- if(s==='aguardando motoboy')return 4;
- if(s==='em embalagem'||s==='aguardando retirada')return 3;
- if(s==='em preparação')return 2;
+ if(['concluído e entregue','retirada concluída','entrega concluída'].includes(s))return 7;
+ if(s==='em entrega')return 6;
+ if(s==='aguardando motoboy')return 5;
+ if(s==='aguardando retirada')return 4;
+ if(s==='em embalagem')return 3;
+ if(s==='em separação'||s==='em preparação')return 2;
  if(s==='aguardando confirmação de pagamento'||o.assignedTo)return 1;
  return 0;
 }
 function orderStage(o){
- const s=String(o.status||'').trim().toLocaleLowerCase('pt-BR'),delivery=o.pickup==='Delivery';
- if(['cancelado','cancelada','estornado'].includes(s))return 7;
- if(['concluído e entregue','retirada concluída','entrega concluída','concluído','concluída','finalizado','finalizada'].includes(s))return 6;
- if(s==='em entrega'||['saiu para entrega','em rota de entrega'].includes(s))return 5;
- if(s==='aguardando motoboy')return 4;
- if(s==='em embalagem'||s==='embalagem'||s==='embalando'||s==='aguardando retirada'||s==='disponível para retirada')return delivery?4:3;
- if(s==='em preparação'||['conferência concluída','conferencia concluida','em separação','em separacao','separação','separacao'].includes(s))return 2;
+ const s=String(o.status||'').trim().toLocaleLowerCase('pt-BR'),pickup=o.pickup||'Retirar na loja';
+ if(['cancelado','cancelada','estornado'].includes(s))return 8;
+ if(['concluído e entregue','retirada concluída','entrega concluída','concluído','concluída','finalizado','finalizada'].includes(s))return 7;
+ if(s==='em entrega'||['saiu para entrega','em rota de entrega'].includes(s))return 6;
+ if(s==='aguardando motoboy')return 5;
+ if(s==='aguardando retirada')return pickup==='Retirar na loja'?4:5;
+ if(s==='em embalagem'||s==='embalagem'||s==='embalando')return 3;
+ if(s==='em separação'||s==='em preparação'||['conferência concluída','conferencia concluida','em separacao','separacao'].includes(s))return 2;
  if(s==='aguardando confirmação de pagamento'||['aguardando conferência','aguardando conferencia','em conferência','em conferencia','pedido assumido'].includes(s)||o.assignedTo&&!o.paymentConfirmed)return 1;
  return 0;
 }
 function selectOrderTab(tab){window.bombasticOrderTab=Number(tab)||0;openModule('Pedidos e atendimento')}
 function ordersView(cancelOnly=false){
  const all=orders.filter(o=>o.branch===staffBranch||role==='Proprietário').slice().sort((a,b)=>new Date(b.date||0)-new Date(a.date||0)||Number(b.id)-Number(a.id));
- const tabs=[{label:'Aguardando atendimento',stage:0},{label:'Aguardando confirmação de pagamento',stage:1},{label:'Em preparação',stage:2},{label:'Embalagem',stage:3},{label:'Aguardando motoboy',stage:4},{label:'Em entrega',stage:5},{label:'Concluídos e entregues',stage:6},{label:'Cancelados',stage:7}];
- let active=Number.isInteger(window.bombasticOrderTab)?window.bombasticOrderTab:0;if(active<0||active>7)active=0;
+ const tabs=[{label:'Aguardando atendimento',stage:0},{label:'Aguardando confirmação de pagamento',stage:1},{label:'Separação',stage:2},{label:'Embalagem',stage:3},{label:'Aguardando retirada',stage:4},{label:'Aguardando motoboy',stage:5},{label:'Em entrega',stage:6},{label:'Concluídos e entregues',stage:7},{label:'Cancelados',stage:8}];
+ let active=Number.isInteger(window.bombasticOrderTab)?window.bombasticOrderTab:0;if(active<0||active>8)active=0;
  const counts=tabs.map(t=>all.filter(o=>orderStage(o)===t.stage).length);
  const list=all.filter(o=>orderStage(o)===active);
  const tabHtml='<div class="actions" style="display:flex;flex-wrap:wrap;gap:8px;margin:12px 0 18px">'+tabs.map((t,i)=>'<button type="button" class="btn '+(active===i?'primary':'')+'" onclick="selectOrderTab('+i+')" style="white-space:normal">'+esc(t.label)+' ('+counts[i]+')</button>').join('')+'</div>';
@@ -914,8 +942,12 @@ function ordersView(cancelOnly=false){
   const action=nextOrderAction(o),owned=(o.assignedTo&&o.assignedTo===staffActor)||role==='Proprietário',locked=o.assignedTo&&!owned;
   let actionButton='';
   if(!cancelOnly&&action){if(action==='Assumir pedido'&&!o.assignedTo)actionButton='<button type="button" class="btn assume-order" onclick="updateOrder('+o.id+',\'Assumir pedido\')">Assumir pedido</button>';else if(owned)actionButton='<button type="button" class="btn primary" onclick="updateOrder('+o.id+',\''+action+'\')">'+esc(action)+'</button>';else if(locked)actionButton='<button type="button" class="btn order-claimed" disabled>Pedido assumido por '+esc(o.assignedTo)+'</button>';}
-  const done=orderStage(o)===6;
-  const refundEligible=role==='Proprietário'&&!!o.assignedTo&&o.paymentConfirmed&&['Em preparação','Em embalagem','Aguardando motoboy','Aguardando retirada','Em entrega','Retirada concluída','Entrega concluída','Concluído e entregue'].includes(o.status);
+  if(!cancelOnly&&o.status==='Aguardando retirada'&&o.pickup==='Retirar na loja'){
+   if(owned)actionButton='<button type="button" class="btn primary" onclick="confirmStorePickup('+Number(o.id)+')">Confirmar retirada (código e nome)</button>';
+   else if(locked)actionButton='<button type="button" class="btn order-claimed" disabled>Pedido assumido por '+esc(o.assignedTo)+'</button>';
+  }
+  const done=orderStage(o)===7;
+  const refundEligible=role==='Proprietário'&&!!o.assignedTo&&o.paymentConfirmed&&['Em separação','Em preparação','Em embalagem','Aguardando motoboy','Aguardando retirada','Em entrega','Retirada concluída','Entrega concluída','Concluído e entregue'].includes(o.status);
   const refundButton=refundEligible?'<button type="button" class="btn" onclick="refundOrder('+o.id+')">Registrar e confirmar estorno</button>':'';
   const cancelButton=(role!=='Vendedor'&&o.status==='Estornado')?'<button type="button" class="btn primary" onclick="updateOrder('+o.id+',\'Cancelar pedido\')">Cancelar pedido</button>':'';
   const cancelInstruction=(cancelOnly&&role!=='Vendedor'&&o.status!=='Estornado')?'<p class="small muted">Cancelamento bloqueado: primeiro registre e confirme o estorno deste pedido.</p>':'';
@@ -936,14 +968,16 @@ async function updateOrder(id,action){
   const refreshedOrder=orders.find(x=>Number(x.id)===Number(id));
   if(!refreshedOrder)throw new Error('Pedido atualizado, mas não foi possível recarregar seus dados.');
   window.bombasticOrderTab=orderStage(refreshedOrder);
-  if(action==='Concluir embalagem')await loadProductsFromSupabase(true);
+  if(['Concluir embalagem','Confirmar retirada'].includes(action))await loadProductsFromSupabase(true);
   refreshOrderAlarmState();
-  if(action==='Concluir embalagem')toast('Pedido embalado e concluído para retirada. Estoque e histórico atualizados.');
+  if(action==='Concluir embalagem')toast('Compra feita dentro da loja concluída. Estoque e histórico atualizados.');
+  else if(action==='Separação concluída')toast('Produtos separados. Agora faça a embalagem do pedido.');
+  else if(action==='Embalagem concluída')toast('Pedido embalado e aguardando o cliente retirar na loja.');
   else if(action==='Iniciar entrega')toast('Motoboy retirou o pedido. Aguardando confirmação do cliente.');
   else if(action==='Preparação concluída')toast(data.status==='Aguardando motoboy'?'Pedido conferido. Aguardando o motoboy.':'Pedido conferido. Encaminhado para embalagem.');
   else if(action==='Cancelar pedido')toast('Pedido cancelado após estorno confirmado.');
   else if(action==='Assumir pedido')toast('Pedido assumido. Agora confirme o pagamento para avançar.');
-  else if(action==='Pagamento confirmado')toast('Pagamento confirmado. Pedido movido para Em preparação.');
+  else if(action==='Pagamento confirmado')toast(data.status==='Em separação'?'Pagamento confirmado. Pedido enviado para separação.':'Pagamento confirmado. Pedido movido para Em preparação.');
   else toast('Etapa atualizada: '+(data.status||action));
   await openModule('Pedidos e atendimento');
  }catch(e){toast('Não foi possível atualizar o pedido: '+(e.message||'tente novamente.'))}
@@ -965,7 +999,7 @@ async function refundOrder(id){
   await loadProductsFromSupabase(true);
   await loadOrdersFromSupabase();
   await loadStaffData();
-  window.bombasticOrderTab=6;
+  window.bombasticOrderTab=8;
   toast('Estorno confirmado. Agora o pedido pode ser cancelado.');
   refreshOrderAlarmState();
   openModule('Pedidos e atendimento');
