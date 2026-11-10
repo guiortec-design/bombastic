@@ -403,6 +403,21 @@ button:focus-visible,.btn:focus-visible{outline:2px solid #f9d328!important;outl
 
 
 #customerSummary #customerTierProgress{display:block;grid-column:1/-1;max-width:150px;margin:2px auto 0;color:var(--muted);font-size:9px;line-height:1.2;text-align:center;white-space:normal}
+
+/* Compactar somente os botões dos produtos em telas de computador */
+@media (min-width: 769px){
+  #products .product button,
+  #products .product .btn{
+    padding:6px 8px!important;
+    font-size:11px!important;
+    min-height:30px;
+    border-radius:8px;
+  }
+  #products .product-controls{gap:5px}
+  #products .product-qty{gap:5px}
+  #products .product-qty .btn{padding:5px 7px!important;font-size:11px!important;min-height:28px}
+  #products .product-remove{padding:6px 8px!important;font-size:11px!important}
+}
 </style>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js" defer></script>
 </head>
