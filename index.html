@@ -861,7 +861,7 @@ async function approveClientReset(id){
 }
 function sellerGoalView(){
   const profile=window.currentStaffProfile||{},name=String(profile.nome||staffActor||'').trim(),unit=staffBranch,now=new Date(),monthStart=new Date(now.getFullYear(),now.getMonth(),1),monthEnd=new Date(now.getFullYear(),now.getMonth()+1,1),goal=Number(employeeGoalSettings[Number(profile.id)]?.meta_mensal||0);
-  const ownSales=sales.filter(s=>String(s.branch||'')===unit&&String(s.assignedTo||'').trim().toLowerCase()===name.toLowerCase()&&new Date(s.saleDate||s.date)>=monthStart&&new Date(s.saleDate||s.date)<monthEnd);
+  const ownSales=sales.filter(s=>s.status!=='Estornado'&&String(s.branch||'')===unit&&String(s.assignedTo||'').trim().toLowerCase()===name.toLowerCase()&&new Date(s.saleDate||s.date)>=monthStart&&new Date(s.saleDate||s.date)<monthEnd);
   const sold=ownSales.reduce((sum,s)=>sum+Number(s.total||0),0),remaining=Math.max(0,goal-sold),pct=goal>0?Math.min(100,sold/goal*100):0,month=now.toLocaleDateString('pt-BR',{month:'long',year:'numeric'});
   return '<h3>Minha meta</h3><p class="muted">'+esc(unit)+' • '+esc(month)+'</p><section class="seller-chart-card"><h4>Meta mensal</h4><div class="owner-dashboard-total"><span>Valor vendido por você</span><strong>'+money(sold)+'</strong><small>'+ownSales.length+' venda(s) concluída(s) no mês</small></div>'+(goal>0?'<div class="seller-bar-track" style="height:18px"><i style="display:block;height:100%;width:'+pct.toFixed(1)+'%;background:linear-gradient(90deg,#f9d328,#b7e34b);border-radius:20px"></i></div><div class="seller-bar-label"><strong>'+pct.toFixed(1)+'% da meta</strong><span>Meta: '+money(goal)+'</span></div><div class="grid cards"><div class="card"><p>Falta para atingir</p><div class="stat">'+money(remaining)+'</div></div><div class="card"><p>Meta mensal</p><div class="stat">'+money(goal)+'</div></div></div>'+(sold>=goal?'<p><strong>Parabéns! Você atingiu sua meta mensal.</strong></p>':''):'<p class="muted">Sua meta mensal ainda não foi definida. Peça ao gerente ou proprietário para cadastrá-la.</p>')+'</section>';
 }
@@ -1588,7 +1588,8 @@ function managerDashboardView(scope,now,monthRows,monthTotal){
  return '<div class="owner-dashboard-total"><span>Total de vendas no mês — '+esc(scope)+'</span><strong>'+money(monthTotal)+'</strong><small>'+monthRows.length+' vendas concluídas</small></div><section class="seller-chart-card"><h4>Participação nas vendas do mês</h4><div class="seller-pie-layout">'+pie+'<div class="seller-legend">'+legend+'</div></div></section>'+goalCard+periods.map(chart).join('')+'<p class="small muted">Os vendedores identificados como fictícios são apenas demonstração visual: não possuem login, não são funcionários cadastrados no banco e não alteram o faturamento real. As metas individuais reais são cadastradas pelo proprietário. Os valores vendidos consideram apenas pedidos concluídos.</p>';
 }
 function ownerDashboardView(scope){
- if(role==='Vendedor'||role==='Gerente')scope=staffBranch;
+  if(role==='Vendedor')return sellerGoalView();
+  if(role==='Gerente')scope=staffBranch;
  if(!scope)scope=staffBranch||Object.keys(branches)[0]||'';
  dashboardScope=scope;
  const all=scope==='Todas as lojas',names=Object.keys(branches),now=new Date(),selectedMonth=Math.max(0,Math.min(11,Number(dashboardSelectedMonth)||0)),monthStart=new Date(now.getFullYear(),selectedMonth,1),monthEnd=new Date(now.getFullYear(),selectedMonth+1,1),monthKey=now.getFullYear()+'-'+String(selectedMonth+1).padStart(2,'0')+'-01',monthLabel=monthStart.toLocaleDateString('pt-BR',{month:'long'}),isCurrentMonth=selectedMonth===now.getMonth(),rows=all?names:[scope],validSale=s=>rows.includes(s.branch)&&new Date(s.saleDate||s.date)>=monthStart;
