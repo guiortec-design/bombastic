@@ -890,7 +890,7 @@ async function openMyOrders(){
    supabaseClient.from('resgates').select('id,brinde_id,pontos_utilizados,status,created_at,brindes(nome,foto_url)').eq('cliente_id',client.id).order('created_at',{ascending:false})
   ]);
   if(ordersResult.error)throw ordersResult.error;
-  if(redemptionsResult.error)throw redemptionsResult.error;
+  const redemptionWarning=redemptionsResult.error?'Os pedidos foram carregados, mas o histórico de resgates de brindes não pôde ser consultado.': '';
   const list=Array.isArray(ordersResult.data)?ordersResult.data:[];
   list.sort((a,b)=>customerOrderPriority(a.status)-customerOrderPriority(b.status)||new Date(b.created_at||0)-new Date(a.created_at||0));
   const orderCards=list.map(o=>{
@@ -906,7 +906,7 @@ async function openMyOrders(){
    const photo=r.brindes?.foto_url?'<img class="customer-redemption-photo" src="'+esc(r.brindes.foto_url)+'" alt="'+esc(giftName)+'">':'<div class="customer-redemption-photo" style="display:grid;place-items:center;font-size:24px">🎁</div>';
    return '<article class="card customer-redemption-card">'+photo+'<div class="customer-redemption-info"><strong>Resgate #R'+r.id+' — '+esc(giftName)+'</strong><p>'+Number(r.pontos_utilizados||0)+' pontos • '+new Date(r.created_at).toLocaleString('pt-BR')+'</p><span class="customer-redemption-status">'+esc(r.status||'Solicitado')+'</span></div></article>';
   }).join('');
-  const sections=(orderCards?'<h3 class="section-title">Compras</h3>'+orderCards:'')+(redemptionCards?'<h3 class="section-title">Resgates de brindes</h3><div class="customer-redemption-grid">'+redemptionCards+'</div>':'');
+  const sections=(orderCards?'<h3 class="section-title">Compras</h3>'+orderCards:'')+(redemptionCards?'<h3 class="section-title">Resgates de brindes</h3><div class="customer-redemption-grid">'+redemptionCards+'</div>':'')+(redemptionWarning?'<p class="small muted">'+esc(redemptionWarning)+'</p>':'');
   if(content)content.innerHTML=sections||'<div class="notice">Você ainda não tem pedidos ou resgates registrados.</div>';
  }catch(e){
   if(content)content.innerHTML='<div class="notice">Não foi possível carregar seus pedidos. '+esc(e.message||'Tente novamente.')+'</div>';
@@ -2280,11 +2280,14 @@ async function restoreStaffSession(){
   role=profileData.cargo==='proprietario'?'Proprietário':profileData.cargo==='gerente'?'Gerente':'Vendedor';staffActor=profileData.nome||user.email||'';staffBranch=role==='Proprietário'?'Todas as unidades':unit;window.currentStaffProfile=profileData;
   renderStaffAvatar(profileData.foto_url,staffActor);
   if(unit){branch=unit;const branchLabel=document.getElementById('branch-label');if(branchLabel)branchLabel.textContent=unit;const customerBranchLabel=document.getElementById('customerBranch');if(customerBranchLabel)customerBranchLabel.textContent=unit;if(branches[unit]){const branchAddress=document.getElementById('branchAddress');if(branchAddress)branchAddress.textContent=branches[unit].address;const branchWhats=document.getElementById('branchWhats');if(branchWhats)branchWhats.href='https://wa.me/'+branches[unit].phone}}
-  await Promise.all([loadStorePixSettings(),loadProductsFromSupabase(true),loadOrdersFromSupabase(),loadStaffData(),loadOwnerSettings()]);
+  const syncTasks=[['configurações da loja',loadStorePixSettings],['catálogo',()=>loadProductsFromSupabase(true)],['pedidos',loadOrdersFromSupabase],['dados da equipe',loadStaffData],['metas e configurações',loadOwnerSettings]];
+  const syncResults=await Promise.allSettled(syncTasks.map(([,task])=>task()));
+  const syncFailures=syncResults.map((result,index)=>result.status==='rejected'?syncTasks[index][0]+': '+(result.reason?.message||'erro desconhecido'):null).filter(Boolean);
   document.getElementById('profile').classList.remove('hidden');document.getElementById('myOrdersBtn')?.classList.add('hidden');document.getElementById('profile-name').textContent=profileData.nome||role;document.getElementById('avatar').textContent=role==='Proprietário'?'P':(profileData.nome||role)[0].toUpperCase();
   const staffTitle=document.getElementById('staffTitle');staffTitle.textContent=role==='Vendedor'?'':'Painel '+role;staffTitle.classList.toggle('hidden',role==='Vendedor');document.getElementById('staffSubtitle').textContent=role==='Proprietário'?'Acesso administrativo às três unidades':role==='Vendedor'?'':unit;
   let modules=['Visão geral','Estoque','Financeiro','Relacionamento','Configurações'];document.getElementById('staffModules').innerHTML=modules.map(m=>`<button type="button" class="admin-category-btn" onclick='openModule(${JSON.stringify(m)})'>${esc(m)}</button>`).join('');
   show('staff');startStaffOrderNotifications();startStaffIdleTimer();
+  if(syncFailures.length){console.error('Falhas na sincronização ao restaurar sessão:',syncFailures);toast('Acesso confirmado. Alguns dados não carregaram: '+syncFailures.join(' | '))}
  }catch(error){console.warn('Não foi possível restaurar a sessão administrativa:',error)}
 }
 let staffIdleTimer=null,staffLastActivity=Date.now();
