@@ -874,7 +874,7 @@ function showAdminCategory(category){
  }else if(category==='Estoque'){
   items=seller?['Consulta de produtos e estoque','Cadastro de produtos e lotes','Produtos mais vendidos']:['Estoque e lotes','Produtos mais vendidos','Fornecedores','Compras e recebimentos','Auditoria de estoque','Vitrine de Brindes'];
  }else if(category==='Financeiro'){
-  items=seller?['Pedidos e atendimento','Pedidos de resgate']:['Fluxo de caixa','Pedidos e atendimento','Pedidos de resgate','Estornar vendas'];
+  items=seller?['Pedidos e atendimento','Pedidos de resgate','Histórico de clientes']:['Fluxo de caixa','Pedidos e atendimento','Pedidos de resgate','Estornar vendas'];
   if(manager)items.push('Cancelar pedido não retirado');
  }else if(category==='Configurações'){
   items=manager?['Histórico de clientes','Redefinição de senha']:['Redefinição de senha','Configurar Pix loja','Histórico de clientes','Cashback e fidelidade'];
