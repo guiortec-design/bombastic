@@ -1228,6 +1228,7 @@ function showAdminCategory(category){
  d.scrollIntoView({behavior:'smooth',block:'start'});updateFloatingPanelBack();
 }
 async function openModule(m){
+ if(m==='Pedidos e atendimento')window.bombasticOrderTab=0;
  if(m==='Cancelamentos e estornos'&&role==='Vendedor'){toast('Acesso exclusivo da administração.');return}
  if(m==='Cadastro de clientes'&&role!=='Proprietário'&&role!=='Gerente'){toast('Acesso exclusivo da administração.');return}
  if(role==='Vendedor'&&(m==='Fluxo de caixa'||m.includes('Estornar')||m==='Relatórios'||m==='Backup e auditoria'||m.includes('Configurações')||m==='Configurar Pix loja'||m==='Cancelar pedido não retirado'||m==='Estoque e lotes'||m==='Fornecedores'||m.includes('Compras'))){toast('Você não tem permissão para este módulo.');return}
@@ -1326,7 +1327,7 @@ function orderStage(o){
  if(s==='aguardando confirmação de pagamento'||['aguardando conferência','aguardando conferencia','em conferência','em conferencia','pedido assumido'].includes(s)||o.assignedTo&&!o.paymentConfirmed)return 1;
  return 0;
 }
-function selectOrderTab(tab){window.bombasticOrderTab=Number(tab)||0;openModule('Pedidos e atendimento')}
+function selectOrderTab(tab){window.bombasticOrderTab=Number(tab)||0;const d=document.getElementById('staffDetail');if(!d)return;d.classList.remove('hidden');d.innerHTML=ordersView();d.scrollIntoView({behavior:'smooth',block:'start'});updateFloatingPanelBack()}
 function ordersView(cancelOnly=false){
  const all=orders.filter(o=>o.branch===staffBranch||role==='Proprietário').slice().sort((a,b)=>new Date(b.date||0)-new Date(a.date||0)||Number(b.id)-Number(a.id));
  const tabs=[{label:'Aguardando atendimento',stage:0},{label:'Aguardando confirmação de pagamento',stage:1},{label:'Separação',stage:2},{label:'Embalagem',stage:3},{label:'Aguardando retirada',stage:4},{label:'Aguardando motoboy',stage:5},{label:'Entrega',stage:6},{label:'Concluídos',stage:7},{label:'Entregue',stage:8},{label:'Cancelados',stage:9}];
