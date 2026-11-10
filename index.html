@@ -451,9 +451,7 @@ function startStaffOrderNotifications(){
     refreshOrderAlarmState();
     const panel=document.getElementById('staffDetail');
     if(panel&&!panel.classList.contains('hidden')&&panel.textContent.includes('Pedidos')){
-     const activeTab=Number.isInteger(window.bombasticOrderTab)?window.bombasticOrderTab:0;
      await openModule('Pedidos e atendimento');
-     window.bombasticOrderTab=activeTab;
     }
     if(payload.eventType==='INSERT')toast('Novo pedido recebido. Abra Pedidos e atendimento.');
    }catch(e){toast('Pedido alterado, mas houve falha ao atualizar a lista: '+e.message)}
