@@ -306,7 +306,48 @@ button:focus-visible,.btn:focus-visible{outline:2px solid #f9d328!important;outl
 .category-filter-group .btn{font-size:11px;padding:8px 9px}
 
 .purchase-simple{display:flex;flex-direction:column;gap:9px;padding:14px;border:1px solid #b18b22;border-radius:14px;background:linear-gradient(145deg,#17150d,#101010);margin:10px 0 18px}.purchase-simple h4{margin:0 0 2px}.purchase-search-row{display:flex;gap:8px;align-items:center}.purchase-search-row input{flex:1;min-width:0}.purchase-product-select{width:100%;min-height:92px}.purchase-price-rule{padding:10px 12px;border:1px solid #80651b;border-radius:10px;background:#211b0b}.purchase-price-rule p{margin:5px 0 0}.purchase-submit{width:100%;margin-top:4px}
-.dashboard-month-picker{display:flex;align-items:center;justify-content:center;gap:12px;margin:14px auto 18px;max-width:420px;padding:12px;border:1px solid var(--border);border-radius:14px;background:var(--surface)}.dashboard-month-picker label{font-weight:700}.dashboard-month-picker select{max-width:180px}.dashboard-general-goal{text-align:center}.dashboard-general-goal h4{text-align:center}\n.reward-edit-photo-preview{margin:8px 0}.reward-edit-photo-preview img{width:120px;height:120px;object-fit:contain;border-radius:12px;background:#211f1b;border:1px solid #5a4a20}.stock-tag-options{display:flex;gap:9px;flex-wrap:wrap;margin:6px 0 14px}.stock-tag-option{display:flex!important;align-items:center;gap:7px;padding:9px 12px;border:1px solid rgba(255,220,0,.35);border-radius:10px;background:#21190e;color:#ffe600;cursor:pointer}.stock-tag-option input{width:auto;margin:0;accent-color:#ffe600}.stock-edit-modal input[readonly],.stock-edit-modal input:disabled{opacity:.8;color:#c9c9c9;background:#24201b;cursor:not-allowed}</style>
+.dashboard-month-picker{display:flex;align-items:center;justify-content:center;gap:12px;margin:14px auto 18px;max-width:420px;padding:12px;border:1px solid var(--border);border-radius:14px;background:var(--surface)}.dashboard-month-picker label{font-weight:700}.dashboard-month-picker select{max-width:180px}.dashboard-general-goal{text-align:center}.dashboard-general-goal h4{text-align:center}\n.reward-edit-photo-preview{margin:8px 0}.reward-edit-photo-preview img{width:120px;height:120px;object-fit:contain;border-radius:12px;background:#211f1b;border:1px solid #5a4a20}.stock-tag-options{display:flex;gap:9px;flex-wrap:wrap;margin:6px 0 14px}.stock-tag-option{display:flex!important;align-items:center;gap:7px;padding:9px 12px;border:1px solid rgba(255,220,0,.35);border-radius:10px;background:#21190e;color:#ffe600;cursor:pointer}.stock-tag-option input{width:auto;margin:0;accent-color:#ffe600}.stock-edit-modal input[readonly],.stock-edit-modal input:disabled{opacity:.8;color:#c9c9c9;background:#24201b;cursor:not-allowed}
+
+/* Ajuste visual responsivo da área do cliente e da vitrine de brindes.
+   Mantém intactos os fluxos de login, cadastro, autenticação e seleção de loja. */
+.top:has(#customerSummary:not(.hidden)){position:relative;top:auto}
+#customerSummary{margin:5px 0 8px;padding:7px 10px;gap:12px;border-radius:11px;box-shadow:0 3px 10px rgba(255,190,0,.08)}
+#customerSummary .customer-greeting h2{font-size:13px!important;line-height:1.2}
+#customerSummary .customer-greeting span{font-size:11px;line-height:1.25}
+#customerSummary .customer-store-line{font-size:10px;margin-top:3px}
+#customerSummary .customer-welcome-actions{justify-content:flex-start;gap:6px;margin-top:6px}
+#customerSummary .customer-welcome-actions .btn{min-width:0;padding:6px 10px;font-size:11px;line-height:1.15;border-radius:8px;box-shadow:none}
+#customerSummary .loyalty-mini{gap:7px}
+#customerSummary .loyalty-item{min-width:70px;padding:4px 7px;row-gap:2px}
+#customerSummary .loyalty-item strong{font-size:12px}
+#customerSummary .loyalty-item small{font-size:9px}
+#products.cards{grid-template-columns:repeat(auto-fit,minmax(155px,1fr));gap:10px}
+#products .card{padding:9px;min-width:0}
+#products .product .emoji{height:112px;flex-basis:112px}
+#products .product h3{margin:2px 0 4px}
+.reward-edit-grid{grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:12px}
+.reward-edit-grid .reward-stock-card{display:grid;grid-template-columns:112px minmax(0,1fr);align-items:center;gap:10px;padding:10px;min-width:0}
+.reward-edit-grid .stock-mini-photo,.reward-edit-grid .stock-mini-placeholder{width:112px;height:112px;max-width:112px;object-fit:contain;border-radius:9px}
+.reward-edit-grid .reward-stock-card .btn{padding:7px 10px;font-size:11px;box-shadow:none}
+@media(max-width:700px){
+ .top:has(#customerSummary:not(.hidden)){padding-bottom:7px}
+ #customerSummary{display:flex;flex-direction:column;align-items:stretch;gap:7px;padding:7px 8px}
+ #customerSummary .customer-welcome-actions{justify-content:flex-start}
+ #customerSummary .loyalty-mini{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:6px}
+ #customerSummary .loyalty-item{display:flex;flex-direction:row;align-items:center;justify-content:flex-start;gap:5px;min-width:0}
+ #customerSummary .loyalty-item small{font-size:9px}
+ #products.cards{grid-template-columns:repeat(2,minmax(0,1fr));gap:7px}
+ #products .product .emoji{height:auto!important;aspect-ratio:1/1;flex-basis:auto}
+ .reward-edit-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:7px}
+ .reward-edit-grid .reward-stock-card{display:flex;flex-direction:column;align-items:stretch;gap:6px;padding:7px}
+ .reward-edit-grid .stock-mini-photo,.reward-edit-grid .stock-mini-placeholder{width:100%;max-width:100%;height:92px;object-fit:contain}
+ .reward-edit-grid .reward-stock-card .btn{font-size:10px;padding:6px 7px}
+}
+@media(min-width:701px) and (max-width:980px){
+ .reward-edit-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
+}
+
+</style>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js" defer></script>
 </head>
 <body>
