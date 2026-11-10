@@ -418,6 +418,43 @@ button:focus-visible,.btn:focus-visible{outline:2px solid #f9d328!important;outl
   #products .product-qty .btn{padding:5px 7px!important;font-size:11px!important;min-height:28px}
   #products .product-remove{padding:6px 8px!important;font-size:11px!important}
 }
+
+/* Filtros de marca e preço junto ao título Produtos */
+#customerProductsTitle.section-title{display:flex!important;align-items:center;justify-content:space-between;gap:12px;text-align:left;margin:20px 0 14px}
+#customerProductsTitle>h3{margin:0;color:var(--gold);font-size:24px}
+.product-top-filters{display:flex;align-items:end;justify-content:flex-end;gap:8px;min-width:0}
+.product-top-filter{display:flex;flex-direction:column;gap:4px;min-width:130px}
+.product-top-filter label{font-size:10px;font-weight:800;color:var(--gold)}
+.product-top-filter select{width:100%;margin:0;padding:7px 8px;font-size:11px;border-radius:8px}
+@media(max-width:600px){
+ #customerProductsTitle.section-title{align-items:flex-start;flex-direction:column;gap:8px}
+ #customerProductsTitle>h3{font-size:21px}
+ .product-top-filters{width:100%;justify-content:stretch;gap:6px}
+ .product-top-filter{flex:1;min-width:0}
+ .product-top-filter label{font-size:9px}
+ .product-top-filter select{font-size:10px;padding:7px 5px}
+}
+/* Pedidos recolhidos: detalhes aparecem somente ao expandir */
+.customer-order-details{width:100%}
+.customer-order-summary{display:flex;align-items:center;gap:9px;flex-wrap:wrap;list-style:none;cursor:pointer;min-height:36px}
+.customer-order-summary::-webkit-details-marker{display:none}
+.customer-order-summary>strong{color:#fff;font-weight:900}
+.customer-order-summary>strong b{color:var(--gold)}
+.customer-order-status{font-size:11px;font-weight:800;color:var(--gold);margin-left:auto}
+.customer-order-more{font-size:11px;color:var(--muted);white-space:nowrap}
+.customer-order-details[open] .customer-order-more{font-size:0}
+.customer-order-details[open] .customer-order-more:after{content:"Ver menos ︿";font-size:11px}
+.customer-order-expanded{display:flex;flex-direction:column;gap:9px;padding-top:11px;margin-top:9px;border-top:1px solid rgba(255,220,0,.2)}
+.customer-order-product-name small{display:inline-block;min-width:20px;color:var(--gold);font-weight:900;font-size:11px}
+/* Histórico de resgates em mini cartões, no mesmo estilo compacto da vitrine */
+.customer-redemption-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(118px,1fr));gap:8px}
+.customer-redemption-card{display:flex;flex-direction:column;align-items:center;gap:5px;min-width:0;padding:8px;text-align:center}
+.customer-redemption-photo{display:block;width:100%;height:76px;object-fit:contain;border-radius:8px;background:rgba(0,0,0,.25)}
+.customer-redemption-info{display:flex;flex-direction:column;align-items:center;gap:4px;min-width:0;width:100%}
+.customer-redemption-info strong{font-size:11px;line-height:1.2;overflow-wrap:anywhere}
+.customer-redemption-info p{margin:0;font-size:9px;line-height:1.2;color:var(--muted)}
+.customer-redemption-status{font-size:9px;font-weight:800;color:var(--gold);overflow-wrap:anywhere}
+
 </style>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js" defer></script>
 </head>
@@ -466,13 +503,11 @@ button:focus-visible,.btn:focus-visible{outline:2px solid #f9d328!important;outl
  <div class="hero staff-login-card"><h2>Acesso da equipe</h2><p class="muted">Entre com seu e-mail e senha de acesso.</p><label for="staffUser">E-mail</label><input id="staffUser" type="email" autocomplete="username" placeholder="seu e-mail cadastrado"><label for="staffPass">Senha</label><input id="staffPass" type="password" autocomplete="current-password" placeholder="Sua senha"><div class="staff-login-actions"><button class="btn primary" id="staffLoginBtn" onclick="staffLogin()">Entrar</button><button class="btn" id="staffResetBtn" onclick="requestStaffPasswordReset()">Solicitar reset de senha</button><button class="btn staff-login-back" onclick="show('start')">Voltar</button></div><p class="small muted staff-login-note">A unidade e as permissões são identificadas pelo cadastro feito pelo proprietário.</p></div>
 </section>
 <section id="customer" class="hidden">
- <div id="customerShop"><section id="customerRewardsSection" class="card reward-showcase hidden"><div class="reward-showcase-heading"><div><h3>🎁 Brindes disponíveis</h3><p>Escolha um brinde e solicite a liberação no balcão.</p><strong id="customerRewardPoints" class="reward-points">Seus pontos: 0</strong></div><span class="pill">Clube Bombastic</span></div><div id="customerRewards" class="grid cards reward-showcase-grid"><p class="muted">Carregando brindes disponíveis...</p></div><div id="customerRedemptionHistory"></div></section><h3 id="customerProductsTitle" class="section-title">Produtos</h3>
+ <div id="customerShop"><section id="customerRewardsSection" class="card reward-showcase hidden"><div class="reward-showcase-heading"><div><h3>🎁 Brindes disponíveis</h3><p>Escolha um brinde e solicite a liberação no balcão.</p><strong id="customerRewardPoints" class="reward-points">Seus pontos: 0</strong></div><span class="pill">Clube Bombastic</span></div><div id="customerRewards" class="grid cards reward-showcase-grid"><p class="muted">Carregando brindes disponíveis...</p></div><div id="customerRedemptionHistory"></div></section><div id="customerProductsTitle" class="section-title"><h3>Produtos</h3><div class="product-top-filters"><div class="product-top-filter"><label for="brandFilter">Marca</label><select id="brandFilter" onchange="setProductBrand(this.value)"><option value="Todas">Todas as marcas</option></select></div><div class="product-top-filter"><label for="productSort">Ordenar por preço</label><select id="productSort" onchange="setProductSort(this.value)"><option value="padrao">Mais relevantes</option><option value="menor">Menor preço</option><option value="maior">Maior preço</option></select></div></div></div>
   <div id="productCatalogLayout">
    <aside id="categoryMenuPanel" class="category-menu-panel" aria-label="Filtros do catálogo">
     <div class="category-filter-group"><strong>Vitrine</strong><button class="btn active" data-tag="Todos" onclick="selectProductTag('Todos')">Todos</button><button class="btn" data-tag="Oferta Especial" onclick="selectProductTag('Oferta Especial')">Oferta especial</button><button class="btn" data-tag="Promoção" onclick="selectProductTag('Promoção')">Promoção</button><button class="btn" id="customerGiftsTab" onclick="showCustomerShopTab('brindes')">🎁 Brindes</button></div>
     <div class="category-filter-group"><strong>Categoria</strong><div id="categoryFilterOptions"></div></div>
-    <div class="category-filter-group"><label for="brandFilter">Marca</label><select id="brandFilter" onchange="setProductBrand(this.value)"><option value="Todas">Todas as marcas</option></select></div>
-    <div class="category-filter-group"><label for="productSort">Ordenar por preço</label><select id="productSort" onchange="setProductSort(this.value)"><option value="padrao">Mais relevantes</option><option value="menor">Menor preço</option><option value="maior">Maior preço</option></select></div>
    </aside>
    <div id="products" class="grid cards"></div>
   </div>
@@ -739,10 +774,10 @@ async function openMyOrders(){
   list.sort((a,b)=>customerOrderPriority(a.status)-customerOrderPriority(b.status)||new Date(b.created_at||0)-new Date(a.created_at||0));
   const orderCards=list.map(o=>{
    const status=String(o.status||'Aguardando atendimento');
-   const items=Array.isArray(o.itens)?o.itens.map(i=>'<div class="customer-order-product"><span class="customer-order-product-name">'+esc(i.nome)+' <small>× '+Number(i.quantidade||0)+'</small></span><strong>'+money(i.subtotal)+'</strong></div>').join(''):'';
+   const items=Array.isArray(o.itens)?o.itens.map(i=>'<div class="customer-order-product"><span class="customer-order-product-name"><small>'+Number(i.quantidade||0)+'×</small> '+esc(i.nome)+'</span><strong>'+money(i.subtotal)+'</strong></div>').join(''):'';
    const canConfirm=o.tipo_recebimento==='Delivery'&&status==='Em entrega';
    const pickupCode=o.tipo_recebimento==='Retirar na loja'&&['Em separação','Em embalagem','Aguardando retirada'].includes(status);
-   return '<article class="card customer-order-card"><div class="customer-order-head"><strong>Pedido <b>#'+String(o.id).slice(-6)+'</b></strong><span class="customer-order-status">'+esc(status)+'</span></div><div class="customer-order-meta"><span><strong>Recebimento:</strong> '+esc(o.tipo_recebimento||'Retirar na loja')+'</span></div>'+(o.endereco_entrega?'<p class="customer-order-address"><strong>Endereço:</strong> '+esc(o.endereco_entrega)+'</p>':'')+(pickupCode?'<div class="notice"><strong>Código de retirada: '+esc(o.codigo_publico||'Consulte a equipe')+'</strong><p>Informe seu nome e este código ao funcionário quando chegar à loja.</p></div>':'')+'<div class="customer-order-products">'+(items||'<span class="small muted">Produtos não informados.</span>')+'</div><div class="customer-order-total-row"><span>Valor total</span><strong class="customer-order-total">'+money(o.total)+'</strong></div>'+(canConfirm?'<div class="customer-order-actions"><button class="btn primary" onclick="confirmDeliveryReceipt('+Number(o.id)+')">Confirmar recebimento</button></div>':'')+'</article>';
+   return '<article class="card customer-order-card"><details class="customer-order-details"><summary class="customer-order-summary"><strong>Pedido <b>#'+String(o.id).slice(-6)+'</b></strong><span class="customer-order-status">'+esc(status)+'</span><span class="customer-order-more">Ver mais ﹀</span></summary><div class="customer-order-expanded"><div class="customer-order-meta"><span><strong>Recebimento:</strong> '+esc(o.tipo_recebimento||'Retirar na loja')+'</span></div>'+(o.endereco_entrega?'<p class="customer-order-address"><strong>Endereço:</strong> '+esc(o.endereco_entrega)+'</p>':'')+(pickupCode?'<div class="notice"><strong>Código de retirada: '+esc(o.codigo_publico||'Consulte a equipe')+'</strong><p>Informe seu nome e este código ao funcionário quando chegar à loja.</p></div>':'')+'<div class="customer-order-products">'+(items||'<span class="small muted">Produtos não informados.</span>')+'</div><div class="customer-order-total-row"><span>Valor total</span><strong class="customer-order-total">'+money(o.total)+'</strong></div>'+(canConfirm?'<div class="customer-order-actions"><button class="btn primary" onclick="confirmDeliveryReceipt('+Number(o.id)+')">Confirmar recebimento</button></div>':'')+'</div></details></article>';
   }).join('');
   const redemptions=Array.isArray(redemptionsResult.data)?redemptionsResult.data:[];
   const redemptionCards=redemptions.map(r=>{
@@ -750,7 +785,7 @@ async function openMyOrders(){
    const photo=r.brindes?.foto_url?'<img class="customer-redemption-photo" src="'+esc(r.brindes.foto_url)+'" alt="'+esc(giftName)+'">':'<div class="customer-redemption-photo" style="display:grid;place-items:center;font-size:24px">🎁</div>';
    return '<article class="card customer-redemption-card">'+photo+'<div class="customer-redemption-info"><strong>Resgate #R'+r.id+' — '+esc(giftName)+'</strong><p>'+Number(r.pontos_utilizados||0)+' pontos • '+new Date(r.created_at).toLocaleString('pt-BR')+'</p><span class="customer-redemption-status">'+esc(r.status||'Solicitado')+'</span></div></article>';
   }).join('');
-  const sections=(orderCards?'<h3 class="section-title">Compras</h3>'+orderCards:'')+(redemptionCards?'<h3 class="section-title">Resgates de brindes</h3>'+redemptionCards:'');
+  const sections=(orderCards?'<h3 class="section-title">Compras</h3>'+orderCards:'')+(redemptionCards?'<h3 class="section-title">Resgates de brindes</h3><div class="customer-redemption-grid">'+redemptionCards+'</div>':'');
   if(content)content.innerHTML=sections||'<div class="notice">Você ainda não tem pedidos ou resgates registrados.</div>';
  }catch(e){
   if(content)content.innerHTML='<div class="notice">Não foi possível carregar seus pedidos. '+esc(e.message||'Tente novamente.')+'</div>';
