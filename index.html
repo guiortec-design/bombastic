@@ -752,7 +752,7 @@ function showAdminCategory(category){
  if(category==='Visão geral'){
   items=owner?['Loja Picerno','Loja Volobueff','Loja Nova Veneza']:[staffBranch];
  }else if(category==='Estoque'){
-  items=seller?['Consulta de produtos e estoque','Cadastro de produtos e lotes','Produtos mais vendidos']:['Estoque e lotes','Histórico de vendas','Produtos mais vendidos','Fornecedores','Compras e recebimentos','Auditoria de estoque'];
+  items=seller?['Consulta de produtos e estoque','Cadastro de produtos e lotes','Produtos mais vendidos']:['Estoque e lotes','Produtos mais vendidos','Fornecedores','Compras e recebimentos','Auditoria de estoque'];
  }else if(category==='Financeiro'){
   items=seller?['Pedidos e atendimento','Pedidos de resgate']:['Fluxo de caixa','Pedidos e atendimento','Pedidos de resgate','Vitrine de brindes','Estornar vendas'];
   if(manager)items.push('Cancelar pedido não retirado');
