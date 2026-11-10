@@ -871,7 +871,7 @@ async function refundOrder(id){
  if(role!=='Proprietário'){toast('Somente o proprietário pode registrar e confirmar o estorno.');return}
  const o=orders.find(x=>Number(x.id)===Number(id));
  if(!o||o.status==='Estornado'||o.status==='Cancelado'){toast('Pedido não encontrado ou já estornado/cancelado.');return}
- const msg='Confirma que o estorno deste pedido foi realizado?\\n\\nDepois desta confirmação, o pedido ficará como ESTORNADO e só então poderá ser cancelado.\\n\\nSe o pagamento já foi confirmado, o sistema registra o recebimento e a devolução no financeiro. Se ainda não foi, apenas libera a reserva. Se a venda já foi concluída, também reverte estoque, pontos e cashback.';
+ const msg='Confirma que o estorno deste pedido foi realizado?\n\nDepois desta confirmação, o pedido ficará como ESTORNADO e só então poderá ser cancelado.\n\nSe o pagamento já foi confirmado, o sistema registra o recebimento e a devolução no financeiro. Se ainda não foi, apenas libera a reserva. Se a venda já foi concluída, também reverte estoque, pontos e cashback.';
  if(!confirm(msg))return;
  try{
   const {data,error}=await supabaseClient.rpc('estornar_pedido_bombastic',{p_pedido_id:Number(id)});
