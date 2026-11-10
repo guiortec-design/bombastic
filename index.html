@@ -866,7 +866,8 @@ function sellerGoalView(){
   const monthSales=ownSales.filter(s=>inRange(s,monthStart,monthEnd)),monthSold=monthSales.reduce((sum,s)=>sum+Number(s.total||0),0),commissionValue=monthSold*commissionRate/100,goalReached=monthlyGoal>0&&monthSold>=monthlyGoal,bonusValue=goalReached?bonusTarget:0;
   const rewardCard='<section class="seller-chart-card"><h4>Comissão e premiação do mês</h4><div class="manager-period-kpis"><div><small>Comissão configurada</small><strong>'+commissionRate.toFixed(2).replace('.',',')+'%</strong></div><div><small>Comissão estimada</small><strong>'+money(commissionValue)+'</strong></div><div><small>Bônus da meta</small><strong>'+money(bonusTarget)+'</strong></div><div><small>Premiação estimada</small><strong>'+money(commissionValue+bonusValue)+'</strong></div></div><p class="small muted">'+(goalReached?'Parabéns! Você atingiu a meta mensal e liberou o bônus.':'O bônus será contabilizado quando você atingir 100% da meta mensal.')+' A comissão é uma estimativa sobre suas vendas concluídas, sujeita à conferência do proprietário.</p></section>';
   return '<h3>Minhas metas</h3><p class="muted">'+esc(unit)+' • '+esc(monthLabel)+'</p>'+cards+rewardCard+'<p class="small muted">As metas diária e semanal são estimadas proporcionalmente a partir da sua meta mensal individual. Você visualiza somente suas próprias vendas, comissão e resultados.</p>';
-}function showAdminCategory(category){
+}
+function showAdminCategory(category){
  staffPanelHistory=[];
  const owner=role==='Proprietário',manager=role==='Gerente',seller=role==='Vendedor';
  let items=[];
