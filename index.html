@@ -347,6 +347,45 @@ button:focus-visible,.btn:focus-visible{outline:2px solid #f9d328!important;outl
  .reward-edit-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
 }
 
+
+/* Cartões compactos e centralizados para Tipo de perfil e Cashback */
+#customerSummary .loyalty-mini{
+  display:grid;
+  grid-template-columns:repeat(2,minmax(0,1fr));
+  align-items:stretch;
+  justify-content:center;
+  gap:8px;
+  width:min(100%,430px);
+  margin:0 auto;
+}
+#customerSummary .loyalty-item{
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  justify-content:center;
+  text-align:center;
+  gap:4px;
+  min-width:0;
+  min-height:58px;
+  padding:7px 9px;
+  border:1px solid rgba(255,220,0,.24);
+  border-radius:10px;
+  background:rgba(0,0,0,.24);
+}
+#customerSummary .loyalty-item .loyalty-label,
+#customerSummary .loyalty-item .customer-tier,
+#customerSummary .loyalty-item strong,
+#customerSummary .loyalty-item small{grid-column:auto;text-align:center;margin:0}
+#customerSummary .loyalty-item .loyalty-label{font-size:10px!important;line-height:1.15}
+#customerSummary .loyalty-item .customer-tier{font-size:14px!important;line-height:1.15}
+#customerSummary .loyalty-item #points,
+#customerSummary .loyalty-item #cashback{font-size:13px;line-height:1.15}
+#customerSummary .loyalty-item small:not(.loyalty-label){font-size:9px;line-height:1.15}
+@media(max-width:700px){
+  #customerSummary .loyalty-mini{width:100%;gap:7px}
+  #customerSummary .loyalty-item{min-height:54px;padding:6px 5px}
+}
+
 </style>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js" defer></script>
 </head>
