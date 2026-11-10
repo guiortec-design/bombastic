@@ -353,7 +353,7 @@ button:focus-visible,.btn:focus-visible{outline:2px solid #f9d328!important;outl
    </aside>
    <div id="products" class="grid cards"></div>
   </div>
-  <div class="card" style="margin-top:22px"><h3 class="section-title">Meu carrinho</h3><p><strong id="cartCount">0 unidades</strong> • Total: <strong id="cartTotal">R$ 0,00</strong></p><div id="cartItems">Seu carrinho está vazio.</div><div class="row" style="display:flex;gap:8px;flex-wrap:wrap;margin-top:12px"><button class="btn" id="clearCartBtn" onclick="clearCart(event)" disabled>Limpar carrinho</button><button class="btn primary" onclick="checkout()">Finalizar pedido</button></div></div>
+  <div id="customerCartSection" class="card" style="margin-top:22px"><h3 class="section-title">Meu carrinho</h3><p><strong id="cartCount">0 unidades</strong> • Total: <strong id="cartTotal">R$ 0,00</strong></p><div id="cartItems">Seu carrinho está vazio.</div><div class="row" style="display:flex;gap:8px;flex-wrap:wrap;margin-top:12px"><button class="btn" id="clearCartBtn" onclick="clearCart(event)" disabled>Limpar carrinho</button><button class="btn primary" onclick="checkout()">Finalizar pedido</button></div></div>
  </div>
 </section>
 <section id="staff" class="hidden">
@@ -497,7 +497,7 @@ async function openCustomer(){
  document.getElementById('profile').classList.remove('hidden');document.getElementById('profile-name').textContent=client.name||'Cliente';await loadClientProfilePhoto();renderClientAvatar(client.photoUrl,client.name);
  document.getElementById('customerStoreName').textContent=branch;document.getElementById('customerSummary').classList.remove('hidden');document.getElementById('welcome').textContent='Bem-vindo, '+(client.name||'cliente')+'!';
  try{await loadCustomerLoyalty()}catch(e){console.warn('Não foi possível carregar a fidelidade:',e)}
- document.getElementById('points').textContent=(client.points||0)+' pts';document.getElementById('customerTier').textContent=customerTier(client);document.getElementById('cashback').textContent=money((client.cashbackLots||[]).reduce((a,x)=>a+Number(x.amount||0),0));
+ document.getElementById('points').textContent=(client.points||0)+' pts';const giftPoints=document.getElementById('customerRewardPoints');if(giftPoints)giftPoints.textContent='Seus pontos: '+(client.points||0);document.getElementById('customerTier').textContent=customerTier(client);document.getElementById('cashback').textContent=money((client.cashbackLots||[]).reduce((a,x)=>a+Number(x.amount||0),0));
  show('customer');refreshProductFilters();renderProducts();renderCart();renderCustomerRewards();
 }
 async function checkCustomerCpf(){
