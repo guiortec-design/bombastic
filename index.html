@@ -441,7 +441,7 @@ function customerTier(c){let raw=String(c?.level||'').normalize('NFD').replace(/
 async function loadCustomerLoyalty(){const [f,c,r]=await Promise.all([supabaseClient.from('fidelidade').select('pontos,nivel,total_compras_12_meses').eq('cliente_id',client.id).maybeSingle(),supabaseClient.from('cashback').select('valor_creditado,saldo_disponivel,data_validade,status').eq('cliente_id',client.id),supabaseClient.from('regras_fidelidade').select('prata_minimo,ouro_minimo').eq('id',1).maybeSingle()]);if(f.error)throw f.error;if(c.error)throw c.error;if(r.error)throw r.error;if(r.data)loyaltyRules={...loyaltyRules,...r.data};client.points=Number(f.data?.pontos)||0;client.spent12m=Number(f.data?.total_compras_12_meses)||0;client.level=f.data?.nivel||'';client.cashbackLots=(c.data||[]).filter(x=>x.status!=='estornado'&&Number(x.saldo_disponivel)>0).map(x=>({amount:Number(x.saldo_disponivel),expires:x.data_validade?new Date(x.data_validade+'T23:59:59').toISOString():null}))}
 async function loadStaffData(){
  const [c,f,r,redeem,loyalty,cash,staff]=await Promise.all([
-  supabaseClient.from('clientes').select('id,cpf,nome,telefone,email,ativo,endereco,bairro,cidade,complemento,referencia,ultimo_acesso'),
+  supabaseClient.from('clientes').select('id,cpf,nome,telefone,email,ativo,auth_user_id,endereco,bairro,cidade,complemento,referencia,ultimo_acesso'),
   supabaseClient.from('fornecedores').select('id,nome,telefone,whatsapp,email,ativo'),
   supabaseClient.from('brindes').select('id,nome,descricao,foto_url,pontos_necessarios,estoque,ativo'),
   supabaseClient.from('resgates').select('id,cliente_id,brinde_id,loja_id,pontos_utilizados,quantidade,status,created_at,aprovado_em,entregue_em,clientes(nome,cpf),brindes(nome)'),
@@ -451,7 +451,7 @@ async function loadStaffData(){
  ]);
  for(const x of [c,f,r,redeem,loyalty,cash,staff])if(x.error)throw x.error;
  staffDirectory=staff.data||[];clients={};
- for(const row of c.data||[]){let l=(loyalty.data||[]).find(x=>x.cliente_id===row.id),cb=(cash.data||[]).filter(x=>x.cliente_id===row.id&&x.status!=='estornado'&&Number(x.saldo_disponivel)>0);clients[row.cpf]={id:row.id,cpf:row.cpf,name:row.nome||'',phone:row.telefone||'',email:row.email||'',address:row.endereco||'',neighborhood:row.bairro||'',city:row.cidade||'',complement:row.complemento||'',reference:row.referencia||'',lastLogin:row.ultimo_acesso,points:Number(l?.pontos)||0,spent12m:Number(l?.total_compras_12_meses)||0,level:l?.nivel||'',cashbackLots:cb.map(x=>({amount:Number(x.saldo_disponivel),expires:x.data_validade?new Date(x.data_validade+'T23:59:59').toISOString():null})),history:orders.filter(o=>o.cpf===row.cpf).map(o=>o.id)}}
+ for(const row of c.data||[]){let l=(loyalty.data||[]).find(x=>x.cliente_id===row.id),cb=(cash.data||[]).filter(x=>x.cliente_id===row.id&&x.status!=='estornado'&&Number(x.saldo_disponivel)>0);clients[row.cpf]={id:row.id,cpf:row.cpf,name:row.nome||'',phone:row.telefone||'',email:row.email||'',authUserId:row.auth_user_id||null,active:row.ativo!==false,address:row.endereco||'',neighborhood:row.bairro||'',city:row.cidade||'',complement:row.complemento||'',reference:row.referencia||'',lastLogin:row.ultimo_acesso,points:Number(l?.pontos)||0,spent12m:Number(l?.total_compras_12_meses)||0,level:l?.nivel||'',cashbackLots:cb.map(x=>({amount:Number(x.saldo_disponivel),expires:x.data_validade?new Date(x.data_validade+'T23:59:59').toISOString():null})),history:orders.filter(o=>o.cpf===row.cpf).map(o=>o.id)}}
  suppliers=(f.data||[]).map(x=>({id:x.id,name:x.nome,phone:x.whatsapp||x.telefone||'',email:x.email||''}));
  rewards=(r.data||[]).map(x=>({id:x.id,name:x.nome,description:x.descricao,photoUrl:x.foto_url,points:x.pontos_necessarios,stock:x.estoque,active:x.ativo!==false,branch:'Todas'}));
  redemptions=(redeem.data||[]).map(x=>({id:x.id,customer:x.clientes?.nome||'Cliente',cpf:x.clientes?.cpf||'',reward:x.brindes?.nome||'Brinde',points:x.pontos_utilizados,branch:branchNameById[Number(x.loja_id)]||'Unidade',branchId:x.loja_id,status:x.status,date:x.created_at}));
@@ -695,11 +695,37 @@ async function staffLogin(){
 function canManage(){return role==='Gerente'||role==='Proprietário'}
 function stockModuleName(){return role==='Vendedor'?'Cadastro de produtos e lotes':role==='Proprietário'?'Estoque e fornecedores':'Estoque e lotes'}
 async function passwordResetRequestsView(){
+ if(role!=='Gerente'&&role!=='Proprietário')return '<p class="notice">Você não tem permissão para redefinir senhas de clientes.</p>';
  const {data,error}=await supabaseClient.functions.invoke('customer-access',{body:{action:'list_resets'}});
  if(error)throw error;if(data?.error)throw new Error(data.error);
  const rows=data.requests||[];
- if(!rows.length)return '<h4>Solicitações de redefinição de senha</h4><p class="muted">Não há clientes com solicitação pendente no momento.</p><button class="btn" onclick="openModule(\'Redefinição de senha\')">Atualizar lista</button>';
- return '<h4>Solicitações de redefinição de senha</h4><p class="muted">Clientes que solicitaram a troca da senha e aguardam aprovação. A aprovação gera um código aleatório de 8 dígitos, válido por 30 minutos.</p><button class="btn" onclick="openModule(\'Redefinição de senha\')">Atualizar lista</button>'+rows.map(r=>'<div class="card"><strong>'+esc(r.clientes?.nome||'Cliente')+'</strong><p>CPF: '+esc(r.clientes?.cpf||'')+'</p><p class="small muted">Solicitado em '+new Date(r.solicitado_em).toLocaleString('pt-BR')+'</p><button class="btn primary" onclick="approveClientReset('+Number(r.id)+')">Aprovar redefinição</button></div>').join('');
+ const pendingHtml=rows.length
+  ?'<h4>Solicitações pendentes</h4><p class="small muted">Clientes que já solicitaram a troca da senha. A aprovação gera um código aleatório de 8 dígitos, válido por 30 minutos.</p>'+rows.map(r=>'<div class="card"><strong>'+esc(r.clientes?.nome||'Cliente')+'</strong><p class="small muted">Solicitado em '+new Date(r.solicitado_em).toLocaleString('pt-BR')+'</p><button class="btn primary" onclick="approveClientReset('+Number(r.id)+')">Aprovar redefinição</button></div>').join('')
+  :'<h4>Solicitações pendentes</h4><p class="muted">Ninguém solicitou redefinição de senha ainda.</p>';
+ const customerRows=Object.values(clients||{}).sort((a,b)=>String(a.name||'').localeCompare(String(b.name||''),'pt-BR'));
+ const customerHtml='<hr><h4>Solicitar reset para um cliente</h4><p class="small muted">Todos os clientes cadastrados aparecem abaixo. Clique no botão ao lado do nome para criar uma solicitação de redefinição.</p><input id="managerResetSearch" placeholder="Pesquisar pelo nome do cliente" oninput="filterManagerResetClients()"><div id="managerResetClientList">'+managerResetClientRows(customerRows)+'</div>';
+ return '<h3>Redefinição de senha</h3><button class="btn" onclick="openModule(\'Redefinição de senha\')">Atualizar lista</button>'+pendingHtml+customerHtml;
+}
+function managerResetClientRows(rows){
+ if(!rows.length)return '<p class="muted">Nenhum cliente cadastrado.</p>';
+ return rows.map(c=>'<div class="card" style="display:flex;align-items:center;justify-content:space-between;gap:12px"><strong>'+esc(c.name||'Cliente sem nome')+'</strong><button class="btn primary" '+(!c.authUserId||!c.active?'disabled title="Cliente sem acesso ativo"':'')+' onclick="requestManagerClientReset(\''+esc(c.cpf)+'\',\''+esc(c.name||'Cliente')+'\')">Solicitar reset</button></div>').join('');
+}
+function filterManagerResetClients(){
+ const q=(document.getElementById('managerResetSearch')?.value||'').trim().toLocaleLowerCase('pt-BR');
+ const rows=Object.values(clients||{}).filter(c=>String(c.name||'').toLocaleLowerCase('pt-BR').includes(q)).sort((a,b)=>String(a.name||'').localeCompare(String(b.name||''),'pt-BR'));
+ const list=document.getElementById('managerResetClientList');if(list)list.innerHTML=managerResetClientRows(rows);
+}
+async function requestManagerClientReset(cpf,name){
+ if(role!=='Gerente'&&role!=='Proprietário'){toast('Sem permissão para solicitar redefinição.');return}
+ const customer=clients[String(cpf||'')];
+ if(!customer?.authUserId||!customer.active){toast('Este cliente ainda não possui um acesso ativo com senha para redefinir.');return}
+ if(!confirm('Solicitar a redefinição de senha para '+(name||customer.name||'este cliente')+'?'))return;
+ try{
+  const {data,error}=await supabaseClient.functions.invoke('customer-access',{body:{action:'request_reset',cpf:String(cpf)}});
+  if(error)throw error;if(data?.error)throw new Error(data.error);
+  toast(data.message||'Solicitação de redefinição encaminhada.');
+  const detail=document.getElementById('staffDetail');if(detail)detail.innerHTML='<h3>Redefinição de senha</h3>'+await passwordResetRequestsView();
+ }catch(e){toast('Não foi possível solicitar o reset: '+(e.message||'tente novamente.'))}
 }
 async function approveClientReset(id){
  if(!confirm('Gerar um código temporário aleatório, válido por 30 minutos, para o cliente cadastrar uma nova senha?'))return;
