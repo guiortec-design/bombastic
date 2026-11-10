@@ -882,7 +882,7 @@ function ordersView(cancelOnly=false){
  const cards=list.map(o=>{
   const action=nextOrderAction(o),owned=(o.assignedTo&&o.assignedTo===staffActor)||role==='Proprietário',locked=o.assignedTo&&!owned;
   let actionButton='';
-  if(!cancelOnly&&action){if(action==='Assumir pedido'&&!o.assignedTo)actionButton='<button type="button" class="btn assume-order" onclick="updateOrder('+o.id+',\'Assumir pedido\')">Assumir pedido</button>';else if(owned)actionButton='<button type="button" class="btn primary" onclick="updateOrder('+o.id+','+JSON.stringify(action)+')">'+esc(action)+'</button>';else if(locked)actionButton='<button type="button" class="btn order-claimed" disabled>Pedido assumido por '+esc(o.assignedTo)+'</button>';}
+  if(!cancelOnly&&action){if(action==='Assumir pedido'&&!o.assignedTo)actionButton='<button type="button" class="btn assume-order" onclick="updateOrder('+o.id+',\'Assumir pedido\')">Assumir pedido</button>';else if(owned)actionButton='<button type="button" class="btn primary" onclick="updateOrder('+o.id+',\''+action+'\')">'+esc(action)+'</button>';else if(locked)actionButton='<button type="button" class="btn order-claimed" disabled>Pedido assumido por '+esc(o.assignedTo)+'</button>';}
   const done=orderStage(o)===5;
   const refundEligible=role==='Proprietário'&&!!o.assignedTo&&o.paymentConfirmed&&['Em preparação','Aguardando retirada','Em entrega','Retirada concluída','Entrega concluída','Concluído e entregue'].includes(o.status);
   const refundButton=refundEligible?'<button type="button" class="btn" onclick="refundOrder('+o.id+')">Registrar e confirmar estorno</button>':'';
