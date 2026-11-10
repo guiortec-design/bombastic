@@ -436,6 +436,7 @@ button:focus-visible,.btn:focus-visible{outline:2px solid #f9d328!important;outl
 }
 /* Pedidos recolhidos: detalhes aparecem somente ao expandir */
 .order-queue-summary{display:flex;flex-wrap:wrap;gap:8px;margin:12px 0;padding:10px 12px;border:1px solid rgba(255,220,0,.2);border-radius:12px;background:rgba(0,0,0,.22)}.order-queue-summary span{flex:1 1 auto;font-size:12px;color:var(--muted)}.order-queue-summary strong{color:var(--gold);font-size:16px;margin-right:4px}.staff-order-tabs{display:flex;gap:7px;overflow-x:auto;padding:2px 1px 10px;margin:8px 0 14px;scrollbar-width:thin;scroll-snap-type:x proximity}.staff-order-tab{flex:0 0 auto;display:flex;align-items:center;gap:7px;max-width:210px;padding:8px 10px;border:1px solid rgba(255,220,0,.22);border-radius:999px;background:#17120d;color:#eee;font-size:11px;line-height:1.2;white-space:nowrap;scroll-snap-align:start}.staff-order-tab strong{display:grid;place-items:center;min-width:20px;height:20px;padding:0 5px;border-radius:20px;background:rgba(255,255,255,.1);color:#fff;font-size:10px}.staff-order-tab.active{border-color:var(--gold);background:linear-gradient(100deg,var(--gold),var(--orange));color:#17100a;font-weight:900}.staff-order-tab.active strong{background:#17100a;color:var(--gold)}.staff-order-details{margin:8px 0 10px;padding:0 2px}.staff-order-details .customer-order-summary{justify-content:flex-start;min-height:28px}.staff-order-details .customer-order-more{font-size:12px;color:var(--gold);font-weight:800}.staff-order-details .customer-order-expanded{padding-top:9px}.staff-order-products{display:flex;flex-direction:column}.staff-order-product{display:grid;grid-template-columns:minmax(0,1fr) auto auto;align-items:center;gap:10px;padding:9px 0;border-top:1px solid rgba(255,220,0,.13);font-size:12px}.staff-order-product-name{min-width:0;overflow-wrap:anywhere;color:#fff}.staff-order-product-qty{white-space:nowrap;color:var(--muted);font-size:11px}.staff-order-product strong{white-space:nowrap;color:#fff}.staff-order-details .customer-order-details[open] .customer-order-more{font-size:0}.staff-order-details[open] .customer-order-more:after{content:'Ver menos ︿';font-size:12px}@media(max-width:600px){.order-queue-summary{gap:6px;padding:8px}.order-queue-summary span{font-size:10px}.order-queue-summary strong{font-size:14px}.staff-order-tab{font-size:10px;padding:7px 9px}.staff-order-product{grid-template-columns:minmax(0,1fr) auto;gap:5px 8px}.staff-order-product-qty{grid-column:1;grid-row:2}.staff-order-product strong{grid-column:2;grid-row:1/3}}
+.customer-admin-data{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:2px 16px}.customer-admin-data p{margin:5px 0;font-size:12px;overflow-wrap:anywhere}.customer-admin-data p strong{color:#f5d34a}.customer-admin-actions{display:flex;flex-wrap:wrap;gap:8px;margin-top:12px;padding-top:12px;border-top:1px solid rgba(255,220,0,.18)}.customer-admin-actions .danger{border-color:#9f3c35;color:#ffaaa3}@media(max-width:600px){.customer-admin-data{grid-template-columns:1fr}.customer-admin-actions .btn{flex:1 1 100%}}
 .customer-order-details{width:100%}
 .customer-order-summary{display:flex;align-items:center;gap:9px;flex-wrap:wrap;list-style:none;cursor:pointer;min-height:36px}
 .customer-order-summary::-webkit-details-marker{display:none}
@@ -589,7 +590,7 @@ const branches={
 const branchNameById={1:"Loja Volobueff",2:"Loja Picerno",3:"Loja Nova Veneza"};
 const SUPABASE_URL="https://mxbmzpnoawfbwpbjkbcw.supabase.co";
 const SUPABASE_ANON_KEY="sb_publishable_-zBTfhTld23BHReZ4huWyQ_zWO-xPIj";
-let products=[],clients={},orders=[],sales=[],suppliers=[],ledger=[],rewards=[],redemptions=[],stockLots=[];
+let products=[],clients={},orders=[],sales=[],suppliers=[],ledger=[],rewards=[],redemptions=[],stockLots=[],customerAdminRows=[];
 const supabaseClient=window.supabase?.createClient?window.supabase.createClient(SUPABASE_URL,SUPABASE_ANON_KEY,{auth:{persistSession:true,autoRefreshToken:true,detectSessionInUrl:true,storage:window.localStorage}}):null;
 if(!supabaseClient)console.error('Supabase JS não carregou. O formulário de acesso continuará disponível, mas a autenticação ficará indisponível até restabelecer a conexão.');
 let dashboardScope='Todas as lojas',dashboardSelectedMonth=new Date().getMonth(),ownerGoalSettings={},employeeGoalSettings={},branch='',client=null,cart={},role='',staffBranch='',staffActor='',activeFilter='Todos',activeProductCategory='Todas',activeProductBrand='Todas',productSort='padrao',currentOrder=null,activeCartProductId=null,pendingClientCpf='',pendingClientEmail='',clientAuthUser=null,pendingTemporaryCpf='',purchaseDraftItems=[],orderChannel=null,orderAlarmTimer=null,ignoredSuggestions=[],barcodeStream=null,barcodeDetector=null,barcodeScanActive=false,barcodeFrame=null,barcodeTargetId=null,storeGoals={},loyaltyRules={cashback_percent:5,cashback_minimo:100,cashback_validade_dias:90,pontos_a_cada:10,prata_minimo:500,ouro_minimo:1500},staffDirectory=[],adultConfirmed=false;
@@ -1073,6 +1074,39 @@ function sellerGoalView(){
   const rewardCard='<section class="seller-chart-card"><h4>Comissão e premiação do mês</h4><div class="manager-period-kpis"><div><small>Comissão configurada</small><strong>'+commissionRate.toFixed(2).replace('.',',')+'%</strong></div><div><small>Comissão estimada</small><strong>'+money(commissionValue)+'</strong></div><div><small>Bônus da meta</small><strong>'+money(bonusTarget)+'</strong></div><div><small>Premiação estimada</small><strong>'+money(commissionValue+bonusValue)+'</strong></div></div><p class="small muted">'+(goalReached?'Parabéns! Você atingiu a meta mensal e liberou o bônus.':'O bônus será contabilizado quando você atingir 100% da meta mensal.')+' A comissão é uma estimativa sobre suas vendas concluídas, sujeita à conferência do proprietário.</p></section>';
   return '<h3>Minhas metas</h3><p class="muted">'+esc(unit)+' • '+esc(monthLabel)+'</p>'+cards+rewardCard+'<p class="small muted">As metas diária e semanal são estimadas proporcionalmente a partir da sua meta mensal individual. Você visualiza somente suas próprias vendas, comissão e resultados.</p>';
 }
+function customerAdminStatus(c){return c.cadastro_excluido?'Cadastro excluído':c.bloqueado||c.ativo===false?'Bloqueado':'Ativo'}
+function customerAdminDate(v){if(!v)return 'Não informado';const d=new Date(String(v).slice(0,10)+'T12:00:00');return Number.isNaN(d.getTime())?'Não informado':d.toLocaleDateString('pt-BR')}
+async function customerAdminView(){
+ if(role!=='Proprietário')return '<p>Acesso exclusivo do proprietário.</p>';
+ const {data,error}=await supabaseClient.functions.invoke('customer-admin',{body:{action:'list'}});
+ if(error)throw error;if(data?.error)throw new Error(data.error);
+ customerAdminRows=data.customers||[];
+ const cards=customerAdminRows.map(c=>{
+  const status=customerAdminStatus(c),age=customerAge(c.data_nascimento),address=[c.endereco,c.complemento,c.bairro,c.cidade].filter(Boolean).join(', ');
+  const safeId=Number(c.id);
+  return '<article class="card customer-admin-card" style="margin-bottom:12px"><details class="customer-order-details"><summary class="customer-order-summary"><strong>'+esc(c.nome||'Cliente sem nome')+'</strong><span class="customer-order-status" style="color:'+(status==='Ativo'?'#86d98b':status==='Bloqueado'?'#ffcc66':'#ff8888')+'">'+status+'</span><span class="customer-order-more">⌄ Ver mais</span></summary><div class="customer-order-expanded"><div class="customer-admin-data"><p><strong>CPF:</strong> '+esc(c.cpf||'Não informado')+'</p><p><strong>Data de nascimento:</strong> '+customerAdminDate(c.data_nascimento)+(age!==null?' ('+age+' anos)':'')+'</p><p><strong>Telefone / WhatsApp:</strong> '+esc(c.telefone||'Não informado')+'</p><p><strong>E-mail:</strong> '+esc(c.email||'Não informado')+'</p><p><strong>Endereço:</strong> '+esc(address||'Não informado')+'</p><p><strong>Referência:</strong> '+esc(c.referencia||'Não informado')+'</p><p><strong>Cadastro em:</strong> '+customerAdminDate(c.created_at)+'</p><p><strong>Último acesso:</strong> '+(c.ultimo_acesso?new Date(c.ultimo_acesso).toLocaleString('pt-BR'):'Nunca acessou')+'</p><p><strong>Senha temporária:</strong> '+(c.senha_temporaria?'Sim':'Não')+'</p></div><div class="actions customer-admin-actions">'+(status==='Ativo'?'<button type="button" class="btn" onclick="customerAdminAction('+safeId+',\'block\')">Bloquear usuário</button>':'')+(status==='Bloqueado'?'<button type="button" class="btn primary" onclick="customerAdminAction('+safeId+',\'unblock\')">Desbloquear usuário</button>':'')+(status==='Ativo'?'<button type="button" class="btn" onclick="customerAdminAction('+safeId+',\'reset_password\')">Reset de senha</button>':'')+(status!=='Cadastro excluído'?'<button type="button" class="btn danger" onclick="customerAdminAction('+safeId+',\'archive\')">Excluir cadastro</button>':'')+'</div></div></details></article>';
+ }).join('');
+ return '<h3>Cadastro de clientes</h3><p class="muted">Consulta administrativa dos dados dos clientes. Apenas o proprietário pode bloquear, redefinir senha ou arquivar cadastros.</p><div id="customerAdminFeedback" class="notice hidden"></div><p class="small muted">'+customerAdminRows.length+' cadastro(s) encontrados.</p>'+(cards||'<p class="muted">Nenhum cliente cadastrado.</p>');
+}
+async function customerAdminAction(customerId,action){
+ if(role!=='Proprietário'){toast('Acesso exclusivo do proprietário.');return}
+ const c=customerAdminRows.find(x=>Number(x.id)===Number(customerId));if(!c)return;
+ const name=c.nome||'este cliente';
+ const messages={block:'Bloquear '+name+'? Ele deixará de conseguir entrar e fazer pedidos.',unblock:'Desbloquear '+name+'? O cliente poderá voltar a entrar.',archive:'Excluir/arquivar o cadastro de '+name+'? O acesso será suspenso permanentemente. Os pedidos, vendas e registros financeiros serão preservados.',reset_password:'Gerar um novo código de redefinição de senha para '+name+'? O código será válido por 30 minutos.'};
+ if(!confirm(messages[action]||'Confirma esta ação?'))return;
+ try{
+  const {data,error}=await supabaseClient.functions.invoke('customer-admin',{body:{action,customerId:Number(customerId)}});
+  if(error)throw error;if(data?.error)throw new Error(data.error);
+  if(action==='reset_password'){
+   const box=document.getElementById('customerAdminFeedback');
+   if(box){box.classList.remove('hidden');box.innerHTML='<strong>Código temporário para '+esc(name)+':</strong><p style="font-size:26px;letter-spacing:4px;font-weight:900;color:var(--gold)">'+esc(data.temporaryCode)+'</p><p class="small">Entregue este código ao cliente. Ele expira em 30 minutos e será solicitado junto ao CPF para criar uma nova senha.</p><button type="button" class="btn primary" onclick="navigator.clipboard.writeText('+JSON.stringify(data.temporaryCode)+').then(()=>toast(\'Código copiado.\')).catch(()=>toast(\'Não foi possível copiar automaticamente.\'))">Copiar código</button>';}
+   toast('Código de redefinição gerado.');
+  }else{
+   toast(data.message||'Ação concluída.');
+   const updated=await customerAdminView();document.getElementById('staffDetail').innerHTML='<h3>Cadastro de clientes</h3>'+updated;
+  }
+ }catch(e){toast('Não foi possível concluir: '+(e.message||'tente novamente.'))}
+}
 function showAdminCategory(category){
  staffPanelHistory=[];
  const owner=role==='Proprietário',manager=role==='Gerente',seller=role==='Vendedor';
@@ -1086,7 +1120,7 @@ function showAdminCategory(category){
   if(manager)items.push('Cancelar pedido não retirado');
  }else if(category==='Configurações'){
   items=manager?['Histórico de clientes','Redefinição de senha']:['Redefinição de senha','Configurar Pix loja','Histórico de clientes','Cashback e fidelidade'];
-  if(owner)items.push('Equipe e funcionários','Backup e auditoria');
+  if(owner)items.push('Cadastro de clientes','Equipe e funcionários','Backup e auditoria');
  }
  const d=document.getElementById('staffDetail');d.classList.remove('hidden');
  if(category==='Visão geral'){d.innerHTML=ownerDashboardView(owner?'Todas as lojas':staffBranch);d.scrollIntoView({behavior:'smooth',block:'start'});updateFloatingPanelBack();return}
@@ -1094,11 +1128,12 @@ function showAdminCategory(category){
  d.scrollIntoView({behavior:'smooth',block:'start'});updateFloatingPanelBack();
 }
 async function openModule(m){
- if(role==='Gerente'&&['Configurar Pix loja','Cashback e fidelidade','Metas da unidade','Equipe e funcionários','Equipe e metas','Backup e auditoria'].includes(m)){toast('Acesso exclusivo do proprietário.');return}
+ if(m==='Cadastro de clientes'&&role!=='Proprietário'){toast('Acesso exclusivo do proprietário.');return}if(role==='Gerente'&&['Configurar Pix loja','Cashback e fidelidade','Metas da unidade','Equipe e funcionários','Equipe e metas','Backup e auditoria'].includes(m)){toast('Acesso exclusivo do proprietário.');return}
  if(role==='Vendedor'&&(m==='Fluxo de caixa'||m.includes('Estornar')||m==='Relatórios'||m==='Backup e auditoria'||m.includes('Configurações')||m==='Configurar Pix loja'||m==='Cancelar pedido não retirado'||m==='Estoque e lotes'||m==='Fornecedores'||m.includes('Compras'))){toast('Você não tem permissão para este módulo.');return}
  if(['Visão geral','Estoque','Financeiro','Configurações'].includes(m)){showAdminCategory(m);return}
  let d=document.getElementById('staffDetail');if(!d.classList.contains('hidden')&&d.innerHTML.trim())staffPanelHistory.push(d.innerHTML);d.classList.remove('hidden');const dashboardPage=(m==='Todas as lojas'||Object.prototype.hasOwnProperty.call(branches,m));let html=dashboardPage?'':'<h3>'+esc(m)+'</h3><p class="muted">Unidade: '+esc(staffBranch)+'</p>';
- if(m==='Redefinição de senha')html+=await passwordResetRequestsView();
+ if(m==='Cadastro de clientes')html+=await customerAdminView();
+  else if(m==='Redefinição de senha')html+=await passwordResetRequestsView();
  else if(m==='Todas as lojas')html+=ownerDashboardView('Todas as lojas');
  else if(Object.prototype.hasOwnProperty.call(branches,m))html+=ownerDashboardView(m);
  else if(m==='Aniversariantes do dia')html+=await birthdayView();
