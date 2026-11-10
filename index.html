@@ -850,12 +850,12 @@ async function purchaseView(){
  const supplierResult=await supabaseClient.from('fornecedores').select('id,nome').eq('ativo',true).order('nome');
  if(supplierResult.error)return '<p class="notice">Não foi possível carregar os fornecedores: '+esc(supplierResult.error.message)+'</p>';
  const branchOptions=role==='Proprietário'?Object.keys(branches).map(n=>'<option value="'+esc(n)+'">'+esc(n)+'</option>').join(''):'<option value="'+esc(staffBranch)+'">'+esc(staffBranch)+'</option>';
- const productOptions='<option value="">Selecione um produto</option>'+products.filter(p=>p.active).map(p=>'<option value="'+p.id+'">'+esc(p.name)+(p.barcode?' • '+esc(p.barcode):'')+'</option>').join('');
+ const productOptions='<option value="" disabled selected hidden></option>'+products.filter(p=>p.active).map(p=>'<option value="'+p.id+'">'+esc(p.name)+(p.barcode?' • '+esc(p.barcode):'')+'</option>').join('');
  let html='<div class="purchase-simple"><h4>Compras e recebimento</h4><p class="small muted">Registre um produto por vez. Ao confirmar, a quantidade entra no estoque da loja selecionada.</p>';
  html+='<label>Loja</label><select id="purchaseBranch" '+(role!=='Proprietário'?'disabled':'')+'>'+branchOptions+'</select>';
  html+='<label>Fornecedor</label><select id="purchaseSupplier"><option value="">Selecione o fornecedor</option>'+(supplierResult.data||[]).map(x=>'<option value="'+x.id+'">'+esc(x.nome)+'</option>').join('')+'</select>';
  html+='<label>Buscar produto por nome ou código de barras</label><div class="purchase-search-row"><input id="purchaseProductSearch" autocomplete="off" placeholder="Digite o nome ou código de barras" oninput="filterPurchaseProducts()"><button type="button" class="btn" onclick="startBarcodeScanner(&quot;purchaseProductSearch&quot;)">Ler código</button></div>';
- html+='<select id="purchaseProduct" size="5" class="purchase-product-select" onchange="showPurchaseProductPrice()">'+productOptions+'</select><p id="purchaseCurrentPrice" class="small muted">Selecione um produto para ver o preço de venda atual.</p>';
+ html+='<label for="purchaseProduct">Selecione um produto</label><select id="purchaseProduct" size="5" class="purchase-product-select" onchange="showPurchaseProductPrice()">'+productOptions+'</select><p id="purchaseProductEmpty" class="small muted"></p><p id="purchaseCurrentPrice" class="small muted">Selecione um produto para ver o preço de venda atual.</p>';
  html+='<div class="grid cards"><div><label>Quantidade</label><input id="purchaseQty" type="number" min="1" step="1" value="1"></div><div><label>Custo unitário (R$)</label><input id="purchaseCost" type="number" min="0" step="0.01" placeholder="0,00"></div></div>';
  html+='<label>Lote (opcional)</label><input id="purchaseLot" placeholder="Se não informar, será gerado automaticamente">';
  html+='<div class="grid cards"><div><label>Fabricação (opcional)</label><input id="purchaseMfg" type="date"></div><div><label>Validade (opcional)</label><input id="purchaseExpiry" type="date"></div></div>';
@@ -868,7 +868,7 @@ async function purchaseView(){
 function filterPurchaseProducts(){
  const search=document.getElementById('purchaseProductSearch'),select=document.getElementById('purchaseProduct');if(!search||!select)return;
  const q=search.value.trim().toLowerCase(),list=products.filter(p=>p.active&&(!q||(p.name+' '+(p.barcode||'')+' '+(p.brand||'')).toLowerCase().includes(q)));
- select.innerHTML='<option value="">'+(list.length?'Selecione um produto':'Nenhum produto encontrado')+'</option>'+list.map(p=>'<option value="'+p.id+'">'+esc(p.name)+(p.barcode?' • '+esc(p.barcode):'')+'</option>').join('');
+ select.innerHTML=(list.length?'<option value="" disabled selected hidden></option>':'')+list.map(p=>'<option value="'+p.id+'">'+esc(p.name)+(p.barcode?' • '+esc(p.barcode):'')+'</option>').join('');const empty=document.getElementById('purchaseProductEmpty');if(empty)empty.textContent=list.length?'':'Nenhum produto encontrado.';
  const exact=products.find(p=>p.active&&q&&String(p.barcode||'').toLowerCase()===q);
  if(exact)select.value=String(exact.id);else if(list.length===1)select.value=String(list[0].id);else select.value='';
  showPurchaseProductPrice();
