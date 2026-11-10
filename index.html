@@ -401,6 +401,8 @@ button:focus-visible,.btn:focus-visible{outline:2px solid #f9d328!important;outl
   #customerSummary .loyalty-item{min-height:54px;padding:6px 5px}
 }
 
+
+#customerSummary #customerTierProgress{display:block;grid-column:1/-1;max-width:150px;margin:2px auto 0;color:var(--muted);font-size:9px;line-height:1.2;text-align:center;white-space:normal}
 </style>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js" defer></script>
 </head>
@@ -413,7 +415,7 @@ button:focus-visible,.btn:focus-visible{outline:2px solid #f9d328!important;outl
  </div>
  <div id="customerSummary" class="customer-summary hidden">
   <div class="customer-greeting"><h2 id="welcome">Bem-vindo!</h2><span id="customerWelcomeHelp">Escolha seus produtos e confira a localização nas prateleiras.</span><div class="customer-store-line">Unidade selecionada: <strong id="customerStoreName"></strong></div><div class="customer-welcome-actions"><button id="myOrdersBtn" class="btn hidden" onclick="openMyOrders()">Meus pedidos</button><button class="btn" onclick="openMyProfileEditor()">Editar perfil</button></div></div>
-  <div class="loyalty-mini"><div class="loyalty-item"><small class="loyalty-label">Tipo de perfil</small><strong id="customerTier" class="customer-tier tier-bronze">Bronze</strong><strong id="points">0 pts</strong><small>Seus pontos</small></div>
+  <div class="loyalty-mini"><div class="loyalty-item"><small class="loyalty-label">Tipo de perfil</small><strong id="customerTier" class="customer-tier tier-bronze">Bronze</strong><strong id="points">0 pts</strong><small id="customerTierProgress">Calculando próximo nível...</small></div>
   <div class="loyalty-item"><strong class="loyalty-label">Cashback</strong><strong id="cashback">R$ 0,00</strong><small>Saldo disponível</small></div></div>
  </div>
 </header>
@@ -575,7 +577,7 @@ function startStaffOrderNotifications(){
 }
 function stopStaffOrderNotifications(){if(orderAlarmTimer){clearInterval(orderAlarmTimer);orderAlarmTimer=null}if(orderChannel){supabaseClient.removeChannel(orderChannel);orderChannel=null}}
 function customerTier(c){let raw=String(c?.level||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase();if(raw.includes('ouro'))return 'Ouro';if(raw.includes('prata'))return 'Prata';if(raw.includes('bronze'))return 'Bronze';let spent=Number(c?.spent12m)||0;return spent>=Number(loyaltyRules.ouro_minimo||1500)?'Ouro':spent>=Number(loyaltyRules.prata_minimo||500)?'Prata':'Bronze'}
-async function loadCustomerLoyalty(){const [f,c,r]=await Promise.all([supabaseClient.from('fidelidade').select('pontos,nivel,total_compras_12_meses').eq('cliente_id',client.id).maybeSingle(),supabaseClient.from('cashback').select('valor_creditado,saldo_disponivel,data_validade,status').eq('cliente_id',client.id),supabaseClient.from('regras_fidelidade').select('prata_minimo,ouro_minimo').eq('id',1).maybeSingle()]);if(f.error)throw f.error;if(c.error)throw c.error;if(r.error)throw r.error;if(r.data)loyaltyRules={...loyaltyRules,...r.data};client.points=Number(f.data?.pontos)||0;client.spent12m=Number(f.data?.total_compras_12_meses)||0;client.level=f.data?.nivel||'';client.cashbackLots=(c.data||[]).filter(x=>x.status!=='estornado'&&Number(x.saldo_disponivel)>0).map(x=>({amount:Number(x.saldo_disponivel),expires:x.data_validade?new Date(x.data_validade+'T23:59:59').toISOString():null}))}
+async function loadCustomerLoyalty(){const [f,c,r]=await Promise.all([supabaseClient.from('fidelidade').select('pontos,nivel,total_compras_12_meses').eq('cliente_id',client.id).maybeSingle(),supabaseClient.from('cashback').select('valor_creditado,saldo_disponivel,data_validade,status').eq('cliente_id',client.id),supabaseClient.from('regras_fidelidade').select('prata_minimo,ouro_minimo,pontos_a_cada').eq('id',1).maybeSingle()]);if(f.error)throw f.error;if(c.error)throw c.error;if(r.error)throw r.error;if(r.data)loyaltyRules={...loyaltyRules,...r.data};client.points=Number(f.data?.pontos)||0;client.spent12m=Number(f.data?.total_compras_12_meses)||0;client.level=f.data?.nivel||'';client.cashbackLots=(c.data||[]).filter(x=>x.status!=='estornado'&&Number(x.saldo_disponivel)>0).map(x=>({amount:Number(x.saldo_disponivel),expires:x.data_validade?new Date(x.data_validade+'T23:59:59').toISOString():null}))}
 async function loadStaffData(){
  const [c,f,r,redeem,loyalty,cash,staff]=await Promise.all([
   supabaseClient.from('clientes').select('id,cpf,nome,telefone,email,ativo,auth_user_id,endereco,bairro,cidade,complemento,referencia,ultimo_acesso'),
@@ -612,7 +614,7 @@ async function openCustomer(){
  document.getElementById('profile').classList.remove('hidden');document.getElementById('profile-name').textContent=client.name||'Cliente';await loadClientProfilePhoto();renderClientAvatar(client.photoUrl,client.name);
  document.getElementById('customerStoreName').textContent=branch;document.getElementById('customerSummary').classList.remove('hidden');document.getElementById('welcome').textContent='Bem-vindo, '+((client.name||'cliente').trim().split(/\s+/)[0])+'!';
  try{await loadCustomerLoyalty()}catch(e){console.warn('Não foi possível carregar a fidelidade:',e)}
- document.getElementById('points').textContent=(client.points||0)+' pts';const giftPoints=document.getElementById('customerRewardPoints');if(giftPoints)giftPoints.textContent='Seus pontos: '+(client.points||0);const tier=customerTier(client),tierEl=document.getElementById('customerTier');tierEl.textContent=tier;tierEl.classList.remove('tier-bronze','tier-prata','tier-ouro');tierEl.classList.add('tier-'+tier.toLocaleLowerCase('pt-BR'));document.getElementById('cashback').textContent=money(cashbackBalance(client));
+ document.getElementById('points').textContent=(client.points||0)+' pts';const tierProgress=document.getElementById('customerTierProgress');if(tierProgress){const spent=Number(client.spent12m)||0,prata=Number(loyaltyRules.prata_minimo)||500,ouro=Number(loyaltyRules.ouro_minimo)||1500,each=Number(loyaltyRules.pontos_a_cada)||10;let target=0,next='';if(tier==='Bronze'){target=prata;next='Prata'}else if(tier==='Prata'){target=ouro;next='Ouro'}if(next){const missingMoney=Math.max(0,target-spent),missingPoints=Math.ceil(missingMoney/each);tierProgress.textContent=missingPoints===1?'Falta 1 ponto para o nível '+next:'Faltam '+missingPoints+' pontos para o nível '+next}else{tierProgress.textContent='Você já chegou ao nível máximo'} }const giftPoints=document.getElementById('customerRewardPoints');if(giftPoints)giftPoints.textContent='Seus pontos: '+(client.points||0);const tier=customerTier(client),tierEl=document.getElementById('customerTier');tierEl.textContent=tier;tierEl.classList.remove('tier-bronze','tier-prata','tier-ouro');tierEl.classList.add('tier-'+tier.toLocaleLowerCase('pt-BR'));document.getElementById('cashback').textContent=money(cashbackBalance(client));
  show('customer');refreshProductFilters();renderProducts();renderCart();renderCustomerRewards();
 }
 async function checkCustomerCpf(){
