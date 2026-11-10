@@ -1198,7 +1198,7 @@ function showAdminCategory(category){
   if(manager)items.push('Cancelar pedido não retirado');
  }else if(category==='Relacionamento'){
   if(!owner&&!manager){toast('Acesso exclusivo do Proprietário ou Gerente.');return}
-  items=['Aniversariantes do dia','Brindes de Aniversário'];
+  items=['Aniversariantes do dia','Brindes de Aniversário','Clientes Inativos'];
  }else if(category==='Configurações'){
   items=manager?['Histórico de clientes','Redefinição de senha']:['Redefinição de senha','Configurar Pix loja','Histórico de clientes','Cashback e fidelidade'];
   if(owner)items.push('Cadastro de clientes','Equipe e funcionários','Backup e auditoria');
@@ -1218,6 +1218,7 @@ async function openModule(m){
  else if(m==='Todas as lojas')html+=ownerDashboardView('Todas as lojas');
  else if(Object.prototype.hasOwnProperty.call(branches,m))html+=ownerDashboardView(m);
  else if(m==='Aniversariantes do dia')html+=await birthdayView();
+ else if(m==='Clientes Inativos')html+=inactiveCustomersView();
  else if(m==='Brindes de Aniversário'){if(!['Gerente','Proprietário'].includes(role)){toast('Acesso exclusivo do Proprietário ou Gerente.');return}html+=await birthdayGiftAdminView();}
  else if(m.includes('Pedidos de resgate'))html+=redemptionOrdersView();
  else if(m.includes('Pedidos'))html+=ordersView()+redemptionOrdersView();
@@ -1756,6 +1757,31 @@ async function setBirthdayGiftAuthorization(giftId,authorized){
   toast(authorized?'Brinde autorizado para aniversário.':'Autorização de aniversário retirada.');
   await reloadBirthdayGiftAdmin();
  }catch(e){toast(e.message||'Não foi possível actualizar a autorização.')}
+}
+function inactiveCustomersView(){
+ if(!['Gerente','Proprietário'].includes(role))return '<p class="notice">Acesso exclusivo do Proprietário ou Gerente.</p>';
+ const now=new Date();
+ const demo=[30,45,60].map((days,i)=>({id:'demo-'+days,name:['Ana Demonstração','Bruno Teste','Carla Exemplo'][i],days,lastLogin:new Date(now.getTime()-days*86400000).toISOString(),demo:true,phone:''}));
+ const real=Object.values(clients||{}).filter(c=>c&&c.cpf&&c.lastLogin&&c.active!==false).map(c=>{
+  const date=new Date(c.lastLogin),days=Math.floor((now-date)/86400000);
+  return {...c,days,lastLogin:date.toISOString(),demo:false};
+ }).filter(c=>Number.isFinite(c.days)&&c.days>=30).sort((a,b)=>b.days-a.days);
+ const rows=[...demo,...real].sort((a,b)=>b.days-a.days);
+ const cards=rows.map(c=>{
+  const phone=String(c.phone||'').replace(/\\D/g,'');
+  const contact=phone.length>=10&&!c.demo?'<button type="button" class="btn green" onclick="openInactiveCustomerWhatsApp('+JSON.stringify(String(c.cpf))+')">Chamar no WhatsApp</button>':'<span class="small muted">'+(c.demo?'Dado fictício para demonstração':'WhatsApp não cadastrado')+'</span>';
+  return '<article class="card" style="margin:10px 0;padding:14px"><div style="display:flex;justify-content:space-between;gap:10px;align-items:center;flex-wrap:wrap"><strong>'+esc(c.name||'Cliente')+'</strong><span class="badge">'+c.days+' dias sem login</span></div><p class="small muted" style="margin:7px 0">Último acesso: '+new Date(c.lastLogin).toLocaleDateString('pt-BR')+(c.demo?' • EXEMPLO':'')+'</p><div class="actions">'+contact+'</div></article>';
+ }).join('');
+ return '<div class="card"><p class="muted">Clientes ativos cujo último login foi há 30 dias ou mais. Use o WhatsApp para enviar uma mensagem pessoal e convidá-los a voltar.</p><p><strong>'+real.length+'</strong> clientes reais encontrados • <strong>3</strong> exemplos fictícios para demonstração.</p></div><div id="inactiveCustomerRows">'+(cards||'<p class="muted">Nenhum cliente inativo encontrado.</p>')+'</div>';
+}
+function openInactiveCustomerWhatsApp(cpf){
+ const c=Object.values(clients||{}).find(x=>String(x.cpf||'')===String(cpf||''));
+ if(!c){toast('Cliente não encontrado. Atualize a tela e tente novamente.');return}
+ const phone=String(c.phone||'').replace(/\\D/g,'');
+ if(phone.length<10){toast('Este cliente não possui WhatsApp válido cadastrado.');return}
+ const name=String(c.name||'').trim().split(/\\s+/)[0]||'tudo bem';
+ const message='Oi, '+name+'! Sentimos sua falta aqui na Bombastic Tabacaria 😊 Temos novidades e ofertas esperando por você. Entre no nosso aplicativo e confira!';
+ window.open('https://wa.me/55'+phone.replace(/^55/, '')+'?text='+encodeURIComponent(message),'_blank','noopener');
 }
 async function birthdayView(){
  if(!['Vendedor','Gerente','Proprietário'].includes(role))return '<p class="notice">Você não tem permissão para consultar aniversariantes.</p>';
