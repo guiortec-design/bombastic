@@ -507,6 +507,28 @@ button:focus-visible,.btn:focus-visible{outline:2px solid #f9d328!important;outl
  .product-top-filter select{font-size:9px;padding:7px 3px}
  .reward-back-btn{font-size:11px;padding:7px 9px}
 }
+
+/* Catálogo do cliente: três cartões compactos por linha no telemóvel */
+@media(max-width:600px){
+ #products.cards{grid-template-columns:repeat(3,minmax(0,1fr))!important;gap:6px!important;align-items:stretch}
+ #products .card{min-width:0;padding:6px!important;border-radius:9px!important;gap:6px}
+ #products .product .emoji{height:64px!important;flex-basis:64px!important;border-radius:8px}
+ #products .card h3{font-size:10.5px!important;line-height:1.18!important;margin:2px 0;overflow-wrap:anywhere}
+ #products .card p{font-size:10px!important;line-height:1.2!important;margin:2px 0}
+ #products .price{font-size:13px!important;line-height:1.1}
+ #products .product .product-shelf{font-size:9px!important;line-height:1.2}
+ #products .product button{font-size:9px!important;line-height:1.15;padding:6px 3px!important;white-space:normal;min-height:30px}
+ #products .product-controls{gap:4px}
+ #products .product-qty{gap:3px!important}
+ #products .product-qty>*{flex:1 1 0;min-width:0;padding:5px 2px!important}
+}
+@media(max-width:350px){
+ #products.cards{gap:4px!important}
+ #products .card{padding:4px!important}
+ #products .product .emoji{height:54px!important;flex-basis:54px!important}
+ #products .card h3{font-size:9.5px!important}
+ #products .product button{font-size:8.5px!important}
+}
 </style>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js" defer></script>
 </head>
