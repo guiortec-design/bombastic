@@ -850,7 +850,7 @@ async function purchaseView(){
  const supplierResult=await supabaseClient.from('fornecedores').select('id,nome').eq('ativo',true).order('nome');
  if(supplierResult.error)return '<p class="notice">Não foi possível carregar os fornecedores: '+esc(supplierResult.error.message)+'</p>';
  const branchOptions=role==='Proprietário'?Object.keys(branches).map(n=>'<option value="'+esc(n)+'">'+esc(n)+'</option>').join(''):'<option value="'+esc(staffBranch)+'">'+esc(staffBranch)+'</option>';
- const productOptions=products.filter(p=>p.active).map(p=>'<option value="'+p.id+'">'+esc(p.name)+(p.barcode?' • '+esc(p.barcode):'')+'</option>').join('');
+ const productOptions='<option value="">Selecione um produto</option>'+products.filter(p=>p.active).map(p=>'<option value="'+p.id+'">'+esc(p.name)+(p.barcode?' • '+esc(p.barcode):'')+'</option>').join('');
  let html='<div class="purchase-simple"><h4>Compras e recebimento</h4><p class="small muted">Registre um produto por vez. Ao confirmar, a quantidade entra no estoque da loja selecionada.</p>';
  html+='<label>Loja</label><select id="purchaseBranch" '+(role!=='Proprietário'?'disabled':'')+'>'+branchOptions+'</select>';
  html+='<label>Fornecedor</label><select id="purchaseSupplier"><option value="">Selecione o fornecedor</option>'+(supplierResult.data||[]).map(x=>'<option value="'+x.id+'">'+esc(x.nome)+'</option>').join('')+'</select>';
@@ -868,9 +868,9 @@ async function purchaseView(){
 function filterPurchaseProducts(){
  const search=document.getElementById('purchaseProductSearch'),select=document.getElementById('purchaseProduct');if(!search||!select)return;
  const q=search.value.trim().toLowerCase(),list=products.filter(p=>p.active&&(!q||(p.name+' '+(p.barcode||'')+' '+(p.brand||'')).toLowerCase().includes(q)));
- select.innerHTML=list.map(p=>'<option value="'+p.id+'">'+esc(p.name)+(p.barcode?' • '+esc(p.barcode):'')+'</option>').join('')||'<option value="">Nenhum produto encontrado</option>';
+ select.innerHTML='<option value="">'+(list.length?'Selecione um produto':'Nenhum produto encontrado')+'</option>'+list.map(p=>'<option value="'+p.id+'">'+esc(p.name)+(p.barcode?' • '+esc(p.barcode):'')+'</option>').join('');
  const exact=products.find(p=>p.active&&q&&String(p.barcode||'').toLowerCase()===q);
- if(exact)select.value=String(exact.id);else if(list.length===1)select.value=String(list[0].id);
+ if(exact)select.value=String(exact.id);else if(list.length===1)select.value=String(list[0].id);else select.value='';
  showPurchaseProductPrice();
 }
 function showPurchaseProductPrice(){
@@ -880,7 +880,7 @@ function showPurchaseProductPrice(){
 function renderPurchaseDraft(){let box=document.getElementById('purchaseDraftRows');if(!box)return;box.innerHTML=purchaseDraftItems.map((x,i)=>'<div class="card"><strong>'+esc(x.name)+'</strong><p>'+x.qty+' un. × '+money(x.cost)+' • Lote '+esc(x.lot)+' • Subtotal '+money(x.qty*x.cost)+'</p><button class="btn" onclick="removePurchaseDraftItem('+i+')">Remover</button></div>').join('')||'<p class="small muted">Nenhum item adicionado.</p>'}
 function addPurchaseDraftItem(){let id=Number(document.getElementById('purchaseProduct').value),p=products.find(x=>Number(x.id)===id),qty=Number(document.getElementById('purchaseQty').value),cost=Number(document.getElementById('purchaseCost').value),lot=document.getElementById('purchaseLot').value.trim(),mfg=document.getElementById('purchaseMfg').value,expiry=document.getElementById('purchaseExpiry').value;if(!p||!Number.isInteger(qty)||qty<1||!Number.isFinite(cost)||cost<0||!lot){toast('Informe produto, quantidade, custo e lote válidos.');return}if(expiry&&expiry<new Date().toISOString().slice(0,10)){toast('A validade informada já passou.');return}purchaseDraftItems.push({id,qty,cost,lot,mfg,expiry,name:p.name});renderPurchaseDraft()}
 function removePurchaseDraftItem(index){purchaseDraftItems.splice(index,1);renderPurchaseDraft()}
-async async function savePurchase(){
+async function savePurchase(){
  const unit=document.getElementById('purchaseBranch')?.value,supplier=document.getElementById('purchaseSupplier')?.value;
  const productId=Number(document.getElementById('purchaseProduct')?.value),product=products.find(p=>Number(p.id)===productId);
  const qty=Number(document.getElementById('purchaseQty')?.value),cost=Number(document.getElementById('purchaseCost')?.value);
