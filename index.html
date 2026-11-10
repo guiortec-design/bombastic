@@ -967,7 +967,7 @@ async function saveStockProductEdit(id,unitId){
  if(lotsError){toast('Saldo salvo, mas não foi possível sincronizar os lotes: '+lotsError.message);return}
  const today=new Date().toISOString().slice(0,10),validLots=(lots||[]).filter(l=>!l.data_validade||l.data_validade>=today);let difference=qty-validLots.reduce((sum,l)=>sum+Number(l.quantidade||0),0);
  for(const lot of [...validLots].reverse()){if(difference===0)break;const current=Number(lot.quantidade)||0,change=difference>0?difference:-Math.min(current,Math.abs(difference)),next=current+change;const upd=await supabaseClient.from('estoque_lotes').update({quantidade:next,quantidade_inicial:Math.max(Number(lot.quantidade_inicial)||0,next)}).eq('id',lot.id);if(upd.error){toast('Saldo salvo, mas houve erro ao ajustar um lote: '+upd.error.message);return}difference-=change;}
- await loadProductsFromSupabase(true);closeModal();toast('Produto, disponibilidade, endereço e saldo atualizados.');openModule(stockModuleName());
+ closeModal();toast('Produto, disponibilidade, endereço e saldo atualizados.');await loadProductsFromSupabase(true);openModule(stockModuleName());
 }
 async function editStockLot(id){
  if(!canManage()){toast('Somente gerente ou proprietário pode editar lotes.');return}
