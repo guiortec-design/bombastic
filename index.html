@@ -2060,7 +2060,7 @@ async function requestEmployeePasswordReset(id){
 
 
 
-function auditView(){return '<h4>Auditoria física de estoque</h4><p>Gere as duas folhas da mesma unidade: primeiro a contagem sem saldo do sistema; depois a conferência com o estoque cadastrado.</p><div class="form-actions"><button class="btn primary" onclick="exportStockAudit(\\'count\\')">PDF 1 — Contagem física (em branco)</button><button class="btn" onclick="exportStockAudit(\\'compare\\')">PDF 2 — Conferência com sistema</button></div>'}
+function auditView(){return `<h4>Auditoria física de estoque</h4><p>Gere as duas folhas da mesma unidade: primeiro a contagem sem saldo do sistema; depois a conferência com o estoque cadastrado.</p><div class="form-actions"><button type="button" class="btn primary" onclick="exportStockAudit('count')">PDF 1 — Contagem física (em branco)</button><button type="button" class="btn" onclick="exportStockAudit('compare')">PDF 2 — Conferência com sistema</button></div>`}
 function salesView(refund=false){
  let opts=role==='Proprietário'?'<label>Unidade</label><select id="salesBranch" onchange="filterSales()"><option value="all">Todas as unidades</option>'+Object.entries(branches).map(([n,b])=>'<option value="'+b.id+'">'+esc(n)+'</option>').join('')+'</select>':'';
  return opts+'<h4>Pesquisar vendas</h4><input id="salesSearch" placeholder="Cliente, CPF ou produto" oninput="filterSales()"><div id="salesRows">'+sales.map(s=>saleRow(s,refund)).join('')+'</div>';
