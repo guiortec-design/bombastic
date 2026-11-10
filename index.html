@@ -443,6 +443,23 @@ button:focus-visible,.btn:focus-visible{outline:2px solid #f9d328!important;outl
 .customer-admin-card .customer-order-details[open] .customer-order-more{font-size:0}
 .customer-admin-card .customer-order-details[open] .customer-order-more:after{content:'Ver menos ︿';font-size:12px}
 @media(max-width:600px){.customer-admin-data{grid-template-columns:1fr}.customer-admin-actions .btn{flex:1 1 100%}}
+
+.customer-history-card{display:flex;align-items:center;justify-content:space-between;gap:14px;margin-bottom:10px}
+.customer-history-card>strong{min-width:0;overflow-wrap:anywhere}
+.customer-history-toggle{border:1px solid rgba(249,211,40,.55);background:rgba(249,211,40,.08);color:var(--gold);border-radius:10px;padding:8px 14px;font-weight:800;white-space:nowrap;cursor:pointer}
+.customer-history-toggle span{font-size:16px;margin-right:5px}
+#modal .modalbox:has(.customer-history-modal){width:min(760px,94vw);max-height:88vh;overflow:auto;position:relative}
+.customer-history-modal{position:relative}
+.customer-history-modal h2{color:var(--gold);margin:0 42px 6px 0}
+.customer-history-modal-close{position:absolute;right:0;top:0;border:0;background:transparent;color:#fff;font-size:28px;cursor:pointer}
+.customer-history-order{border:1px solid rgba(249,211,40,.2);border-radius:12px;padding:12px;margin:12px 0;background:#111}
+.customer-history-order-head{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap}
+.customer-history-order-head>strong{color:var(--gold)}
+.customer-history-order-items{display:flex;flex-direction:column;gap:7px;margin-top:10px}
+.customer-history-order-items>div{display:flex;justify-content:space-between;gap:12px;border-top:1px solid #333;padding-top:7px}
+.customer-history-order-total{text-align:right;border-top:1px solid rgba(249,211,40,.2);padding-top:9px}
+@media(max-width:520px){.customer-history-card{align-items:flex-start;flex-direction:column}.customer-history-toggle{align-self:center;min-width:140px}}
+
 .customer-order-details{width:100%}
 .customer-order-summary{display:flex;align-items:center;gap:9px;flex-wrap:wrap;list-style:none;cursor:pointer;min-height:36px}
 .customer-order-summary::-webkit-details-marker{display:none}
@@ -1137,7 +1154,7 @@ async function openModule(m){
  if(m==='Cadastro de clientes'&&role!=='Proprietário'){toast('Acesso exclusivo do proprietário.');return}if(role==='Gerente'&&['Configurar Pix loja','Cashback e fidelidade','Metas da unidade','Equipe e funcionários','Equipe e metas','Backup e auditoria'].includes(m)){toast('Acesso exclusivo do proprietário.');return}
  if(role==='Vendedor'&&(m==='Fluxo de caixa'||m.includes('Estornar')||m==='Relatórios'||m==='Backup e auditoria'||m.includes('Configurações')||m==='Configurar Pix loja'||m==='Cancelar pedido não retirado'||m==='Estoque e lotes'||m==='Fornecedores'||m.includes('Compras'))){toast('Você não tem permissão para este módulo.');return}
  if(['Visão geral','Estoque','Financeiro','Configurações'].includes(m)){showAdminCategory(m);return}
- let d=document.getElementById('staffDetail');if(!d.classList.contains('hidden')&&d.innerHTML.trim())staffPanelHistory.push(d.innerHTML);d.classList.remove('hidden');const dashboardPage=(m==='Todas as lojas'||Object.prototype.hasOwnProperty.call(branches,m));let html=dashboardPage||m==='Cadastro de clientes'?'':'<h3>'+esc(m)+'</h3><p class="muted">Unidade: '+esc(staffBranch)+'</p>';
+ let d=document.getElementById('staffDetail');if(!d.classList.contains('hidden')&&d.innerHTML.trim())staffPanelHistory.push(d.innerHTML);d.classList.remove('hidden');const dashboardPage=(m==='Todas as lojas'||Object.prototype.hasOwnProperty.call(branches,m));let html=dashboardPage||m==='Cadastro de clientes'||m==='Histórico de clientes'?'':'<h3>'+esc(m)+'</h3><p class="muted">Unidade: '+esc(staffBranch)+'</p>';
  if(m==='Cadastro de clientes')html+=await customerAdminView();
   else if(m==='Redefinição de senha')html+=await passwordResetRequestsView();
  else if(m==='Todas as lojas')html+=ownerDashboardView('Todas as lojas');
@@ -1146,7 +1163,7 @@ async function openModule(m){
  else if(m.includes('Pedidos de resgate'))html+=redemptionOrdersView();
  else if(m.includes('Pedidos'))html+=ordersView()+redemptionOrdersView();
  else if(m.includes('mais vendidos'))html+=bestSellersView();
- else if(m==='Histórico de clientes')html+=clientsView();
+ else if(m==='Histórico de clientes')html+=customerHistoryView();
  else if(m.includes('Histórico'))html+=salesView();
  else if(m==='Financeiro'||m==='Fluxo de caixa')html+=await financeView();
  else if(m.includes('Metas'))html+=await goalsView();
@@ -1963,7 +1980,30 @@ async function saveGoalModal(){
  ownerGoalSettings[id]={...(ownerGoalSettings[id]||{}),meta_mensal:monthly};storeGoals[id]=monthly;employeeTargets.forEach(x=>employeeGoalSettings[x.funcionario_id]={loja_id:id,meta_mensal:x.meta_mensal,comissao_percentual:x.comissao_percentual,bonus_meta:x.bonus_meta});toast('Metas da loja e dos funcionários salvas.');closeModal();setOwnerDashboardScope(dashboardScope);
 }
 function clientsView(){let list=Object.values(clients).sort((a,b)=>(a.name||'').localeCompare(b.name||''));return '<h4>Cadastro completo de clientes</h4><input id="allClientsSearch" placeholder="Buscar por nome, CPF, telefone ou e-mail" oninput="filterAllClients()"><p class="small muted">'+list.length+' clientes cadastrados.</p><div id="allClientsRows">'+clientRowsHtml(list)+'</div>'}
-function clientRowsHtml(list){return list.map(c=>'<div class="card"><strong>'+esc(c.name||'Sem nome')+'</strong><p>CPF: '+esc(c.cpf)+' • WhatsApp: '+esc(c.phone||'-')+'</p><p>E-mail: '+esc(c.email||'-')+'</p><p>Endereço: '+esc([c.address,c.complement,c.neighborhood,c.city].filter(Boolean).join(', ')||'-')+'</p><p>Último acesso: '+(c.lastLogin?new Date(c.lastLogin).toLocaleString('pt-BR'):'Não registrado')+' • Categoria: '+customerTier(c)+' • Pontos: '+(c.points||0)+' • Cashback: '+money(c.cashbackLots.reduce((a,x)=>a+x.amount,0))+'</p><button class="btn" onclick="showClientDetails(\''+String(c.cpf).replace(/'/g,'')+'\')">Ver histórico</button> '+(validBrazilWhatsApp(c.phone)?'<a class="btn green" target="_blank" rel="noopener" href="'+clientWhatsAppLink(c.cpf)+'">WhatsApp</a>':'<span class="small muted">WhatsApp não cadastrado</span>')+'</div>').join('')||'<p>Nenhum cliente cadastrado.</p>'}
+
+function customerHistoryView(){
+ const list=Object.values(clients).filter(c=>c&&c.cpf).sort((a,b)=>(a.name||'').localeCompare(b.name||''));
+ return '<h3>Histórico de clientes</h3><input id="customerHistorySearch" placeholder="Buscar por nome" oninput="filterCustomerHistory()"><p class="small muted" id="customerHistoryCount">'+list.length+' clientes encontrados.</p><div id="customerHistoryRows">'+customerHistoryRowsHtml(list)+'</div>';
+}
+function customerHistoryRowsHtml(list){
+ return list.map(c=>'<article class="card customer-history-card"><strong>'+esc(c.name||'Cliente sem nome')+'</strong><button type="button" class="customer-history-toggle" onclick="openCustomerHistoryOrders(\''+String(c.cpf).replace(/'/g,'')+'\')"><span>⌄</span> Ver mais</button></article>').join('')||'<p class="muted">Nenhum cliente encontrado.</p>';
+}
+function filterCustomerHistory(){
+ const q=(document.getElementById('customerHistorySearch')?.value||'').trim().toLocaleLowerCase('pt-BR');
+ const list=Object.values(clients).filter(c=>c&&c.cpf&&String(c.name||'').toLocaleLowerCase('pt-BR').includes(q)).sort((a,b)=>(a.name||'').localeCompare(b.name||''));
+ const rows=document.getElementById('customerHistoryRows');if(rows)rows.innerHTML=customerHistoryRowsHtml(list);
+ const count=document.getElementById('customerHistoryCount');if(count)count.textContent=list.length+' clientes encontrados.';
+}
+function openCustomerHistoryOrders(cpf){
+ const customer=clients[cpf];if(!customer)return;
+ const history=orders.filter(o=>String(o.cpf||'').replace(/\D/g,'')===String(cpf||'').replace(/\D/g,'')).sort((a,b)=>new Date(b.date||0)-new Date(a.date||0));
+ const content=history.map(o=>'<article class="customer-history-order"><div class="customer-history-order-head"><strong>Pedido #'+esc(String(o.id))+'</strong><span>'+esc(o.status||'Status não informado')+'</span></div><p class="small muted">'+(o.date?new Date(o.date).toLocaleString('pt-BR'):'Data não informada')+' • '+esc(o.branch||'Unidade não informada')+'</p><div class="customer-history-order-items">'+(o.items||[]).map(item=>'<div><span>'+esc(item.name||'Produto')+' × '+Number(item.qty||0)+'</span><strong>'+money(Number(item.price||0)*Number(item.qty||0))+'</strong></div>').join('')+'</div><p class="customer-history-order-total">Total do pedido: <strong>'+money(o.total||0)+'</strong></p></article>').join('');
+ const modal=document.getElementById('modal'),box=modal?.querySelector('.modalbox');if(!modal||!box)return;
+ box.classList.remove('profile-editor','checkout-modal');modal.classList.remove('profile-editor-modal','checkout-modal');
+ box.innerHTML='<div class="customer-history-modal"><button type="button" class="customer-history-modal-close" onclick="closeModal()" aria-label="Fechar">×</button><h2>Pedidos de '+esc(customer.name||'Cliente')+'</h2><p class="small muted">'+history.length+' pedido(s) encontrado(s).</p>'+(content||'<p class="muted">Este cliente ainda não possui pedidos registados.</p>')+'</div>';
+ modal.classList.remove('hidden');
+}
+
 function clientWhatsAppLink(cpf){
  const c=clients[cpf];if(!c||!validBrazilWhatsApp(c.phone))return '';
  const digit=String(c.phone).replace(/\D/g,'').replace(/^55/,'');
