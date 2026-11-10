@@ -490,7 +490,7 @@ async function clientLogin(){
  if(!validCPF(cpf)){toast('Informe um CPF válido.');return}if(!password){toast('Informe sua senha.');return}
  const btn=document.getElementById('clientLoginBtn');btn.disabled=true;btn.textContent='Entrando...';
  try{const {data,error}=await supabaseClient.functions.invoke('customer-access',{body:{action:'login',cpf,password}});if(error)throw error;if(data?.error)throw new Error(data.error);await applyCustomerSession(data)}
- catch(e){document.getElementById('clientResetRequestBtn')?.classList.remove('hidden');toast('Senha incorreta. Confira e tente novamente ou solicite a redefinição.')}
+ catch(e){document.getElementById('clientResetRequestBtn')?.classList.remove('hidden');console.error('Falha no login do cliente:',e);toast(e?.message?'Não foi possível entrar: '+e.message:'Não foi possível entrar. Confira CPF e senha ou solicite a redefinição.')}
  finally{btn.disabled=false;btn.textContent='Entrar'}
 }
 async function registerClient(){
