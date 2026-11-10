@@ -1315,7 +1315,7 @@ async function openModule(m){
  else if(m.includes('Cashback')||m.includes('fidelidade'))html+=loyaltyView();
  else if(m.includes('Cancelar'))html+=ordersView(true);
  else if(m.includes('Estornar'))html+=salesView(true);
- else if(m.includes('Backup'))html+=(role==='Proprietário'?'<button class="btn primary" onclick="exportBackup()">Exportar backup JSON</button>':'<p class="small muted">Exportação do backup restrita ao Proprietário.</p>')+'<hr><h4>Auditoria física de estoque — PDF</h4><p class="small muted">O proprietário imprime a lista com o saldo esperado. A gerente imprime a lista com a contagem em branco para preencher na loja.</p><label>Unidade</label>'+branchSelectHtml('auditBranch','all',true)+'<button class="btn primary" onclick="exportStockAudit(\'owner\')">PDF do proprietário — quantidades do sistema</button> <button class="btn" onclick="exportStockAudit(\'manager\')">PDF para contagem manual</button>';
+ else if(m.includes('Backup'))html+=(role==='Proprietário'?'<button class="btn primary" onclick="exportBackup()">Exportar backup JSON</button>':'<p class="small muted">Exportação do backup restrita ao Proprietário.</p>')+'<hr><h4>Auditoria física de estoque — PDF</h4><p class="small muted">O proprietário imprime a lista com o saldo esperado. A gerente imprime a lista com a contagem em branco para preencher na loja.</p><label>Unidade</label>'+branchSelectHtml('auditBranch','all',true)+'<button class="btn primary" onclick="exportStockAudit(\'owner\')">PDF 2 — Conferência com sistema</button> <button class="btn" onclick="exportStockAudit(\'manager\')">PDF 1 — Contagem física (em branco)</button>';
  else if(m==='Configurar Pix loja'||m.includes('Configurações')){let configBranch=role==='Proprietário'?'Loja Picerno':staffBranch;let pc=pixSettings[configBranch]||{};html+='<h4>Configurar Pix da loja</h4>'+(role==='Proprietário'?'<label>Unidade</label><select id="cfgPixBranch" onchange="fillPixSettings(this.value)"><option>Loja Picerno</option><option>Loja Volobueff</option><option>Loja Nova Veneza</option></select>':'')+'<label>Chave Pix oficial</label><input id="cfgPix" value="'+esc(pc.key||'')+'" placeholder="Chave Pix"><label>Nome do recebedor</label><input id="cfgPixName" maxlength="25" value="'+esc(pc.merchant||'BOMBASTIC TABACARIA')+'"><label>Cidade do recebedor</label><input id="cfgPixCity" maxlength="15" value="'+esc(pc.city||'SUMARE')+'"><button class="btn primary" onclick="savePixSettings()">Salvar dados Pix</button>';}
  else html+='<p>Selecione um módulo para consultar os dados.</p>';
  html+='<p><button type="button" class="btn btn-close-module" onclick="goBackStaffPanel()">← Voltar ao painel</button></p>';
@@ -1973,21 +1973,22 @@ function exportBackup(){
  a.href=url;a.download='bombastic-backup-'+new Date().toISOString().slice(0,10)+'.json';document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),1000);toast('Backup JSON gerado com os dados carregados no aplicativo.')
 }
 function exportStockAudit(mode){
+ const auditMode=mode==='owner'?'compare':mode==='manager'?'count':mode;
+ if(!['count','compare'].includes(auditMode)){toast('Tipo de relatório inválido.');return}
  const unit=role==='Proprietário'?(document.getElementById('auditBranch')?.value||'all'):String(branches[staffBranch]?.id||'');
  const names=Object.entries(branches).filter(([name,b])=>unit==='all'||String(b.id)===String(unit));
  const rows=names.flatMap(([name])=>products.map(p=>({store:name,name:p.name,barcode:p.barcode||'',shelf:p.shelf||'',qty:branchStock(p,name),unit:p.unit||'unidades'})));
- const w=window.open('','_blank');
- if(!w){toast('Permita pop-ups para gerar o PDF.');return}
- const tableRows=rows.map(x=>'<tr><td>'+esc(x.store)+'</td><td>'+esc(x.name)+'</td><td>'+esc(x.barcode)+'</td><td>'+esc(x.shelf)+'</td><td>'+esc(x.unit)+'</td><td class="qty">'+(mode==='owner'?x.qty:'')+'</td><td class="qty"></td></tr>').join('');
- w.document.write(`<!doctype html><html lang="pt-BR"><head><meta charset="utf-8"><title>Auditoria de estoque Bombastic</title><style>body{font:12px Arial;padding:24px;color:#111}h1{font-size:20px}table{width:100%;border-collapse:collapse}th,td{border:1px solid #777;padding:7px;text-align:left}th{background:#eee}.qty{text-align:center;width:90px}@media print{button{display:none}}
-/* Cadastro administrativo: resumo mostra somente nome, CPF e Ver mais */
-.customer-admin-card .customer-order-summary{display:flex;align-items:center;gap:12px;flex-wrap:wrap}
-.customer-admin-card .customer-admin-cpf{font-size:12px;color:var(--muted);font-weight:500}
-.customer-admin-card .customer-order-more{margin-left:auto;position:static;transform:none}
-@media(max-width:600px){.customer-admin-card .customer-order-summary{gap:7px}.customer-admin-card .customer-admin-cpf{flex-basis:100%}.customer-admin-card .customer-order-more{margin-left:0}}
-</style></head><body><h1>Bombastic Tabacaria — Auditoria física de estoque</h1><p>Unidade(s): ${names.map(x=>esc(x[0])).join(', ')}</p><p>Data: ${new Date().toLocaleDateString('pt-BR')}</p><table><tr><th>Unidade</th><th>Produto</th><th>Código</th><th>Prateleira</th><th>Unidade</th><th>Saldo sistema</th><th>Contagem física</th></tr>${tableRows}</table><p>Responsável: ____________________________________</p><p>Assinatura: ____________________________________</p></body></html>`);
- w.document.close();
- w.onload=()=>w.print();
+ const w=window.open('','_blank');if(!w){toast('Permita pop-ups para gerar o PDF.');return}
+ const countOnly=auditMode==='count';
+ const tableRows=rows.map(x=>countOnly
+  ?'<tr><td>'+esc(x.store)+'</td><td>'+esc(x.name)+'</td><td>'+esc(x.barcode)+'</td><td>'+esc(x.shelf)+'</td><td>'+esc(x.unit)+'</td><td class="qty"></td></tr>'
+  :'<tr><td>'+esc(x.store)+'</td><td>'+esc(x.name)+'</td><td>'+esc(x.barcode)+'</td><td>'+esc(x.shelf)+'</td><td>'+esc(x.unit)+'</td><td class="qty">'+x.qty+'</td><td class="qty"></td><td class="qty"></td><td class="check"></td></tr>').join('');
+ const headers=countOnly
+  ?'<th>Unidade</th><th>Produto</th><th>Código</th><th>Prateleira</th><th>Unidade</th><th>Quantidade encontrada</th>'
+  :'<th>Unidade</th><th>Produto</th><th>Código</th><th>Prateleira</th><th>Unidade</th><th>Saldo no sistema</th><th>Contagem física</th><th>Diferença</th><th>Confere?</th>';
+ const title=countOnly?'Folha de contagem física — sem saldo do sistema':'Conferência de estoque — comparação com o sistema';
+ w.document.write(`<!doctype html><html lang="pt-BR"><head><meta charset="utf-8"><title>${title} — Bombastic</title><style>@page{size:A4 landscape;margin:12mm}body{font:11px Arial;padding:18px;color:#111}h1{font-size:19px;margin:0 0 8px}p{margin:5px 0 12px}table{width:100%;border-collapse:collapse}th,td{border:1px solid #777;padding:6px;text-align:left}th{background:#eee}.qty{text-align:center;width:90px}.check{text-align:center;width:70px;height:28px}.instructions{padding:8px;border:1px solid #aaa;margin:10px 0 14px}@media print{body{padding:0}}</style></head><body><h1>Bombastic Tabacaria — ${title}</h1><p>Unidade(s): ${names.map(x=>esc(x[0])).join(', ')}</p><p>Data: ${new Date().toLocaleDateString('pt-BR')}</p><div class="instructions">${countOnly?'Preencha somente a quantidade física encontrada na loja. Esta folha não mostra o saldo registrado no sistema.':'Compare o saldo do sistema com a contagem física. Anote a diferença e marque se os números conferem.'}</div><table><tr>${headers}</tr>${tableRows}</table><p>Responsável: ____________________________________ &nbsp;&nbsp; Assinatura: ____________________________________</p></body></html>`);
+ w.document.close();w.onload=()=>w.print();
 }
 async function requestStaffPasswordReset(){
  const email=document.getElementById('staffUser').value.trim().toLowerCase();
@@ -2059,7 +2060,7 @@ async function requestEmployeePasswordReset(id){
 
 
 
-function auditView(){return '<h4>Auditoria física de estoque</h4><p>Imprima a lista da unidade atribuída e preencha a quantidade encontrada nas prateleiras.</p><button class="btn primary" onclick="exportStockAudit(\'manager\')">Gerar PDF para contagem manual</button>'}
+function auditView(){return '<h4>Auditoria física de estoque</h4><p>Gere as duas folhas da mesma unidade: primeiro a contagem sem saldo do sistema; depois a conferência com o estoque cadastrado.</p><div class="form-actions"><button class="btn primary" onclick="exportStockAudit(\\'count\\')">PDF 1 — Contagem física (em branco)</button><button class="btn" onclick="exportStockAudit(\\'compare\\')">PDF 2 — Conferência com sistema</button></div>'}
 function salesView(refund=false){
  let opts=role==='Proprietário'?'<label>Unidade</label><select id="salesBranch" onchange="filterSales()"><option value="all">Todas as unidades</option>'+Object.entries(branches).map(([n,b])=>'<option value="'+b.id+'">'+esc(n)+'</option>').join('')+'</select>':'';
  return opts+'<h4>Pesquisar vendas</h4><input id="salesSearch" placeholder="Cliente, CPF ou produto" oninput="filterSales()"><div id="salesRows">'+sales.map(s=>saleRow(s,refund)).join('')+'</div>';
