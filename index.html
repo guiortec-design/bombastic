@@ -961,8 +961,7 @@ function catalogChoiceValue(id){
 function showStockAttention(branchName){
  const today=new Date();today.setHours(0,0,0,0);
  const dateOnly=v=>{if(!v)return null;const d=new Date(String(v).slice(0,10)+'T12:00:00');return Number.isNaN(d.getTime())?null:d};
- const daysBetween=d=>Math.floor((today-d)/86400000);
- const attention=[];
+ const daysBetween=d=>Math.floor((today-d)/86400000),attention=[];
  stockLots.filter(l=>l.branch===branchName&&Number(l.quantity)>0).forEach(l=>{
   const p=products.find(x=>Number(x.id)===Number(l.productId));if(!p)return;
   const expiry=dateOnly(l.expiryDate),received=dateOnly(l.receivedAt);
@@ -971,9 +970,31 @@ function showStockAttention(branchName){
  });
  attention.sort((a,b)=>a.priority-b.priority||a.days-b.days);
  const modal=document.getElementById('modal');
- const rows=attention.length?attention.map(a=>{const p=products.find(x=>Number(x.id)===Number(a.productId)),isPromo=p?.tag==='Promoção',expired=a.kind==='Vencido';return '<article class="stock-item-card"><div class="stock-item-main"><strong>'+esc(a.product)+'</strong><small>'+esc(a.kind)+' • Lote: '+esc(a.lot)+'</small><div class="stock-item-meta"><span class="pill">Saldo: '+Number(a.qty)+' '+esc(a.unit)+'</span><span class="pill">'+esc(a.reason)+'</span></div><small>'+ (a.kind==='Muito tempo em estoque'?'Entrada: ':'Validade: ')+lotDateLabel(a.date)+'</small><div class="stock-item-actions"><button type="button" class="btn primary" onclick="addAttentionProductPromotion('+Number(a.productId)+',\''+esc(branchName)+'\')" '+(isPromo||expired?'disabled':'')+'>'+(expired?'Produto vencido':isPromo?'Já está em promoção':'⭐ Adicionar à promoção')+'</button><button type="button" class="btn" onclick="prepareAttentionGift('+Number(a.productId)+',\''+esc(branchName)+'\','+Number(a.lotId)+','+Number(a.qty)+')" '+(expired?'disabled':'')+'>🎁 Colocar na vitrine de brindes</button></div>'+(expired?'<small class="muted">Produto vencido não pode ser vendido nem oferecido como brinde.</small>':'')+'</div></article>'}).join(''):'<p class="muted">Nenhum lote com saldo foi encontrado nessas condições nesta loja.</p>'
- modal.innerHTML='<div class="modalbox stock-edit-modal"><h2>Produtos que precisam de atenção</h2><p class="small muted">'+esc(branchName)+' • Vencimento em até 30 dias ou estoque há 90 dias ou mais</p><div class="stock-attention-summary"><strong>'+attention.length+'</strong><span>registro(s) para verificar</span></div>'+rows+'<div class="stock-edit-actions"><button type="button" class="btn primary" onclick="closeModal()">Fechar</button></div></div>';
+ const rows=attention.length?attention.map(a=>{
+  const p=products.find(x=>Number(x.id)===Number(a.productId)),isPromo=String(p?.tag||'').includes('Promoção'),expired=a.kind==='Vencido';
+  const action=expired
+   ?'<button type="button" class="btn" onclick="prepareExpiredWriteoff('+Number(a.productId)+',\''+esc(branchName)+'\','+Number(a.lotId)+','+Number(a.qty)+')">🗑 Dar baixa por vencimento</button>'
+   :'<button type="button" class="btn" onclick="prepareAttentionGift('+Number(a.productId)+',\''+esc(branchName)+'\','+Number(a.lotId)+','+Number(a.qty)+')">🎁 Mover para vitrine de brindes</button>';
+  return '<article class="stock-item-card"><div class="stock-item-main"><strong>'+esc(a.product)+'</strong><small>'+esc(a.kind)+' • Lote: '+esc(a.lot)+'</small><div class="stock-item-meta"><span class="pill">Saldo: '+Number(a.qty)+' '+esc(a.unit)+'</span><span class="pill">'+esc(a.reason)+'</span></div><small>'+(a.kind==='Muito tempo em estoque'?'Entrada: ':'Validade: ')+lotDateLabel(a.date)+'</small><div class="stock-item-actions">'+(expired?'': '<button type="button" class="btn primary" onclick="addAttentionProductPromotion('+Number(a.productId)+',\''+esc(branchName)+'\')" '+(isPromo?'disabled':'')+'>'+(isPromo?'Já está em promoção':'⭐ Adicionar à promoção')+'</button>')+action+'</div>'+(expired?'<small class="muted">Produto vencido não pode ser oferecido como brinde. A baixa será registrada como saída sem valor comercial.</small>':'<small class="muted">Ao mover para brinde, o lote e o estoque de venda serão reduzidos e a saída ficará registrada no financeiro sem gerar venda.</small>')+'</div></article>';
+ }).join(''):'<p class="muted">Nenhum lote com saldo foi encontrado nessas condições nesta loja.</p>';
+ modal.innerHTML='<div class="modalbox stock-edit-modal"><h2>Produtos que precisam de atenção</h2><p class="small muted">'+esc(branchName)+' • Produtos vencidos ou lotes há 90 dias ou mais em estoque (também são destacados os que vencem em até 30 dias).</p><div class="stock-attention-summary"><strong>'+attention.length+'</strong><span>registro(s) para verificar</span></div>'+rows+'<div class="stock-edit-actions"><button type="button" class="btn primary" onclick="closeModal()">Fechar</button></div></div>';
  modal.classList.remove('hidden');
+}
+function prepareExpiredWriteoff(productId,branchName,lotId,availableQty){
+ if(role!=='Proprietário'&&role!=='Gerente'){toast('Somente proprietário ou gerente pode dar baixa em produto vencido.');return}
+ const p=products.find(x=>Number(x.id)===Number(productId));if(!p)return;
+ const modal=document.getElementById('modal');
+ modal.innerHTML='<div class="modalbox stock-edit-modal"><h2>Baixa de produto vencido</h2><p><strong>'+esc(p.name)+'</strong></p><p class="small muted">Este lote não será colocado na vitrine de brindes. A quantidade será retirada do estoque e registrada no financeiro como <strong>Saída sem valor comercial</strong>.</p><label>Quantidade para baixa</label><input id="expiredWriteoffQty" type="number" min="1" max="'+Number(availableQty)+'" value="'+Number(availableQty)+'"><div class="stock-edit-actions"><button type="button" class="btn primary" onclick="writeOffExpiredLot('+Number(productId)+',\''+esc(branchName)+'\','+Number(lotId)+')">Confirmar baixa</button><button type="button" class="btn" onclick="closeModal()">Cancelar</button></div></div>';
+ modal.classList.remove('hidden');
+}
+async function writeOffExpiredLot(productId,branchName,lotId){
+ const qty=Math.floor(Number(document.getElementById('expiredWriteoffQty')?.value)||0),storeId=Number(branches[branchName]?.id||0);
+ if(!qty||qty<1||!storeId){toast('Informe uma quantidade válida e confira a unidade.');return}
+ const {data,error}=await supabaseClient.rpc('baixar_lote_vencido_bombastic',{p_produto_id:Number(productId),p_loja_id:storeId,p_lote_id:Number(lotId),p_quantidade:qty});
+ if(error){toast('Não foi possível dar baixa: '+error.message);return}
+ closeModal();await Promise.all([loadProductsFromSupabase(true),loadStaffData()]);
+ toast('Baixa por vencimento registrada. Estoque atualizado e saída sem valor comercial lançada.');
+ showStockAttention(branchName);
 }
 async function addAttentionProductPromotion(productId,branchName){
  if(role!=='Proprietário'&&role!=='Gerente'){toast('Somente proprietário ou gerente pode alterar promoções.');return}
@@ -1095,7 +1116,49 @@ function loyaltyView(){
 }
 async function saveLoyaltyRules(){if(role!=='Proprietário'){toast('Somente proprietário pode alterar regras.');return}let v={id:1,cashback_percent:Number(document.getElementById('ruleCashPercent').value),cashback_minimo:Number(document.getElementById('ruleCashMin').value),cashback_validade_dias:Number(document.getElementById('ruleCashDays').value),pontos_a_cada:Number(document.getElementById('rulePointsEach').value),prata_minimo:Number(document.getElementById('ruleSilver').value),ouro_minimo:Number(document.getElementById('ruleGold').value),atualizado_em:new Date().toISOString(),atualizado_por:window.currentStaffProfile?.auth_user_id};if(Object.values(v).some((x,i)=>i>0&&i<7&&(!Number.isFinite(x)||x<0))||v.cashback_percent>100||v.cashback_validade_dias<1||v.pontos_a_cada<=0||v.ouro_minimo<v.prata_minimo){toast('Confira os valores informados.');return}let {error}=await supabaseClient.from('regras_fidelidade').update(v).eq('id',1);if(error){toast(error.message);return}loyaltyRules=v;toast('Regras atualizadas; as próximas vendas usarão estes valores.');openModule('Cashback e fidelidade')}
 function toggleRewardForm(){const box=document.getElementById('rewardFormWrap');if(!box)return;const opening=box.classList.contains('hidden');box.classList.toggle('hidden',!opening);if(opening)box.scrollIntoView({behavior:'smooth',block:'center'})}
-function rewardsView(){let admin=role==='Proprietário'||role==='Gerente',form=admin?'<button class="btn primary" onclick="toggleRewardForm()">+ Adicionar novo brinde</button><div id="rewardFormWrap" class="card hidden"><h4>Novo brinde</h4><label>Nome</label><input id="rewardName" placeholder="Nome do brinde"><label>Descrição</label><input id="rewardDesc" placeholder="Descrição"><label>Foto do brinde</label><input id="rewardPhotoFile" type="file" accept="image/*"><label>Ou URL pública da foto</label><input id="rewardPhoto" placeholder="https://..."><label>Pontos necessários</label><input id="rewardPoints" type="number" min="1"><label>Quantidade em estoque</label><input id="rewardStock" type="number" min="0" value="0"><button class="btn primary" onclick="addReward()">Cadastrar brinde</button><button class="btn" onclick="toggleRewardForm()">Cancelar</button></div>':'';let available=rewards.filter(r=>r.active).map(r=>'<div class="card">'+(r.photoUrl?'<img src="'+esc(r.photoUrl)+'" style="width:90px;height:90px;object-fit:cover;border-radius:10px" alt="">':'')+'<strong>'+esc(r.name)+'</strong><p>'+esc(r.description||'')+' • '+r.points+' pontos • Estoque: '+r.stock+'</p>'+(admin?'<button class="btn" onclick="editReward('+r.id+')">Editar</button> <button class="btn" onclick="archiveReward('+r.id+')">Excluir</button>':'')+'</div>').join('');return '<h4>Vitrine de brindes</h4>'+form+'<h4>Brindes disponíveis</h4>'+(available||'<p>Nenhum brinde disponível no momento.</p>')+'<h4>Solicitações de resgate</h4>'+redemptionOrdersView()}
+function rewardStockBranch(){return role==='Proprietário'?(document.getElementById('rewardStockBranch')?.value||Object.keys(branches)[0]||''):staffBranch}
+function filterRewardStockProducts(){
+ const query=String(document.getElementById('rewardStockSearch')?.value||'').trim().toLocaleLowerCase('pt-BR');
+ const store=rewardStockBranch();
+ const found=products.filter(p=>stockLots.some(l=>Number(l.productId)===Number(p.id)&&l.branch===store&&Number(l.quantity)>0)&&(!query||(p.name+' '+p.barcode+' '+p.brand+' '+p.category).toLocaleLowerCase('pt-BR').includes(query))).slice(0,20);
+ const box=document.getElementById('rewardStockResults');if(!box)return;
+ box.innerHTML=found.length?found.map(p=>'<button type="button" class="btn" style="display:block;width:100%;text-align:left;margin:5px 0" onclick="selectRewardStockProduct('+Number(p.id)+')">'+esc(p.name)+' • '+esc(p.barcode||p.brand||p.category||'Produto')+'</button>').join(''):'<p class="small muted">Nenhum produto com lote e saldo encontrado nesta unidade.</p>';
+}
+function selectRewardStockProduct(productId){
+ const p=products.find(x=>Number(x.id)===Number(productId));if(!p)return;
+ window.rewardStockProductId=Number(productId);
+ const box=document.getElementById('rewardStockSelected');if(!box)return;
+ const store=rewardStockBranch(),lots=stockLots.filter(l=>Number(l.productId)===Number(productId)&&l.branch===store&&Number(l.quantity)>0).sort((a,b)=>String(a.expiryDate||'9999-12-31').localeCompare(String(b.expiryDate||'9999-12-31')));
+ box.innerHTML='<p><strong>'+esc(p.name)+'</strong> • '+esc(p.unit||'unidades')+'</p><label>Escolha o lote</label><select id="rewardStockLot" onchange="updateRewardStockLotInfo()"><option value="">Selecione o lote</option>'+lots.map(l=>'<option value="'+Number(l.id)+'" data-qty="'+Number(l.quantity)+'" data-expiry="'+esc(l.expiryDate||'')+'">'+esc(l.lotNumber||'Lote #'+l.id)+' • Saldo: '+Number(l.quantity)+' • Validade: '+lotDateLabel(l.expiryDate)+'</option>').join('')+'</select><p id="rewardStockLotInfo" class="small muted">Selecione um lote para verificar a validade e a quantidade.</p><label>Quantidade para transferir à vitrine</label><input id="rewardStockQty" type="number" min="1" value="1"><label>Pontos para resgate</label><input id="rewardStockPoints" type="number" min="1" value="10"><div class="stock-edit-actions"><button type="button" class="btn primary" onclick="createRewardFromStock()">Cadastrar como brinde e dar baixa no estoque</button></div>';
+ updateRewardStockLotInfo();
+}
+function updateRewardStockLotInfo(){
+ const sel=document.getElementById('rewardStockLot'),info=document.getElementById('rewardStockLotInfo'),qty=document.getElementById('rewardStockQty');if(!sel||!info)return;
+ const opt=sel.options[sel.selectedIndex];if(!opt||!opt.value){info.textContent='Selecione um lote para verificar a validade e a quantidade.';return}
+ const max=Number(opt.dataset.qty)||0,expiry=opt.dataset.expiry||'',expired=!!expiry&&expiry<new Date().toISOString().slice(0,10);
+ if(qty){qty.max=max;qty.value=Math.min(Math.max(1,Number(qty.value)||1),max)}
+ info.textContent=expired?'Lote vencido: não pode ser transformado em brinde. Faça a baixa por vencimento em Produtos que precisam de atenção.':'Lote dentro da validade. Saldo disponível para transferir: '+max+'.';
+ const btn=document.querySelector('#rewardStockSelected button[onclick="createRewardFromStock()"]');if(btn)btn.disabled=expired;
+}
+async function createRewardFromStock(){
+ if(role!=='Proprietário'&&role!=='Gerente'){toast('Somente proprietário ou gerente pode cadastrar brindes.');return}
+ const productId=Number(window.rewardStockProductId||0),lotId=Number(document.getElementById('rewardStockLot')?.value||0),qty=Math.floor(Number(document.getElementById('rewardStockQty')?.value)||0),points=Math.floor(Number(document.getElementById('rewardStockPoints')?.value)||0),store=rewardStockBranch(),storeId=Number(branches[store]?.id||0);
+ if(!productId||!lotId||!qty||qty<1||!points||points<1||!storeId){toast('Selecione produto, lote, quantidade e pontos válidos.');return}
+ const lot=stockLots.find(l=>Number(l.id)===lotId);if(!lot||lot.expiryDate&&lot.expiryDate<new Date().toISOString().slice(0,10)){toast('Lote vencido não pode ser oferecido como brinde.');return}
+ const {error}=await supabaseClient.rpc('criar_brinde_estoque_bombastic',{p_produto_id:productId,p_loja_id:storeId,p_lote_id:lotId,p_quantidade:qty,p_pontos:points});
+ if(error){toast('Não foi possível cadastrar o brinde: '+error.message);return}
+ window.rewardStockProductId=null;await Promise.all([loadProductsFromSupabase(true),loadStaffData()]);
+ toast('Produto transferido para a vitrine. Estoque de venda baixado e saída sem valor comercial registrada.');
+ openModule('Vitrine de brindes');
+}
+function rewardsView(){
+ const admin=role==='Proprietário'||role==='Gerente',store=rewardStockBranch();
+ const branchControl=role==='Proprietário'?'<label>Unidade</label><select id="rewardStockBranch" onchange="filterRewardStockProducts()">'+Object.keys(branches).map(b=>'<option value="'+esc(b)+'" '+(b===store?'selected':'')+'>'+esc(b)+'</option>').join('')+'</select>':'<p class="small muted">Unidade: '+esc(staffBranch)+'</p>';
+ const stockForm=admin?'<section class="card"><h4>Adicionar produto do estoque como brinde</h4><p class="small muted">Pesquise pelo nome, marca ou código de barras, selecione o lote e a quantidade. O sistema transfere o saldo do lote para a vitrine e registra a saída sem valor comercial.</p>'+branchControl+'<label>Buscar produto cadastrado</label><input id="rewardStockSearch" placeholder="Digite nome, marca ou código de barras" oninput="filterRewardStockProducts()"><div id="rewardStockResults"></div><div id="rewardStockSelected"></div></section>':'';
+ const manual=admin?'<button class="btn primary" onclick="toggleRewardForm()">+ Adicionar brinde manual</button><div id="rewardFormWrap" class="card hidden"><h4>Brinde sem vínculo com estoque de produtos</h4><label>Nome</label><input id="rewardName" placeholder="Nome do brinde"><label>Descrição</label><input id="rewardDesc" placeholder="Descrição"><label>Foto do brinde</label><input id="rewardPhotoFile" type="file" accept="image/*"><label>Ou URL pública da foto</label><input id="rewardPhoto" placeholder="https://..."><label>Pontos necessários</label><input id="rewardPoints" type="number" min="1"><label>Quantidade em estoque</label><input id="rewardStock" type="number" min="0" value="0"><button class="btn primary" onclick="addReward()">Cadastrar brinde</button><button class="btn" onclick="toggleRewardForm()">Cancelar</button></div>':'';
+ const available=rewards.filter(r=>r.active&&(role==='Proprietário'||r.branch==='Todas'||r.branch===staffBranch)).map(r=>'<div class="card">'+(r.photoUrl?'<img src="'+esc(r.photoUrl)+'" style="width:90px;height:90px;object-fit:cover;border-radius:10px" alt="">':'')+'<strong>'+esc(r.name)+'</strong><p>'+esc(r.description||'')+' • '+r.points+' pontos • Estoque: '+r.stock+'</p>'+(r.productId?'<p class="small muted">Produto vinculado ao estoque • '+esc(r.branch)+'</p>':'')+(admin?'<button class="btn" onclick="editReward('+r.id+')">Editar</button> <button class="btn" onclick="archiveReward('+r.id+')">Excluir</button>':'')+'</div>').join('');
+ return '<h4>Vitrine de brindes</h4>'+stockForm+manual+'<h4>Brindes disponíveis</h4>'+(available||'<p>Nenhum brinde disponível no momento.</p>')+'<h4>Solicitações de resgate</h4>'+redemptionOrdersView();
+}
 async function addReward(){if(role!=='Proprietário'&&role!=='Gerente')return;let n=document.getElementById('rewardName').value.trim(),p=Number(document.getElementById('rewardPoints').value),s=Number(document.getElementById('rewardStock').value),d=document.getElementById('rewardDesc').value.trim(),photo=document.getElementById('rewardPhoto').value.trim();if(!n||!Number.isInteger(p)||p<=0||!Number.isInteger(s)||s<0){toast('Preencha nome, pontos e estoque.');return}let {error}=await supabaseClient.from('brindes').insert({nome:n,descricao:d,foto_url:photo||null,pontos_necessarios:p,estoque:s,ativo:true});if(error){toast(error.message);return}await loadStaffData();toast('Brinde cadastrado.');openModule('Vitrine de brindes')}
 async function editReward(id){
  if(role!=='Proprietário'&&role!=='Gerente'){toast('Somente proprietário ou gerente pode editar brindes.');return}
