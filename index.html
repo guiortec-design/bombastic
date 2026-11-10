@@ -1137,7 +1137,7 @@ async function customerAdminAction(customerId,action){
  if(role!=='Proprietário'){toast('Acesso exclusivo do proprietário.');return}
  const c=customerAdminRows.find(x=>Number(x.id)===Number(customerId));if(!c)return;
  const name=c.nome||'este cliente';
- const messages={block:'Bloquear '+name+'? Ele deixará de conseguir entrar e fazer pedidos.',unblock:'Desbloquear '+name+'? O cliente poderá voltar a entrar.',archive:'Excluir o cadastro de '+name+'? A conta de acesso será removida e o CPF ficará livre para a pessoa fazer um novo cadastro. O histórico de pedidos e vendas será preservado.',reset_password:'Gerar um novo código de redefinição de senha para '+name+'? O código será válido por 30 minutos.'};
+ const messages={block:'Bloquear '+name+'? Ele deixará de conseguir entrar e fazer pedidos.',unblock:'Desbloquear '+name+'? O cliente poderá voltar a entrar.',archive:'ATENÇÃO: excluir '+name+' apagará definitivamente o cadastro, a conta de acesso, TODOS os pedidos e itens desses pedidos, além de cashback, fidelidade, resgates e demais registros vinculados. Essa ação não poderá ser desfeita. O CPF ficará livre para um novo cadastro. Deseja continuar?',reset_password:'Gerar um novo código de redefinição de senha para '+name+'? O código será válido por 30 minutos.'};
  if(!confirm(messages[action]||'Confirma esta ação?'))return;
  try{
   const {data,error}=await supabaseClient.functions.invoke('customer-admin',{body:{action,customerId:Number(customerId)}});
