@@ -1120,7 +1120,7 @@ function rewardStockBranch(){return role==='Proprietário'?(document.getElementB
 function filterRewardStockProducts(){
  const query=String(document.getElementById('rewardStockSearch')?.value||'').trim().toLocaleLowerCase('pt-BR');
  const store=rewardStockBranch();
- const found=products.filter(p=>stockLots.some(l=>Number(l.productId)===Number(p.id)&&l.branch===store&&Number(l.quantity)>0)&&(!query||(p.name+' '+p.barcode+' '+p.brand+' '+p.category).toLocaleLowerCase('pt-BR').includes(query))).slice(0,20);
+ const found=products.filter(p=>p.active&&stockLots.some(l=>Number(l.productId)===Number(p.id)&&l.branch===store&&Number(l.quantity)>0)&&(!query||(p.name+' '+p.barcode+' '+p.brand+' '+p.category).toLocaleLowerCase('pt-BR').includes(query))).slice(0,20);
  const box=document.getElementById('rewardStockResults');if(!box)return;
  box.innerHTML=found.length?found.map(p=>'<button type="button" class="btn" style="display:block;width:100%;text-align:left;margin:5px 0" onclick="selectRewardStockProduct('+Number(p.id)+')">'+esc(p.name)+' • '+esc(p.barcode||p.brand||p.category||'Produto')+'</button>').join(''):'<p class="small muted">Nenhum produto com lote e saldo encontrado nesta unidade.</p>';
 }
