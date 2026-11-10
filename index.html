@@ -293,6 +293,8 @@ button:focus-visible,.btn:focus-visible{outline:2px solid #f9d328!important;outl
 .category-filter-group select{width:100%;min-width:0;padding:9px 7px;border-radius:8px;background:#211a11;color:#fff;border:1px solid var(--line);font-size:12px}
 .category-filter-group #categoryFilterOptions{display:flex;flex-direction:column;gap:5px}
 .category-filter-group .btn{font-size:11px;padding:8px 9px}
+
+.purchase-simple{display:flex;flex-direction:column;gap:9px;padding:14px;border:1px solid #b18b22;border-radius:14px;background:linear-gradient(145deg,#17150d,#101010);margin:10px 0 18px}.purchase-simple h4{margin:0 0 2px}.purchase-search-row{display:flex;gap:8px;align-items:center}.purchase-search-row input{flex:1;min-width:0}.purchase-product-select{width:100%;min-height:92px}.purchase-price-rule{padding:10px 12px;border:1px solid #80651b;border-radius:10px;background:#211b0b}.purchase-price-rule p{margin:5px 0 0}.purchase-submit{width:100%;margin-top:4px}
 </style>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js" defer></script>
 </head>
@@ -842,25 +844,61 @@ function filterSales(){let q=document.getElementById('salesSearch').value.toLowe
 async function refundSale(id){if(role!=='Proprietário'){toast('Somente proprietário pode estornar.');return}let s=sales.find(x=>x.id===id);if(!s||s.status==='Estornado'){toast('Venda não encontrada ou já estornada.');return}if(!confirm('Confirma o estorno desta venda? O estoque, os pontos e o cashback serão ajustados.'))return;const {data,error}=await supabaseClient.rpc('estornar_pedido_bombastic',{p_pedido_id:id});if(error){toast('Não foi possível estornar: '+error.message);return}await loadProductsFromSupabase(true);await loadOrdersFromSupabase();await loadStaffData();toast('Estorno registrado no banco e estoque devolvido.');openModule('Estornar venda')}
 
 async function purchaseView(){
- purchaseDraftItems=[];
- const {data,error}=await supabaseClient.from('compras').select('id,data_compra,valor_total,status,observacoes,fornecedores(nome),itens_compra(id,quantidade,custo_unitario,subtotal,numero_lote,data_validade,produtos(nome))').order('data_compra',{ascending:false}).limit(25);
+ await loadProductsFromSupabase(true);
+ const {data,error}=await supabaseClient.from('compras').select('id,data_compra,valor_total,status,observacoes,fornecedores(nome),itens_compra(id,quantidade,custo_unitario,subtotal,numero_lote,data_validade,produtos(nome))').order('data_compra',{ascending:false}).limit(15);
  if(error)return '<p class="notice">Não foi possível carregar as compras: '+esc(error.message)+'</p>';
- let unitSelect=role==='Proprietário'?'<label>Unidade</label><select id="purchaseBranch"><option>Loja Picerno</option><option>Loja Volobueff</option><option>Loja Nova Veneza</option></select>':'<input id="purchaseBranch" type="hidden" value="'+esc(staffBranch)+'">';
- let html='<h4>Registrar compra e receber estoque</h4><p class="small muted">Ao salvar, o sistema registra a compra, aumenta o estoque da unidade e cria os lotes com suas validades.</p>'+unitSelect;
- html+='<label>Fornecedor</label><select id="purchaseSupplier"><option value="">Sem fornecedor vinculado</option>'+suppliers.map(s=>'<option value="'+s.id+'">'+esc(s.name)+'</option>').join('')+'</select>';
- html+='<label>Produto</label><select id="purchaseProduct">'+products.map(p=>'<option value="'+p.id+'">'+esc(p.name)+'</option>').join('')+'</select>';
+ const supplierResult=await supabaseClient.from('fornecedores').select('id,nome').eq('ativo',true).order('nome');
+ if(supplierResult.error)return '<p class="notice">Não foi possível carregar os fornecedores: '+esc(supplierResult.error.message)+'</p>';
+ const branchOptions=role==='Proprietário'?Object.keys(branches).map(n=>'<option value="'+esc(n)+'">'+esc(n)+'</option>').join(''):'<option value="'+esc(staffBranch)+'">'+esc(staffBranch)+'</option>';
+ const productOptions=products.filter(p=>p.active).map(p=>'<option value="'+p.id+'">'+esc(p.name)+(p.barcode?' • '+esc(p.barcode):'')+'</option>').join('');
+ let html='<div class="purchase-simple"><h4>Compras e recebimento</h4><p class="small muted">Registre um produto por vez. Ao confirmar, a quantidade entra no estoque da loja selecionada.</p>';
+ html+='<label>Loja</label><select id="purchaseBranch" '+(role!=='Proprietário'?'disabled':'')+'>'+branchOptions+'</select>';
+ html+='<label>Fornecedor</label><select id="purchaseSupplier"><option value="">Selecione o fornecedor</option>'+(supplierResult.data||[]).map(x=>'<option value="'+x.id+'">'+esc(x.nome)+'</option>').join('')+'</select>';
+ html+='<label>Buscar produto por nome ou código de barras</label><div class="purchase-search-row"><input id="purchaseProductSearch" autocomplete="off" placeholder="Digite o nome ou código de barras" oninput="filterPurchaseProducts()"><button type="button" class="btn" onclick="startBarcodeScanner(&quot;purchaseProductSearch&quot;)">Ler código</button></div>';
+ html+='<select id="purchaseProduct" size="5" class="purchase-product-select" onchange="showPurchaseProductPrice()">'+productOptions+'</select><p id="purchaseCurrentPrice" class="small muted">Selecione um produto para ver o preço de venda atual.</p>';
  html+='<div class="grid cards"><div><label>Quantidade</label><input id="purchaseQty" type="number" min="1" step="1" value="1"></div><div><label>Custo unitário (R$)</label><input id="purchaseCost" type="number" min="0" step="0.01" placeholder="0,00"></div></div>';
- html+='<label>Número do lote</label><input id="purchaseLot" placeholder="Número do lote do fabricante">';
+ html+='<label>Lote (opcional)</label><input id="purchaseLot" placeholder="Se não informar, será gerado automaticamente">';
  html+='<div class="grid cards"><div><label>Fabricação (opcional)</label><input id="purchaseMfg" type="date"></div><div><label>Validade (opcional)</label><input id="purchaseExpiry" type="date"></div></div>';
- html+='<button class="btn" onclick="addPurchaseDraftItem()">Adicionar item à compra</button><div id="purchaseDraftRows"><p class="small muted">Nenhum item adicionado.</p></div>';
- html+='<label>Observações</label><input id="purchaseNote" placeholder="Nota fiscal, referência ou observação"><button class="btn primary" onclick="savePurchase()">Registrar compra e atualizar estoque</button>';
+ html+='<label>Observações (opcional)</label><input id="purchaseNote" placeholder="Nota fiscal ou observação">';
+ html+='<div class="purchase-price-rule"><strong>Reajuste automático do preço de venda</strong><p class="small">Se o custo desta compra for maior que o custo da última compra, o preço de venda será reajustado proporcionalmente, mantendo a mesma margem. Se o custo baixar, o preço de venda não será reduzido.</p></div>';
+ html+='<button class="btn primary purchase-submit" onclick="savePurchase()">Registrar compra e atualizar estoque</button></div>';
  html+='<h4>Últimas compras registradas</h4>'+((data||[]).map(p=>'<div class="card"><strong>Compra #'+p.id+'</strong><p>'+new Date(p.data_compra+'T12:00:00').toLocaleDateString('pt-BR')+' • '+esc(p.fornecedores?.nome||'Sem fornecedor')+' • '+money(p.valor_total)+' • '+esc(p.status||'')+'</p><p>'+(p.itens_compra||[]).map(i=>esc(i.produtos?.nome||'Produto')+' × '+i.quantidade+' • Lote '+esc(i.numero_lote||'-')).join('<br>')+'</p></div>').join('')||'<p class="muted">Nenhuma compra registrada ainda.</p>');
  return html;
+}
+function filterPurchaseProducts(){
+ const search=document.getElementById('purchaseProductSearch'),select=document.getElementById('purchaseProduct');if(!search||!select)return;
+ const q=search.value.trim().toLowerCase(),list=products.filter(p=>p.active&&(!q||(p.name+' '+(p.barcode||'')+' '+(p.brand||'')).toLowerCase().includes(q)));
+ select.innerHTML=list.map(p=>'<option value="'+p.id+'">'+esc(p.name)+(p.barcode?' • '+esc(p.barcode):'')+'</option>').join('')||'<option value="">Nenhum produto encontrado</option>';
+ const exact=products.find(p=>p.active&&q&&String(p.barcode||'').toLowerCase()===q);
+ if(exact)select.value=String(exact.id);else if(list.length===1)select.value=String(list[0].id);
+ showPurchaseProductPrice();
+}
+function showPurchaseProductPrice(){
+ const id=Number(document.getElementById('purchaseProduct')?.value),p=products.find(x=>Number(x.id)===id),box=document.getElementById('purchaseCurrentPrice');
+ if(box)box.textContent=p?'Preço de venda atual: '+money(p.price):'Selecione um produto para ver o preço de venda atual.';
 }
 function renderPurchaseDraft(){let box=document.getElementById('purchaseDraftRows');if(!box)return;box.innerHTML=purchaseDraftItems.map((x,i)=>'<div class="card"><strong>'+esc(x.name)+'</strong><p>'+x.qty+' un. × '+money(x.cost)+' • Lote '+esc(x.lot)+' • Subtotal '+money(x.qty*x.cost)+'</p><button class="btn" onclick="removePurchaseDraftItem('+i+')">Remover</button></div>').join('')||'<p class="small muted">Nenhum item adicionado.</p>'}
 function addPurchaseDraftItem(){let id=Number(document.getElementById('purchaseProduct').value),p=products.find(x=>Number(x.id)===id),qty=Number(document.getElementById('purchaseQty').value),cost=Number(document.getElementById('purchaseCost').value),lot=document.getElementById('purchaseLot').value.trim(),mfg=document.getElementById('purchaseMfg').value,expiry=document.getElementById('purchaseExpiry').value;if(!p||!Number.isInteger(qty)||qty<1||!Number.isFinite(cost)||cost<0||!lot){toast('Informe produto, quantidade, custo e lote válidos.');return}if(expiry&&expiry<new Date().toISOString().slice(0,10)){toast('A validade informada já passou.');return}purchaseDraftItems.push({id,qty,cost,lot,mfg,expiry,name:p.name});renderPurchaseDraft()}
 function removePurchaseDraftItem(index){purchaseDraftItems.splice(index,1);renderPurchaseDraft()}
-async function savePurchase(){if(!purchaseDraftItems.length){toast('Adicione pelo menos um produto à compra.');return}let unit=document.getElementById('purchaseBranch')?.value,supplier=document.getElementById('purchaseSupplier').value;if(!branches[unit]){toast('Selecione uma unidade válida.');return}const payload=purchaseDraftItems.map(({id,qty,cost,lot,mfg,expiry})=>({id,qty,cost,lot,mfg,expiry}));const {data,error}=await supabaseClient.rpc('registrar_compra_bombastic',{p_loja_id:branches[unit].id,p_fornecedor_id:supplier?Number(supplier):null,p_observacoes:document.getElementById('purchaseNote').value.trim()||null,p_itens:payload});if(error){toast('Não foi possível registrar a compra: '+error.message);return}await loadProductsFromSupabase(true);await loadStaffData();toast('Compra #'+data.compra_id+' registrada. Estoque e lotes atualizados.');openModule(role==='Proprietário'?'Compras e recebimento':'Compras necessárias')}
+async async function savePurchase(){
+ const unit=document.getElementById('purchaseBranch')?.value,supplier=document.getElementById('purchaseSupplier')?.value;
+ const productId=Number(document.getElementById('purchaseProduct')?.value),product=products.find(p=>Number(p.id)===productId);
+ const qty=Number(document.getElementById('purchaseQty')?.value),cost=Number(document.getElementById('purchaseCost')?.value);
+ const expiry=document.getElementById('purchaseExpiry')?.value||'',mfg=document.getElementById('purchaseMfg')?.value||'';
+ const lot=document.getElementById('purchaseLot')?.value.trim()||'',note=document.getElementById('purchaseNote')?.value.trim()||'';
+ if(!branches[unit]){toast('Selecione uma loja válida.');return}
+ if(!supplier){toast('Selecione o fornecedor.');return}
+ if(!product){toast('Pesquise e selecione um produto cadastrado.');return}
+ if(!Number.isInteger(qty)||qty<1||!Number.isFinite(cost)||cost<0){toast('Informe quantidade e custo unitário válidos.');return}
+ if(expiry&&expiry<new Date().toISOString().slice(0,10)){toast('A validade informada já passou.');return}
+ const payload=[{id:productId,qty,cost,lot,mfg,expiry}];
+ const {data,error}=await supabaseClient.rpc('registrar_compra_bombastic',{p_loja_id:branches[unit].id,p_fornecedor_id:Number(supplier),p_observacoes:note||null,p_itens:payload});
+ if(error){toast('Não foi possível registrar a compra: '+error.message);return}
+ await loadProductsFromSupabase(true);await loadStaffData();
+ const priceMsg=data?.preco_reajustado?' Preço de venda reajustado para '+money(data.preco_venda_atual)+'.':'';
+ toast('Compra #'+data.compra_id+' registrada. Estoque atualizado.'+priceMsg);
+ openModule(role==='Proprietário'?'Compras e recebimento':'Compras necessárias');
+}
 async function importStockSpreadsheet(event){let file=event.target.files?.[0];if(!file)return;if(typeof XLSX==='undefined'){toast('O leitor de planilhas ainda está carregando. Tente novamente.');return}let reader=new FileReader();reader.onload=async function(ev){try{let workbook=XLSX.read(ev.target.result,{type:'array',cellDates:true}),sheet=workbook.Sheets[workbook.SheetNames[0]],rows=XLSX.utils.sheet_to_json(sheet,{defval:''});if(!rows.length)throw new Error('A primeira aba da planilha está vazia.');let norm=s=>String(s||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().replace(/[^a-z0-9]/g,'');let parseMoney=v=>{if(typeof v==='number')return v;let s=String(v||'').replace(/[R$\s]/g,'');if(s.includes(','))s=s.replace(/\./g,'').replace(',','.');return s===''?0:Number(s)};let dateValue=v=>{if(!v)return '';if(v instanceof Date)return v.toISOString().slice(0,10);if(typeof v==='number'){let d=new Date(Date.UTC(1899,11,30)+v*86400000);return d.toISOString().slice(0,10)}let s=String(v).trim();if(/^\d{2}\/\d{2}\/\d{4}$/.test(s)){let [d,m,y]=s.split('/');return y+'-'+m+'-'+d}return /^\d{4}-\d{2}-\d{2}$/.test(s)?s:''};let payload=rows.map(row=>{let obj={};Object.keys(row).forEach(k=>obj[norm(k)]=row[k]);let pick=(...keys)=>{for(let k of keys){let v=obj[norm(k)];if(v!==undefined&&v!=='')return v}return ''};return{name:String(pick('nome','produto','name')).trim(),price:parseMoney(pick('preco','preço','valor','price')),quantity:Math.floor(parseMoney(pick('quantidade','estoque','saldo','quantity'))),minimum:Math.floor(parseMoney(pick('estoque minimo','estoque mínimo','minimo','minimum'))),cost:pick('custo','custo unitario','custo unitário')===''?'':parseMoney(pick('custo','custo unitario','custo unitário')),barcode:String(pick('codigo de barras','código de barras','codigo barras','ean','barcode')).replace(/\D/g,''),lot:String(pick('lote','numero do lote','numero lote','lot')).trim(),expiry:dateValue(pick('validade','data validade','vencimento','expiry')),manufacture:dateValue(pick('fabricacao','fabricação','data fabricacao','manufacture')),category:String(pick('categoria','category')||'Outros'),brand:String(pick('marca','brand')),description:String(pick('descricao','descrição','description')),shelf:String(pick('prateleira','localizacao','localização','shelf')),unit:String(pick('unidade','unit')||'unidades'),tag:String(pick('etiqueta','tag')||'Todos'),photo:String(pick('foto','foto url','imagem','photo'))}}).filter(x=>x.name);if(!payload.length)throw new Error('Não encontrei linhas com a coluna Nome.');let unit=role==='Proprietário'?(document.getElementById('stockBranchSelect')?.value||'Loja Picerno'):staffBranch;if(!branches[unit])throw new Error('Unidade inválida.');const {data,error}=await supabaseClient.rpc('importar_catalogo_bombastic',{p_loja_id:branches[unit].id,p_linhas:payload});if(error)throw error;await loadProductsFromSupabase(true);toast(data.imported+' produtos importados/atualizados em '+unit+'.');openModule(stockModuleName())}catch(err){toast('Falha na importação: '+(err.message||'verifique a planilha.'))}finally{event.target.value=''}};reader.readAsArrayBuffer(file)}
 async function startBarcodeScanner(targetId){
  if(!window.BarcodeDetector||!navigator.mediaDevices||!navigator.mediaDevices.getUserMedia){toast('Leitura por câmera indisponível neste navegador. Digite o código ou use um leitor USB.');return}
