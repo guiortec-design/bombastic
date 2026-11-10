@@ -1081,7 +1081,7 @@ function clientWhatsAppLink(cpf){
  for(const sale of customerSales.slice(0,5)){for(const item of sale.items||[]){const name=item.name||products.find(p=>Number(p.id)===Number(item.id))?.name;if(name&&!recentItems.includes(name))recentItems.push(name)}}
  const purchased=recentItems.slice(0,4);
  const categories=new Set(products.filter(p=>purchased.includes(p.name)).map(p=>String(p.category||'').toLowerCase()).filter(Boolean));
- const offers=products.filter(p=>p.active!==false&&branchStock(p,staffBranch)>0&&(p.tag==='Promoção'||p.tag==='Oferta Especial'||categories.has(String(p.category||'').toLowerCase()))).filter(p=>!purchased.includes(p.name)).slice(0,4);
+ const offers=products.filter(p=>p.active!==false&&(role==='Proprietário'?Object.keys(branches).some(unit=>branchStock(p,unit)>0):branchStock(p,staffBranch)>0)&&(p.tag==='Promoção'||p.tag==='Oferta Especial'||categories.has(String(p.category||'').toLowerCase()))).filter(p=>!purchased.includes(p.name)).slice(0,4);
  const first=(c.name||'').trim().split(/\s+/)[0]||'tudo bem';
  let message='Oi '+first+', tudo bem? 😊 Aqui é da Bombastic Tabacaria!';
  if(purchased.length)message+=' Vi nas suas últimas compras que você levou '+purchased.join(', ')+'.';
