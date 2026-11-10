@@ -906,10 +906,11 @@ async function openMyOrders(){
   list.sort((a,b)=>customerOrderPriority(a.status)-customerOrderPriority(b.status)||new Date(b.created_at||0)-new Date(a.created_at||0));
   const orderCards=list.map(o=>{
    const status=String(o.status||'Aguardando atendimento');
+   const statusLabel=status==='Em entrega'?'Saiu para entrega':status;
    const items=Array.isArray(o.itens)?o.itens.map(i=>'<div class="customer-order-product"><span class="customer-order-product-name"><small>'+Number(i.quantidade||0)+'×</small> '+esc(i.nome)+'</span><strong>'+money(i.subtotal)+'</strong></div>').join(''):'';
    const canConfirm=o.tipo_recebimento==='Delivery'&&status==='Em entrega';
    const pickupCode=o.tipo_recebimento==='Retirar na loja'&&['Em separação','Em embalagem','Aguardando retirada'].includes(status);
-   return '<article class="card customer-order-card"><details class="customer-order-details"><summary class="customer-order-summary"><strong>Pedido <b>#'+String(o.id).slice(-6)+'</b></strong><span class="customer-order-status">'+esc(status)+'</span><span class="customer-order-more">Ver mais ﹀</span></summary><div class="customer-order-expanded"><div class="customer-order-meta"><span><strong>Recebimento:</strong> '+esc(o.tipo_recebimento||'Retirar na loja')+'</span></div>'+(o.endereco_entrega?'<p class="customer-order-address"><strong>Endereço:</strong> '+esc(o.endereco_entrega)+'</p>':'')+(pickupCode?'<div class="notice"><strong>Código de retirada: '+esc(o.codigo_publico||'Consulte a equipe')+'</strong><p>Informe seu nome e este código ao funcionário quando chegar à loja.</p></div>':'')+'<div class="customer-order-products">'+(items||'<span class="small muted">Produtos não informados.</span>')+'</div><div class="customer-order-total-row"><span>Valor total</span><strong class="customer-order-total">'+money(o.total)+'</strong></div>'+(canConfirm?'<div class="customer-order-actions"><button class="btn primary" onclick="confirmDeliveryReceipt('+Number(o.id)+')">Confirmar recebimento</button></div>':'')+'</div></details></article>';
+   return '<article class="card customer-order-card"><details class="customer-order-details"><summary class="customer-order-summary"><strong>Pedido <b>#'+String(o.id).slice(-6)+'</b></strong><span class="customer-order-status">'+esc(statusLabel)+'</span><span class="customer-order-more">Ver mais ﹀</span></summary><div class="customer-order-expanded"><div class="customer-order-meta"><span><strong>Recebimento:</strong> '+esc(o.tipo_recebimento||'Retirar na loja')+'</span></div>'+(o.endereco_entrega?'<p class="customer-order-address"><strong>Endereço:</strong> '+esc(o.endereco_entrega)+'</p>':'')+(pickupCode?'<div class="notice"><strong>Código de retirada: '+esc(o.codigo_publico||'Consulte a equipe')+'</strong><p>Informe seu nome e este código ao funcionário quando chegar à loja.</p></div>':'')+'<div class="customer-order-products">'+(items||'<span class="small muted">Produtos não informados.</span>')+'</div><div class="customer-order-total-row"><span>Valor total</span><strong class="customer-order-total">'+money(o.total)+'</strong></div>'+(canConfirm?'<div class="notice"><strong>Seu pedido saiu para entrega!</strong><p>Quando o motoboy entregar, confirme o recebimento abaixo.</p><div class="customer-order-actions"><button class="btn primary" onclick="confirmDeliveryReceipt('+Number(o.id)+')">Confirmar que recebi do motoboy</button></div></div>':'')+'</div></details></article>';
   }).join('');
   const redemptions=Array.isArray(redemptionsResult.data)?redemptionsResult.data:[];
   const redemptionCards=redemptions.map(r=>{
@@ -1223,8 +1224,39 @@ function isNewUnassignedOrder(o){const status=String(o?.status||'Aguardando aten
 function staffNotificationBadge(label){const count=staffNotificationCount(label);return count>0?'<span class="staff-notification-badge" aria-label="'+count+' notificações">'+(count>99?'99+':count)+'</span>':''}
 function renderStaffCategoryButton(label){return '<button type="button" class="admin-category-btn" onclick="openModule('+JSON.stringify(label).replace(/"/g,'&quot;')+')">'+esc(label)+staffNotificationBadge(label)+'</button>'}
 function updateStaffNotificationBadges(){document.querySelectorAll('#staffModules .admin-category-btn').forEach(btn=>{const label=(btn.getAttribute('onclick')||'').match(/openModule\(['"]([^'"]+)/)?.[1];if(!label)return;const old=btn.querySelector('.staff-notification-badge');if(old)old.remove();const html=staffNotificationBadge(label);if(html)btn.insertAdjacentHTML('beforeend',html)});document.querySelectorAll('#staffDetail .admin-shortcut').forEach(btn=>{const label=btn.textContent.replace(/\s*\d+\s*$/,'').trim();const old=btn.querySelector('.staff-notification-badge');if(old)old.remove();const html=staffNotificationBadge(label);if(html)btn.insertAdjacentHTML('beforeend',html)})}
-async function startCustomerOrderNotifications(){if(!clientAuthUser)return;stopCustomerOrderNotifications();window.bombasticCustomerOrderChannel=supabaseClient.channel('bombastic-client-orders-'+client.id).on('postgres_changes',{event:'*',schema:'public',table:'pedidos'},()=>refreshCustomerOrderBadge()).subscribe()}
-function stopCustomerOrderNotifications(){if(window.bombasticCustomerOrderChannel){supabaseClient.removeChannel(window.bombasticCustomerOrderChannel);window.bombasticCustomerOrderChannel=null}}
+async function startCustomerOrderNotifications(){
+ if(!clientAuthUser||!client)return;
+ stopCustomerOrderNotifications();
+ try{
+  const {data,error}=await supabaseClient.rpc('meus_pedidos_bombastic');
+  if(error)throw error;
+  window.bombasticCustomerOrderStatuses=new Map((Array.isArray(data)?data:[]).map(o=>[String(o.id),String(o.status||'')]));
+ }catch(e){window.bombasticCustomerOrderStatuses=new Map();console.warn('Não foi possível iniciar o acompanhamento dos pedidos:',e)}
+ window.bombasticCustomerOrderChannel=supabaseClient.channel('bombastic-client-orders-'+client.id)
+  .on('postgres_changes',{event:'*',schema:'public',table:'pedidos'},async()=>{
+   try{
+    const {data,error}=await supabaseClient.rpc('meus_pedidos_bombastic');
+    if(error)throw error;
+    const list=Array.isArray(data)?data:[];
+    const previous=window.bombasticCustomerOrderStatuses||new Map();
+    const next=new Map();
+    let deliveryStarted=false;
+    list.forEach(o=>{
+     const id=String(o.id),status=String(o.status||'');
+     if(status==='Em entrega'&&previous.has(id)&&previous.get(id)!=='Em entrega')deliveryStarted=true;
+     next.set(id,status);
+    });
+    window.bombasticCustomerOrderStatuses=next;
+    if(deliveryStarted){
+     toast('Seu pedido saiu para entrega! Acompanhe em Meus pedidos.');
+     const page=document.getElementById('customerOrdersPage');
+     if(page&&!page.classList.contains('hidden'))await openMyOrders();
+    }
+    await refreshCustomerOrderBadge();
+   }catch(e){console.warn('Não foi possível atualizar as notificações dos pedidos:',e)}
+  }).subscribe(status=>{if(status==='CHANNEL_ERROR'||status==='TIMED_OUT')console.warn('A conexão de acompanhamento dos pedidos foi interrompida.')});
+}
+function stopCustomerOrderNotifications(){if(window.bombasticCustomerOrderChannel){supabaseClient.removeChannel(window.bombasticCustomerOrderChannel);window.bombasticCustomerOrderChannel=null}window.bombasticCustomerOrderStatuses=null}
 async function refreshCustomerOrderBadge(){const btn=document.getElementById('myOrdersBtn');if(!btn||!clientAuthUser)return;try{const {data,error}=await supabaseClient.rpc('meus_pedidos_bombastic');if(error)throw error;const active=(Array.isArray(data)?data:[]).filter(o=>!['Retirada concluída','Entrega concluída','Concluído e entregue','Concluído','Cancelado','Estornado'].includes(String(o.status||''))&&!o.data_conclusao).length;btn.innerHTML='Meus pedidos'+(active?'<span class="customer-notification-badge">'+(active>99?'99+':active)+'</span>':'')}catch(e){btn.innerHTML='Meus pedidos'}}
 function closeCustomerBenefitPopup(){const modal=document.getElementById('customerBenefitPopup');if(modal)modal.remove()}
 function showCustomerBenefitPopup(birthdayCount,rewardCount){if(!client||(!birthdayCount&&!rewardCount))return;const key='bombastic-benefits-seen-'+client.id+'-'+new Date().toISOString().slice(0,10);try{if(sessionStorage.getItem(key))return;sessionStorage.setItem(key,'1')}catch(e){}closeCustomerBenefitPopup();const lines=[];if(birthdayCount)lines.push('<p>🎂 Você tem <strong>'+birthdayCount+'</strong> brinde(s) de aniversário disponível(is) para retirar.</p>');if(rewardCount)lines.push('<p>⭐ Você já tem pontos suficientes para trocar por <strong>'+rewardCount+'</strong> brinde(s) disponível(is).</p>');document.body.insertAdjacentHTML('beforeend','<div id="customerBenefitPopup" class="customer-benefit-overlay" role="dialog" aria-modal="true" aria-labelledby="customerBenefitTitle"><div class="customer-benefit-box"><button type="button" class="customer-benefit-close" aria-label="Fechar" onclick="closeCustomerBenefitPopup()">×</button><div class="customer-benefit-icon">🎁</div><h2 id="customerBenefitTitle">Você tem benefícios disponíveis!</h2>'+lines.join('')+'<button type="button" class="btn primary" onclick="closeCustomerBenefitPopup();showCustomerShopTab(\'brindes\')">Ver meus brindes</button><button type="button" class="btn" onclick="closeCustomerBenefitPopup()">Agora não</button></div></div>')}
