@@ -1231,7 +1231,7 @@ async function addMovement(){
  if(type==='Saída'&&!beneficiary){toast('Selecione o funcionário beneficiado pela saída.');return}
  if(type==='Saída'&&Number(staffDirectory.find(e=>Number(e.id)===Number(beneficiary))?.loja_id)!==unitId){toast('O funcionário beneficiado deve pertencer à unidade selecionada.');return}
  const {error}=await supabaseClient.from('lancamentos_financeiros').insert({loja_id:unitId,funcionario_id:window.currentStaffProfile?.id||null,beneficiario_funcionario_id:beneficiary?Number(beneficiary):null,tipo,categoria:type==='Saída'?'Despesa operacional':'Entrada manual',descricao:desc,valor:v.toFixed(2),data_lancamento:new Date().toISOString(),status:'Concluído'});
- if(error){toast('Não foi possível registrar: '+error.message);return}await loadStaffData();toast('Movimentação registrada.');openModule('Financeiro');
+ if(error){toast('Não foi possível registrar: '+error.message);return}await loadStaffData();toast('Movimentação registrada.');await refreshFinanceView();
 }
 function reportsView(){
  const names=role==='Proprietário'?Object.keys(branches):[staffBranch],total=sales.reduce((a,s)=>a+s.total,0),rows=names.map(n=>{let ss=sales.filter(s=>s.branch===n),pending=orders.filter(o=>o.branch===n&&!['Retirada concluída','Entrega concluída','Cancelado','Estornado'].includes(o.status)).length;return '<tr><td>'+esc(n)+'</td><td>'+ss.length+'</td><td>'+pending+'</td><td>'+money(ss.reduce((a,s)=>a+s.total,0))+'</td></tr>'}).join(''),top=products.map(p=>({name:p.name,qty:sales.reduce((a,s)=>a+s.items.filter(i=>Number(i.id)===Number(p.id)).reduce((b,i)=>b+i.qty,0),0)})).sort((a,b)=>b.qty-a.qty).slice(0,10);
