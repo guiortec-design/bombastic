@@ -1355,7 +1355,7 @@ function ordersView(cancelOnly=false){
   const isPicking=active===2&&!cancelOnly;
   const isCancelled=active===9;
   const productRows=o.items.length?o.items.map(i=>isPicking
-   ?'<div class="staff-order-product staff-order-pick-product"><span class="staff-order-product-qty">QTD. '+Number(i.qty)+'</span><strong class="staff-order-product-name">'+esc(i.name)+'</strong></div>'
+   ?'<div class="staff-order-product staff-order-pick-product"><span class="staff-order-product-qty">QUANTIDADE: <strong>'+Number(i.qty)+'</strong></span><strong class="staff-order-product-name">'+esc(i.name)+'</strong></div>'
    :isCancelled
     ?'<div class="staff-order-product staff-order-cancel-product"><strong class="staff-order-product-name">'+esc(i.name)+'</strong><span class="staff-order-product-qty">QTD. '+Number(i.qty)+'</span><span class="staff-order-cancel-unit">'+money(i.price)+'</span><strong class="staff-order-cancel-subtotal">'+money(i.price*i.qty)+'</strong></div>'
     :'<div class="staff-order-product"><span class="staff-order-product-name">'+esc(i.name)+'</span><span class="staff-order-product-qty">'+Number(i.qty)+' × '+money(i.price)+'</span><strong>'+money(i.price*i.qty)+'</strong></div>'
