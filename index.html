@@ -1358,7 +1358,7 @@ async function renderCustomerRewards(){
  try{await loadCustomerLoyalty()}catch(e){box.innerHTML='<p class="muted">Não foi possível atualizar seu saldo de pontos.</p>';return}
  const [gifts,requests]=await Promise.all([
   supabaseClient.from('brindes').select('id,nome,descricao,foto_url,pontos_necessarios,estoque,loja_id').eq('ativo',true).gt('estoque',0).or('loja_id.is.null,loja_id.eq.'+storeId).order('pontos_necessarios'),
-  supabaseClient.from('resgates').select('id,brinde_id,pontos_utilizados,status,created_at,brindes(nome)').eq('cliente_id',client.id).order('created_at',{ascending:false})
+  supabaseClient.from('resgates').select('id,brinde_id,pontos_utilizados,pontos_debitados,status,created_at,brindes(nome)').eq('cliente_id',client.id).order('created_at',{ascending:false})
  ]);
  if(gifts.error||requests.error){box.innerHTML='<p class="muted">Não foi possível carregar a vitrine de brindes agora.</p>';return}
  const history=requests.data||[],pendingPoints=history.filter(x=>x.status==='Solicitado'&&!x.pontos_debitados).reduce((s,x)=>s+Number(x.pontos_utilizados||0),0),available=Math.max(0,Number(client.points||0)-pendingPoints);
