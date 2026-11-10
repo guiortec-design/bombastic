@@ -309,12 +309,12 @@ button:focus-visible,.btn:focus-visible{outline:2px solid #f9d328!important;outl
 </header>
 <main id="app">
 <section id="start">
- <div style="display:flex;justify-content:flex-end;margin-bottom:14px"><button class="btn area-admin-btn" onclick="show('staffLogin')">Área Administrativa</button></div>
+ <div style="display:flex;justify-content:flex-end;margin-bottom:14px"><button class="btn area-admin-btn" id="openStaffLoginBtn" type="button" onclick="document.getElementById('start').classList.add('hidden');document.getElementById('staffLogin').classList.remove('hidden')">Área Administrativa</button></div>
  <div class="hero"><h2>Selecione sua loja</h2><p class="muted">Escolha a unidade onde deseja fazer suas compras.</p></div>
  <div class="grid branches">
-  <article class="card"><h3>Loja Picerno</h3><p>Avenida Fuad Assef Maluf, 07</p><button class="btn primary" onclick="show('cpfLogin'); chooseBranch('Loja Picerno')">Entrar nesta loja</button></article>
-  <article class="card"><h3>Loja Volobueff</h3><p>Rua Generoso Alves Vieira, 165</p><button class="btn primary" onclick="show('cpfLogin'); chooseBranch('Loja Volobueff')">Entrar nesta loja</button></article>
-  <article class="card"><h3>Loja Nova Veneza</h3><p>Av. da Amizade, 3249</p><button class="btn primary" onclick="show('cpfLogin'); chooseBranch('Loja Nova Veneza')">Entrar nesta loja</button></article>
+  <article class="card"><h3>Loja Picerno</h3><p>Avenida Fuad Assef Maluf, 07</p><button class="btn primary" onclick="document.getElementById('start').classList.add('hidden');document.getElementById('cpfLogin').classList.remove('hidden');chooseBranch('Loja Picerno')">Entrar nesta loja</button></article>
+  <article class="card"><h3>Loja Volobueff</h3><p>Rua Generoso Alves Vieira, 165</p><button class="btn primary" onclick="document.getElementById('start').classList.add('hidden');document.getElementById('cpfLogin').classList.remove('hidden');chooseBranch('Loja Volobueff')">Entrar nesta loja</button></article>
+  <article class="card"><h3>Loja Nova Veneza</h3><p>Av. da Amizade, 3249</p><button class="btn primary" onclick="document.getElementById('start').classList.add('hidden');document.getElementById('cpfLogin').classList.remove('hidden');chooseBranch('Loja Nova Veneza')">Entrar nesta loja</button></article>
  </div>
  <div class="notice">Bombastic Tabacaria — selecione sua unidade para acessar o catálogo, estoque e pedidos.</div>
 </section>
@@ -382,8 +382,9 @@ const branches={
 const branchNameById={1:"Loja Volobueff",2:"Loja Picerno",3:"Loja Nova Veneza"};
 const SUPABASE_URL="https://mxbmzpnoawfbwpbjkbcw.supabase.co";
 const SUPABASE_ANON_KEY="sb_publishable_-zBTfhTld23BHReZ4huWyQ_zWO-xPIj";
-const supabaseClient=window.supabase.createClient(SUPABASE_URL,SUPABASE_ANON_KEY,{auth:{persistSession:true,autoRefreshToken:true,detectSessionInUrl:true,storage:window.localStorage}});
 let products=[],clients={},orders=[],sales=[],suppliers=[],ledger=[],rewards=[],redemptions=[],stockLots=[];
+const supabaseClient=window.supabase?.createClient?window.supabase.createClient(SUPABASE_URL,SUPABASE_ANON_KEY,{auth:{persistSession:true,autoRefreshToken:true,detectSessionInUrl:true,storage:window.localStorage}}):null;
+if(!supabaseClient)console.error('Supabase JS não carregou. O formulário de acesso continuará disponível, mas a autenticação ficará indisponível até restabelecer a conexão.');
 let dashboardScope='Todas as lojas',ownerGoalSettings={},employeeGoalSettings={},branch='',client=null,cart={},role='',staffBranch='',staffActor='',activeFilter='Todos',activeProductCategory='Todas',activeProductBrand='Todas',productSort='padrao',currentOrder=null,activeCartProductId=null,pendingClientCpf='',pendingClientEmail='',clientAuthUser=null,pendingTemporaryCpf='',purchaseDraftItems=[],orderChannel=null,orderAlarmTimer=null,ignoredSuggestions=[],barcodeStream=null,barcodeDetector=null,barcodeScanActive=false,barcodeFrame=null,barcodeTargetId=null,storeGoals={},loyaltyRules={cashback_percent:5,cashback_minimo:100,cashback_validade_dias:90,pontos_a_cada:10,prata_minimo:500,ouro_minimo:1500},staffDirectory=[],adultConfirmed=false;
 const money=n=>Number(n||0).toLocaleString('pt-BR',{style:'currency',currency:'BRL'});
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -1195,5 +1196,18 @@ function stopStaffIdleTimer(){if(staffIdleTimer){clearTimeout(staffIdleTimer);st
 function registerStaffActivity(){if(!['Proprietário','Gerente','Vendedor'].includes(role))return;staffLastActivity=Date.now();if(staffIdleTimer)clearTimeout(staffIdleTimer);staffIdleTimer=setTimeout(()=>{if(Date.now()-staffLastActivity>=600000)logout(true);else registerStaffActivity()},600000)}
 function startStaffIdleTimer(){stopStaffIdleTimer();if(!['Proprietário','Gerente','Vendedor'].includes(role))return;staffLastActivity=Date.now();['pointerdown','pointermove','keydown','scroll','touchstart','click'].forEach(ev=>document.addEventListener(ev,registerStaffActivity,{capture:true,passive:true}));staffIdleTimer=setTimeout(()=>logout(true),600000)}
 window.addEventListener('load',async()=>{await restoreCustomerSession();if(!clientAuthUser)await restoreStaffSession()},{once:true});
+</script>
+<script>
+/* Fallback de navegação: garante que as telas de acesso abram mesmo se uma dependência externa falhar. */
+(function(){
+ const start=document.getElementById('start');
+ const cpf=document.getElementById('cpfLogin');
+ const staff=document.getElementById('staffLogin');
+ const openStaff=document.getElementById('openStaffLoginBtn');
+ if(openStaff)openStaff.addEventListener('click',function(){if(start)start.classList.add('hidden');if(staff)staff.classList.remove('hidden');});
+ document.querySelectorAll('#start .branches button').forEach(function(btn){
+  btn.addEventListener('click',function(){if(start)start.classList.add('hidden');if(cpf)cpf.classList.remove('hidden');});
+ });
+})();
 </script>
 </body></html>
