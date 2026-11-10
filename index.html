@@ -758,7 +758,7 @@ function showAdminCategory(category){
   if(manager)items.push('Cancelar pedido não retirado');
  }else if(category==='Configurações'){
   items=manager?['Histórico de clientes','Redefinição de senha']:['Redefinição de senha','Configurar Pix loja','Histórico de clientes','Cashback e fidelidade'];
-  if(owner)items.push('Equipe e funcionários','Equipe e metas','Backup e auditoria');
+  if(owner)items.push('Equipe e funcionários','Backup e auditoria');
  }
  const d=document.getElementById('staffDetail');d.classList.remove('hidden');
  if(category==='Visão geral'){d.innerHTML=ownerDashboardView(owner?'Todas as lojas':staffBranch);d.scrollIntoView({behavior:'smooth',block:'start'});updateFloatingPanelBack();return}
