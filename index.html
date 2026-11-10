@@ -1444,34 +1444,17 @@ function exportBackup(){
  const blob=new Blob([JSON.stringify(payload,null,2)],{type:'application/json;charset=utf-8'}),url=URL.createObjectURL(blob),a=document.createElement('a');
  a.href=url;a.download='bombastic-backup-'+new Date().toISOString().slice(0,10)+'.json';document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),1000);toast('Backup JSON gerado com os dados carregados no aplicativo.')
 }
-function exportStockAudit(mode){let unit=role==='Proprietário'?(document.getElementById('auditBranch')?.value||'all'):String(branches[staffBranch]?.id||''),names=Object.entries(branches).filter(([n,b])=>unit==='all'||String(b.id)===String(unit)),rows=names.flatMap(([name])=>products.map(p=>({store:name,name:p.name,barcode:p.barcode||'',shelf:p.shelf||'',qty:branchStock(p,name),unit:p.unit||'unidades'}))).filter(x=>true),w=window.open('','_blank');if(!w){toast('Permita pop-ups para gerar o PDF.');return}w.document.write('<html><head><title>Auditoria de estoque Bombastic</title><style>body{font:12px Arial;padding:24px;color:#111}h1{font-size:20px}table{width:100%;border-collapse:collapse}th,td{border:1px solid #777;padding:7px;text-align:left}th{background:#eee}.qty{text-align:center;width:90px}@media print{button{display:none}}.stock-attention-action{margin:12px 0 18px;padding:12px;border:1px solid #806819;border-radius:12px;background:#17150c}.stock-attention-action p{margin:7px 0 0}.stock-attention-summary{display:flex;align-items:center;gap:10px;padding:10px 12px;margin:10px 0 14px;border:1px solid #806819;border-radius:10px;background:#17150c}.stock-attention-summary strong{font-size:26px;color:#ffe45c}
-/* Meus pedidos do cliente: página normal, rolagem livre e cartões compactos */
-#customerOrdersPage{min-height:60vh;padding-bottom:34px}
-.customer-orders-toolbar{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;margin:8px 0 14px}
-.customer-orders-toolbar h2{margin:0;color:var(--gold)}
-.customer-orders-list{display:flex;flex-direction:column;gap:8px}
-.customer-order-card{margin:0!important;padding:11px 13px!important;border-radius:12px!important;background:linear-gradient(145deg,rgba(26,21,12,.96),rgba(14,13,11,.96))}
-.customer-order-head{display:flex;align-items:center;justify-content:space-between;gap:8px}
-.customer-order-head strong{font-size:14px;color:#fff}
-.customer-order-status{font-size:10px;font-weight:900;padding:4px 8px;border-radius:20px;background:rgba(249,211,40,.16);border:1px solid rgba(249,211,40,.5);color:#ffe45c;white-space:nowrap}
-.customer-order-meta{display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap;margin:6px 0;color:var(--muted);font-size:11px}
-.customer-order-total{font-size:14px;font-weight:900;color:var(--gold);white-space:nowrap}
-.customer-order-products{margin:6px 0 0;padding-top:6px;border-top:1px solid rgba(255,220,0,.16);display:grid;gap:4px}
-.customer-order-product{display:flex;justify-content:space-between;gap:8px;font-size:11px;line-height:1.3}
-.customer-order-product span:first-child{min-width:0;overflow-wrap:anywhere}
-.customer-order-actions{display:flex;justify-content:flex-end;gap:5px;margin-top:7px}
-.customer-order-actions .btn{font-size:10px!important;padding:5px 8px!important;margin:0!important}
-.customer-redemption-card{display:flex;align-items:center;gap:10px;padding:9px 11px!important;margin:0!important}
-.customer-redemption-photo{width:48px;height:48px;flex:0 0 48px;object-fit:contain;border-radius:8px;background:#fff}
-.customer-redemption-info{flex:1;min-width:0}
-.customer-redemption-info strong{font-size:12px;overflow-wrap:anywhere}
-.customer-redemption-info p{margin:3px 0;font-size:10px;color:var(--muted)}
-.customer-redemption-status{font-size:10px;color:var(--gold);font-weight:800}
-@media(max-width:600px){#customerOrdersPage{padding:0 0 30px}.customer-orders-toolbar{margin:5px 0 10px}.customer-order-card{padding:9px 10px!important}.customer-order-head strong{font-size:13px}.customer-order-meta{font-size:10px}.customer-order-product{font-size:10px}.customer-order-total{font-size:13px}}
-</style></head><body><h1>Bombastic Tabacaria — Auditoria física de estoque</h1><p>Unidade(s): '+names.map(x=>esc(x[0])).join(', ')+'</p><p>Data: '+new Date().toLocaleDateString('pt-BR')+'</p><table><tr><th>Unidade</th><th>Produto</th><th>Código</th><th>Prateleira</th><th>Unidade</th><th>Saldo sistema</th><th>Contagem física</th></tr>'+rows.map(x=>'<tr><td>'+esc(x.store)+'</td><td>'+esc(x.name)+'</td><td>'+esc(x.barcode)+'</td><td>'+esc(x.shelf)+'</td><td>'+esc(x.unit)+'</td><td class="qty">'+(mode==='owner'?x.qty:'')+'</td><td class="qty"></td></tr>').join('')+'</table><p>Responsável: ____________________________________</p><p>Assinatura: ____________________________________</p><script>window.onload=()=>window.print()<\/script></body></html>');w.document.close()}
-
-
-
+function exportStockAudit(mode){
+ const unit=role==='Proprietário'?(document.getElementById('auditBranch')?.value||'all'):String(branches[staffBranch]?.id||'');
+ const names=Object.entries(branches).filter(([name,b])=>unit==='all'||String(b.id)===String(unit));
+ const rows=names.flatMap(([name])=>products.map(p=>({store:name,name:p.name,barcode:p.barcode||'',shelf:p.shelf||'',qty:branchStock(p,name),unit:p.unit||'unidades'})));
+ const w=window.open('','_blank');
+ if(!w){toast('Permita pop-ups para gerar o PDF.');return}
+ const tableRows=rows.map(x=>'<tr><td>'+esc(x.store)+'</td><td>'+esc(x.name)+'</td><td>'+esc(x.barcode)+'</td><td>'+esc(x.shelf)+'</td><td>'+esc(x.unit)+'</td><td class="qty">'+(mode==='owner'?x.qty:'')+'</td><td class="qty"></td></tr>').join('');
+ w.document.write(`<!doctype html><html lang="pt-BR"><head><meta charset="utf-8"><title>Auditoria de estoque Bombastic</title><style>body{font:12px Arial;padding:24px;color:#111}h1{font-size:20px}table{width:100%;border-collapse:collapse}th,td{border:1px solid #777;padding:7px;text-align:left}th{background:#eee}.qty{text-align:center;width:90px}@media print{button{display:none}}</style></head><body><h1>Bombastic Tabacaria — Auditoria física de estoque</h1><p>Unidade(s): ${names.map(x=>esc(x[0])).join(', ')}</p><p>Data: ${new Date().toLocaleDateString('pt-BR')}</p><table><tr><th>Unidade</th><th>Produto</th><th>Código</th><th>Prateleira</th><th>Unidade</th><th>Saldo sistema</th><th>Contagem física</th></tr>${tableRows}</table><p>Responsável: ____________________________________</p><p>Assinatura: ____________________________________</p></body></html>`);
+ w.document.close();
+ w.onload=()=>w.print();
+}
 async function requestStaffPasswordReset(){
  const email=document.getElementById('staffUser').value.trim().toLowerCase();
  if(!email){toast('Informe seu e-mail para solicitar o reset de senha.');return}
