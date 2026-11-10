@@ -966,7 +966,7 @@ function showStockAttention(branchName){
   const p=products.find(x=>Number(x.id)===Number(l.productId));if(!p)return;
   const expiry=dateOnly(l.expiryDate),received=dateOnly(l.receivedAt);
   if(expiry){const days=Math.ceil((expiry-today)/86400000);if(days<=30)attention.push({lotId:l.id,productId:p.id,kind:days<0?'Vencido':'Próximo do vencimento',priority:days<0?0:1,product:p.name,lot:l.lotNumber||'Não informado',qty:l.quantity,unit:p.unit||'unidades',date:l.expiryDate,days,reason:days<0?'Vencido há '+Math.abs(days)+' dia(s)':days===0?'Vence hoje':'Vence em '+days+' dia(s)'})}
-  if(received){const days=daysBetween(received);if(days>=90)attention.push({lotId:l.id,productId:p.id,kind:'Muito tempo em estoque',priority:2,product:p.name,lot:l.lotNumber||'Não informado',qty:l.quantity,unit:p.unit||'unidades',date:l.receivedAt,days,reason:'Recebido há '+days+' dia(s)'})}
+  if(received){const days=daysBetween(received),isExpired=!!(expiry&&expiry<today);if(days>=90&&!isExpired)attention.push({lotId:l.id,productId:p.id,kind:'Muito tempo em estoque',priority:2,product:p.name,lot:l.lotNumber||'Não informado',qty:l.quantity,unit:p.unit||'unidades',date:l.receivedAt,days,reason:'Recebido há '+days+' dia(s)'})}
  });
  attention.sort((a,b)=>a.priority-b.priority||a.days-b.days);
  const modal=document.getElementById('modal');
