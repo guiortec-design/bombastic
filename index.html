@@ -933,7 +933,7 @@ function orderStage(o){
 function selectOrderTab(tab){window.bombasticOrderTab=Number(tab)||0;openModule('Pedidos e atendimento')}
 function ordersView(cancelOnly=false){
  const all=orders.filter(o=>o.branch===staffBranch||role==='Proprietário').slice().sort((a,b)=>new Date(b.date||0)-new Date(a.date||0)||Number(b.id)-Number(a.id));
- const tabs=[{label:'Aguardando atendimento',stage:0},{label:'Aguardando confirmação de pagamento',stage:1},{label:'Separação',stage:2},{label:'Embalagem',stage:3},{label:'Aguardando retirada',stage:4},{label:'Aguardando motoboy',stage:5},{label:'Em entrega',stage:6},{label:'Concluídos e entregues',stage:7},{label:'Cancelados',stage:8}];
+ const tabs=[{label:'Aguardando atendimento',stage:0},{label:'Aguardando confirmação de pagamento',stage:1},{label:'Separação / preparação',stage:2},{label:'Embalagem',stage:3},{label:'Aguardando retirada',stage:4},{label:'Aguardando motoboy',stage:5},{label:'Em entrega',stage:6},{label:'Concluídos e entregues',stage:7},{label:'Cancelados',stage:8}];
  let active=Number.isInteger(window.bombasticOrderTab)?window.bombasticOrderTab:0;if(active<0||active>8)active=0;
  const counts=tabs.map(t=>all.filter(o=>orderStage(o)===t.stage).length);
  const list=all.filter(o=>orderStage(o)===active);
