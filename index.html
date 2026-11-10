@@ -1065,9 +1065,9 @@ function branchSelectHtml(id,selected,includeAll){let options=includeAll?'<optio
 function setOwnerDashboardScope(scope){if(role==='Vendedor')scope=staffBranch;if(role==='Gerente')scope=staffBranch;dashboardScope=scope;const d=document.getElementById('staffDetail');if(d)d.innerHTML=ownerDashboardView(scope)}
 function demoDashboardStaff(storeNames){
  const demoByStore={
-  'Loja Picerno':[{nome:'Mariana Alves',cargo:'vendedor',demoSalesCount:2},{nome:'Lucas Ferreira',cargo:'vendedor',demoSalesCount:1},{nome:'Rafael Santos',cargo:'vendedor',demoSalesCount:3}],
-  'Loja Volobueff':[{nome:'Beatriz Lima',cargo:'vendedor',demoSalesCount:2},{nome:'Pedro Henrique',cargo:'vendedor',demoSalesCount:0},{nome:'Gabriel Costa',cargo:'vendedor',demoSalesCount:5}],
-  'Loja Nova Veneza':[{nome:'Camila Rocha',cargo:'vendedor',demoSalesCount:4},{nome:'Matheus Oliveira',cargo:'vendedor',demoSalesCount:1},{nome:'João Pedro',cargo:'vendedor',demoSalesCount:2}]
+  'Loja Picerno':[{nome:'Mariana Alves',cargo:'vendedor',demoSalesCount:2},{nome:'Lucas Ferreira',cargo:'vendedor',demoSalesCount:1},{nome:'Rafael Santos',cargo:'vendedor',demoSalesCount:0}],
+  'Loja Volobueff':[{nome:'Beatriz Lima',cargo:'vendedor',demoSalesCount:1},{nome:'Pedro Henrique',cargo:'vendedor',demoSalesCount:0},{nome:'Gabriel Costa',cargo:'vendedor',demoSalesCount:5}],
+  'Loja Nova Veneza':[{nome:'Camila Rocha',cargo:'vendedor',demoSalesCount:1},{nome:'Matheus Oliveira',cargo:'vendedor',demoSalesCount:1},{nome:'João Pedro',cargo:'vendedor',demoSalesCount:0}]
  };
  return (storeNames||[]).flatMap(store=>(demoByStore[store]||[]).map((e,i)=>({...e,id:-((Number(branches[store]?.id)||1)*10+i+1),loja_id:Number(branches[store]?.id),ativo:true,demo:true})));
 }
