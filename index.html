@@ -438,7 +438,28 @@ function checkBrazilPhone(input){let digits=String(input.value||'').replace(/\D/
 async function loadProductsFromSupabase(forStaff=false){let giftRows=[];if(!forStaff){const storeId=Number(branches[branch]?.id||0);if(storeId){const gifts=await supabaseClient.from('brindes').select('produto_id,loja_id,ativo,estoque').eq('loja_id',storeId).eq('ativo',true).gt('estoque',0);if(gifts.error)throw gifts.error;giftRows=gifts.data||[]}}let giftProductIds=new Set(giftRows.map(g=>Number(g.produto_id)).filter(Boolean));let productQuery=supabaseClient.from('produtos').select('id,nome,descricao,categoria,marca,preco,codigo_barras,foto_url,ativo,prateleira,etiqueta,emoji,unidade');const {data,error}=await productQuery.order('nome');if(error)throw error;let stockRows=[];if(forStaff){const r=await supabaseClient.from('estoque').select('produto_id,loja_id,quantidade,estoque_minimo');if(r.error)throw r.error;stockRows=r.data||[]}else{const unitId=Number(branches[branch]?.id||0);if(unitId){const r=await supabaseClient.rpc('catalogo_quantidade_estoque',{p_loja_id:unitId});if(r.error)throw r.error;stockRows=(r.data||[]).map(x=>({...x,loja_id:unitId,quantidade:Math.max(0,Number(x.quantidade)||0)}))}else{stockRows=[]}stockLots=[]}let lotRows=[];if(forStaff){const r=await supabaseClient.from('estoque_lotes').select('*');if(r.error)throw r.error;lotRows=r.data||[]}products=(data||[]).map(p=>{let byBranch={},minByBranch={};stockRows.filter(s=>Number(s.produto_id)===Number(p.id)).forEach(s=>{let name=branchNameById[Number(s.loja_id)];if(name){byBranch[name]=Number(s.quantidade)||0;minByBranch[name]=Number(s.estoque_minimo)||0}});return{id:p.id,name:p.nome,description:p.descricao||'',category:p.categoria||'Outros',brand:p.marca||'',price:Number(p.preco)||0,barcode:p.codigo_barras||'',photoUrl:p.foto_url||'',active:true,shelf:p.prateleira||'Consulte a equipe',tag:p.etiqueta||'Todos',emoji:p.emoji||'📦',unit:p.unidade||'unidades',stockByBranch:byBranch,stockMinimumByBranch:minByBranch,stock:Object.values(byBranch).reduce((a,n)=>a+n,0),isGift:giftProductIds.has(Number(p.id))}});if(forStaff){stockLots=lotRows.map(l=>({id:l.id,productId:l.produto_id,branch:branchNameById[Number(l.loja_id)],lotNumber:l.numero_lote,receivedAt:l.data_recebimento,manufactureDate:l.data_fabricacao,expiryDate:l.data_validade,unitCost:l.custo_unitario,quantity:l.quantidade,initialQuantity:l.quantidade_inicial,source:l.origem})).filter(l=>l.branch)}return products}
 function playOrderBeep(){try{const Ctx=window.AudioContext||window.webkitAudioContext;if(!Ctx)return;const ctx=new Ctx(),now=ctx.currentTime;[[659.25,0],[880,0.19]].forEach(([frequency,delay])=>{const osc=ctx.createOscillator(),gain=ctx.createGain(),start=now+delay;osc.type='triangle';osc.frequency.setValueAtTime(frequency,start);gain.gain.setValueAtTime(0.0001,start);gain.gain.exponentialRampToValueAtTime(0.16,start+0.025);gain.gain.exponentialRampToValueAtTime(0.0001,start+0.15);osc.connect(gain);gain.connect(ctx.destination);osc.start(start);osc.stop(start+0.17)});ctx.resume?.();setTimeout(()=>ctx.close(),900)}catch(e){}}
 function refreshOrderAlarmState(){if(!['Vendedor','Gerente'].includes(role)){if(orderAlarmTimer){clearInterval(orderAlarmTimer);orderAlarmTimer=null}return}let pending=orders.some(o=>!o.assignedTo&&!['Retirada concluída','Entrega concluída','Cancelado','Estornado'].includes(o.status));if(pending){if(!orderAlarmTimer){playOrderBeep();orderAlarmTimer=setInterval(playOrderBeep,60000)}}else if(orderAlarmTimer){clearInterval(orderAlarmTimer);orderAlarmTimer=null}}
-function startStaffOrderNotifications(){stopStaffOrderNotifications();if(!['Vendedor','Gerente'].includes(role))return;refreshOrderAlarmState();let config={event:'INSERT',schema:'public',table:'pedidos'};if(branches[staffBranch])config.filter='loja_id=eq.'+branches[staffBranch].id;orderChannel=supabaseClient.channel('bombastic-pedidos-'+staffBranch).on('postgres_changes',config,async payload=>{try{await loadOrdersFromSupabase();refreshOrderAlarmState();toast('Nova venda recebida! Abra Pedidos e atendimento.');if(!document.getElementById('staffDetail').classList.contains('hidden')&&document.getElementById('staffDetail').textContent.includes('Pedidos'))openModule('Pedidos e atendimento')}catch(e){toast('Nova venda detectada, mas houve falha ao atualizar a lista: '+e.message)}}).subscribe(status=>{if(status==='CHANNEL_ERROR'||status==='TIMED_OUT')toast('A conexão de notificações de pedidos foi interrompida. Atualize o painel.')})}
+function startStaffOrderNotifications(){
+ stopStaffOrderNotifications();
+ if(!['Vendedor','Gerente','Proprietário'].includes(role))return;
+ refreshOrderAlarmState();
+ let config={event:'*',schema:'public',table:'pedidos'};
+ if(role!=='Proprietário'&&branches[staffBranch])config.filter='loja_id=eq.'+branches[staffBranch].id;
+ orderChannel=supabaseClient.channel('bombastic-pedidos-'+staffBranch)
+  .on('postgres_changes',config,async payload=>{
+   try{
+    await loadOrdersFromSupabase();
+    refreshOrderAlarmState();
+    const panel=document.getElementById('staffDetail');
+    if(panel&&!panel.classList.contains('hidden')&&panel.textContent.includes('Pedidos')){
+     const activeTab=Number.isInteger(window.bombasticOrderTab)?window.bombasticOrderTab:0;
+     await openModule('Pedidos e atendimento');
+     window.bombasticOrderTab=activeTab;
+    }
+    if(payload.eventType==='INSERT')toast('Novo pedido recebido. Abra Pedidos e atendimento.');
+   }catch(e){toast('Pedido alterado, mas houve falha ao atualizar a lista: '+e.message)}
+  })
+  .subscribe(status=>{if(status==='CHANNEL_ERROR'||status==='TIMED_OUT')toast('A conexão de atualização dos pedidos foi interrompida. Atualize o painel.')});
+}
 function stopStaffOrderNotifications(){if(orderAlarmTimer){clearInterval(orderAlarmTimer);orderAlarmTimer=null}if(orderChannel){supabaseClient.removeChannel(orderChannel);orderChannel=null}}
 function customerTier(c){let raw=String(c?.level||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase();if(raw.includes('ouro'))return 'Ouro';if(raw.includes('prata'))return 'Prata';if(raw.includes('bronze'))return 'Bronze';let spent=Number(c?.spent12m)||0;return spent>=Number(loyaltyRules.ouro_minimo||1500)?'Ouro':spent>=Number(loyaltyRules.prata_minimo||500)?'Prata':'Bronze'}
 async function loadCustomerLoyalty(){const [f,c,r]=await Promise.all([supabaseClient.from('fidelidade').select('pontos,nivel,total_compras_12_meses').eq('cliente_id',client.id).maybeSingle(),supabaseClient.from('cashback').select('valor_creditado,saldo_disponivel,data_validade,status').eq('cliente_id',client.id),supabaseClient.from('regras_fidelidade').select('prata_minimo,ouro_minimo').eq('id',1).maybeSingle()]);if(f.error)throw f.error;if(c.error)throw c.error;if(r.error)throw r.error;if(r.data)loyaltyRules={...loyaltyRules,...r.data};client.points=Number(f.data?.pontos)||0;client.spent12m=Number(f.data?.total_compras_12_meses)||0;client.level=f.data?.nivel||'';client.cashbackLots=(c.data||[]).filter(x=>x.status!=='estornado'&&Number(x.saldo_disponivel)>0).map(x=>({amount:Number(x.saldo_disponivel),expires:x.data_validade?new Date(x.data_validade+'T23:59:59').toISOString():null}))}
@@ -822,7 +843,16 @@ async function saveTeamAssignment(id){
  openModule('Equipe e funcionários');
 }
 function overviewView(){let total=sales.reduce((a,s)=>a+s.total,0);return `<div class="grid cards"><div class="card"><p>Pedidos pendentes</p><div class="stat">${orders.filter(o=>!['Retirada concluída','Entrega concluída','Cancelado'].includes(o.status)).length}</div></div><div class="card"><p>Vendas registradas</p><div class="stat">${sales.length}</div></div><div class="card"><p>Faturamento registrado</p><div class="stat">${money(total)}</div></div><div class="card"><p>Produtos cadastrados</p><div class="stat">${products.length}</div></div></div><h4>Unidades</h4><table class="table"><tr><th>Unidade</th><th>Pedidos</th><th>Vendas</th></tr>${Object.keys(branches).map(b=>`<tr><td>${esc(b)}</td><td>${orders.filter(o=>o.branch===b).length}</td><td>${money(sales.filter(s=>s.branch===b).reduce((a,s)=>a+s.total,0))}</td></tr>`).join('')}</table>`}
-function nextOrderAction(o){if(!o.assignedTo)return 'Assumir pedido';if(o.status==='Aguardando confirmação de pagamento'&&!o.paymentConfirmed)return 'Pagamento confirmado';if(o.status==='Em preparação'&&o.paymentConfirmed)return 'Preparação concluída';if(o.status==='Aguardando retirada'&&o.paymentConfirmed)return 'Iniciar entrega';if(o.status==='Em entrega'&&o.paymentConfirmed)return 'Concluir entrega';return null}
+function nextOrderAction(o){
+ const status=String(o.status||'').trim();
+ if(['Cancelado','Estornado','Retirada concluída','Entrega concluída','Concluído e entregue'].includes(status)||o.completedAt)return null;
+ if(status==='Aguardando atendimento'&&!o.assignedTo)return 'Assumir pedido';
+ if(status==='Aguardando confirmação de pagamento'&&o.assignedTo&&!o.paymentConfirmed)return 'Pagamento confirmado';
+ if(status==='Em preparação'&&o.assignedTo&&o.paymentConfirmed)return 'Preparação concluída';
+ if(status==='Aguardando retirada'&&o.assignedTo&&o.paymentConfirmed)return 'Iniciar entrega';
+ if(status==='Em entrega'&&o.assignedTo&&o.paymentConfirmed)return 'Concluir entrega';
+ return null;
+}
 function orderFlowRank(o){
  const s=String(o.status||'').trim().toLocaleLowerCase('pt-BR');
  if(['cancelado','cancelada','estornado'].includes(s))return -1;
@@ -856,7 +886,8 @@ function ordersView(cancelOnly=false){
   let actionButton='';
   if(!cancelOnly&&action){if(action==='Assumir pedido'&&!o.assignedTo)actionButton='<button type="button" class="btn assume-order" onclick="updateOrder('+o.id+',\'Assumir pedido\')">Assumir pedido</button>';else if(owned)actionButton='<button type="button" class="btn primary" onclick="updateOrder('+o.id+','+JSON.stringify(action)+')">'+esc(action)+'</button>';else if(locked)actionButton='<button type="button" class="btn order-claimed" disabled>Pedido assumido por '+esc(o.assignedTo)+'</button>';}
   const done=orderStage(o)===5;
-  const refundButton=(role==='Proprietário'&&!['Estornado','Cancelado'].includes(o.status))?'<button type="button" class="btn" onclick="refundOrder('+o.id+')">Registrar e confirmar estorno</button>':'';
+  const refundEligible=role==='Proprietário'&&!!o.assignedTo&&o.paymentConfirmed&&['Em preparação','Aguardando retirada','Em entrega','Retirada concluída','Entrega concluída','Concluído e entregue'].includes(o.status);
+  const refundButton=refundEligible?'<button type="button" class="btn" onclick="refundOrder('+o.id+')">Registrar e confirmar estorno</button>':'';
   const cancelButton=(role!=='Vendedor'&&o.status==='Estornado')?'<button type="button" class="btn primary" onclick="updateOrder('+o.id+',\'Cancelar pedido\')">Cancelar pedido</button>':'';
   const cancelInstruction=(cancelOnly&&role!=='Vendedor'&&o.status!=='Estornado')?'<p class="small muted">Cancelamento bloqueado: primeiro registre e confirme o estorno deste pedido.</p>':'';
   const productRows=o.items.length?o.items.map(i=>'<div style="display:flex;justify-content:space-between;align-items:center;gap:12px;padding:9px 0;border-top:1px solid #333"><span style="flex:1;min-width:0">'+esc(i.name)+'</span><strong style="white-space:nowrap">Qtd.: '+i.qty+'</strong><span style="white-space:nowrap;color:#ddd">'+money(i.price*i.qty)+'</span></div>').join(''):'<p class="muted">Nenhum produto informado neste pedido.</p>';
@@ -866,11 +897,34 @@ function ordersView(cancelOnly=false){
  }).join('');
  return '<h4>Pedidos e atendimento</h4>'+tabHtml+(cards||'<p class="muted">Nenhum pedido nesta etapa.</p>');
 }
-async function updateOrder(id,action){let o=orders.find(x=>Number(x.id)===Number(id));if(!o)return;try{const {data,error}=await supabaseClient.rpc('avancar_pedido_bombastic',{p_pedido_id:Number(id),p_acao:action});if(error)throw error;if(data?.success!==true)throw new Error('O banco não confirmou esta etapa.');await loadOrdersFromSupabase();const refreshedOrder=orders.find(x=>Number(x.id)===Number(id));if(refreshedOrder)window.bombasticOrderTab=orderStage(refreshedOrder);if(action==='Concluir entrega'){await loadProductsFromSupabase(true);toast('Pedido concluído e entregue. Estoque e histórico atualizados.')}else if(action==='Cancelar pedido')toast('Pedido cancelado após estorno confirmado.');else if(action==='Assumir pedido')toast('Pedido assumido por você.');else toast('Etapa atualizada: '+(data.status||action));refreshOrderAlarmState();openModule('Pedidos e atendimento')}catch(e){toast('Não foi possível atualizar o pedido: '+(e.message||'tente novamente.'))}}
+async function updateOrder(id,action){
+ const o=orders.find(x=>Number(x.id)===Number(id));if(!o)return;
+ try{
+  const {data,error}=await supabaseClient.rpc('avancar_pedido_bombastic',{p_pedido_id:Number(id),p_acao:action});
+  if(error)throw error;
+  if(data?.success!==true)throw new Error('O banco não confirmou esta etapa.');
+  await loadOrdersFromSupabase();
+  const refreshedOrder=orders.find(x=>Number(x.id)===Number(id));
+  if(!refreshedOrder)throw new Error('Pedido atualizado, mas não foi possível recarregar seus dados.');
+  window.bombasticOrderTab=orderStage(refreshedOrder);
+  if(action==='Concluir entrega')await loadProductsFromSupabase(true);
+  refreshOrderAlarmState();
+  if(action==='Concluir entrega')toast('Pedido concluído e entregue. Estoque e histórico atualizados.');
+  else if(action==='Cancelar pedido')toast('Pedido cancelado após estorno confirmado.');
+  else if(action==='Assumir pedido')toast('Pedido assumido. Agora confirme o pagamento para avançar.');
+  else if(action==='Pagamento confirmado')toast('Pagamento confirmado. Pedido movido para Em preparação.');
+  else toast('Etapa atualizada: '+(data.status||action));
+  await openModule('Pedidos e atendimento');
+ }catch(e){toast('Não foi possível atualizar o pedido: '+(e.message||'tente novamente.'))}
+}
 async function refundOrder(id){
  if(role!=='Proprietário'){toast('Somente o proprietário pode registrar e confirmar o estorno.');return}
  const o=orders.find(x=>Number(x.id)===Number(id));
- if(!o||o.status==='Estornado'||o.status==='Cancelado'){toast('Pedido não encontrado ou já estornado/cancelado.');return}
+ if(!o){toast('Pedido não encontrado.');return}
+ if(!o.assignedTo){toast('Assuma o pedido antes de registrar o estorno.');return}
+ if(!o.paymentConfirmed){toast('O estorno só pode ser registrado depois da confirmação do pagamento.');return}
+ if(['Estornado','Cancelado'].includes(o.status)){toast('Este pedido já foi estornado ou cancelado.');return}
+ if(!['Em preparação','Aguardando retirada','Em entrega','Retirada concluída','Entrega concluída','Concluído e entregue'].includes(o.status)){toast('O pedido ainda não está em uma etapa que permita estorno.');return}
  const msg='Confirma que o estorno deste pedido foi realizado?\n\nDepois desta confirmação, o pedido ficará como ESTORNADO e só então poderá ser cancelado.\n\nSe o pagamento já foi confirmado, o sistema registra o recebimento e a devolução no financeiro. Se ainda não foi, apenas libera a reserva. Se a venda já foi concluída, também reverte estoque, pontos e cashback.';
  if(!confirm(msg))return;
  try{
