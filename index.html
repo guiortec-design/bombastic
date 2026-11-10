@@ -529,6 +529,20 @@ button:focus-visible,.btn:focus-visible{outline:2px solid #f9d328!important;outl
  #products .card h3{font-size:9.5px!important}
  #products .product button{font-size:8.5px!important}
 }
+
+/* Consulta de produtos em estoque: cartões compactos em colunas, com lotes visíveis */
+.stock-lookup-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:10px;align-items:stretch;margin-top:12px}
+.stock-lookup-card{display:flex;flex-direction:column;align-items:stretch;gap:8px;margin:0;padding:10px;min-width:0}
+.stock-lookup-card .stock-lookup-photo{width:100%;height:112px;object-fit:contain;background:#fff;border-radius:9px}
+.stock-lookup-info{min-width:0;display:flex;flex-direction:column;gap:5px}
+.stock-lookup-name{font-size:14px;line-height:1.25;color:var(--gold);overflow-wrap:anywhere}
+.stock-lookup-info p{margin:0;font-size:12px;line-height:1.35;overflow-wrap:anywhere}
+.stock-lookup-price{font-size:16px!important;font-weight:900;color:var(--gold)}
+.stock-lookup-lots{margin-top:4px;padding-top:7px;border-top:1px solid rgba(255,220,0,.25);display:flex;flex-direction:column;gap:5px;font-size:11px}
+.stock-lookup-lots>strong{color:var(--gold)}
+.stock-lookup-lot{display:flex;flex-direction:column;gap:2px;padding:6px 7px;border:1px solid rgba(255,220,0,.16);border-radius:8px;background:rgba(0,0,0,.2);overflow-wrap:anywhere}
+.stock-lookup-lot small{color:var(--muted)}
+@media(max-width:600px){.stock-lookup-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:7px}.stock-lookup-card{padding:8px;gap:7px}.stock-lookup-card .stock-lookup-photo{height:82px}.stock-lookup-name{font-size:12px}.stock-lookup-info p{font-size:10px}.stock-lookup-price{font-size:14px!important}.stock-lookup-lots{font-size:10px}.stock-lookup-lot{padding:5px}}
 </style>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js" defer></script>
 </head>
@@ -1434,8 +1448,8 @@ async function startBarcodeScanner(targetId){
  }catch(e){stopBarcodeScanner();toast('Não foi possível abrir a câmera: '+(e.message||'verifique a permissão do navegador.'))}
 }
 function stopBarcodeScanner(){barcodeScanActive=false;if(barcodeFrame)cancelAnimationFrame(barcodeFrame);barcodeFrame=null;if(barcodeStream){barcodeStream.getTracks().forEach(t=>t.stop());barcodeStream=null}let video=document.getElementById('barcodeScannerVideo');if(video)video.srcObject=null;document.getElementById('barcodeScannerOverlay')?.remove();barcodeDetector=null;barcodeTargetId=null}
-function stockLookupView(){return '<h4>Consultar produtos e estoque da unidade</h4><input id="stockLookupSearch" placeholder="Pesquisar por nome, marca ou código de barras" oninput="filterStockLookup()"><button type="button" class="btn" onclick="startBarcodeScanner(\'stockLookupSearch\')">Ler código com câmera</button><div id="stockLookupRows">'+stockLookupRows(products)+'</div>'}
-function stockLookupRows(list){return list.map(p=>{let qty=branchStock(p,staffBranch),min=Number(p.stockMinimumByBranch?.[staffBranch]||0),lots=productLots(p.id,staffBranch),low=min>0&&qty<=min,available=qty>0,photo=p.photoUrl?'<img class="stock-lookup-photo" src="'+esc(p.photoUrl)+'" alt="'+esc(p.name)+'">':'<div class="stock-lookup-photo">'+esc(p.emoji||'📦')+'</div>';return '<div class="card stock-lookup-card">'+photo+'<div class="stock-lookup-info"><strong>'+esc(p.name)+'</strong><p>'+esc(p.category||'Outros')+' • '+money(p.price)+'</p><p>Localização: '+esc(p.shelf||'Consulte a equipe')+'</p><p>Saldo nesta unidade: <strong>'+qty+' '+esc(p.unit||'unidades')+'</strong></p>'+(low?'<span class="badge">Estoque baixo</span>':'')+' <span class="badge">'+(available?'Disponível':'Indisponível')+'</span>'+(lots.length?'<details><summary>Ver lotes ('+lots.length+')</summary>'+lots.map(l=>'<p>Lote '+esc(l.lotNumber)+' • '+l.quantity+' un. • Validade: '+lotDateLabel(l.expiryDate)+' • '+lotExpiryState(l)+'</p>').join('')+'</details>':'')+'</div></div>'}).join('')||'<p>Nenhum produto cadastrado.</p>'}
+function stockLookupView(){return '<h4>Consultar produtos e estoque da unidade</h4><input id="stockLookupSearch" placeholder="Pesquisar por nome, marca ou código de barras" oninput="filterStockLookup()"><button type="button" class="btn" onclick="startBarcodeScanner(\'stockLookupSearch\')">Ler código com câmera</button><div id="stockLookupRows" class="stock-lookup-grid">'+stockLookupRows(products)+'</div>'}
+function stockLookupRows(list){return list.map(p=>{let qty=branchStock(p,staffBranch),min=Number(p.stockMinimumByBranch?.[staffBranch]||0),lots=productLots(p.id,staffBranch),low=min>0&&qty<=min,available=qty>0,photo=p.photoUrl?'<img class="stock-lookup-photo" src="'+esc(p.photoUrl)+'" alt="'+esc(p.name)+'">':'<div class="stock-lookup-photo">'+esc(p.emoji||'📦')+'</div>';return '<article class="card stock-lookup-card">'+photo+'<div class="stock-lookup-info"><strong class="stock-lookup-name">'+esc(p.name)+'</strong><p class="stock-lookup-price">'+money(p.price)+'</p><p><b>Prateleira:</b> '+esc(p.shelf||'Consulte a equipe')+'</p><p><b>Saldo:</b> '+qty+' '+esc(p.unit||'unidades')+'</p><p><span class="badge">'+(available?'Disponível':'Indisponível')+'</span>'+(low?' <span class="badge">Estoque baixo</span>':'')+'</p><div class="stock-lookup-lots"><strong>Lotes ('+lots.length+')</strong>'+(lots.length?lots.map(l=>'<div class="stock-lookup-lot"><b>'+esc(l.lotNumber||'Sem número')+'</b><span>'+l.quantity+' un.</span><span>Validade: '+lotDateLabel(l.expiryDate)+'</span><small>'+lotExpiryState(l)+'</small></div>').join(''):'<small>Não há lotes com saldo nesta unidade.</small>')+'</div></div></article>'}).join('')||'<p class="muted">Nenhum produto cadastrado.</p>'}
 function filterStockLookup(){let q=document.getElementById('stockLookupSearch').value.toLowerCase().trim();let list=products.filter(p=>(p.name+' '+(p.category||'')+' '+(p.brand||'')+' '+(p.shelf||'')+' '+(p.barcode||'')).toLowerCase().includes(q));document.getElementById('stockLookupRows').innerHTML=stockLookupRows(list)}
 function setProductAvailability(){toast('A disponibilidade é automática: com 1 ou mais unidades o produto fica disponível; com estoque zerado fica indisponível. Faça uma entrada ou saída para alterar essa condição.');}
 function catalogChoiceField(id,placeholder,values){
