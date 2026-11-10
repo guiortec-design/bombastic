@@ -1139,7 +1139,7 @@ function showAdminCategory(category){
  }else if(category==='Estoque'){
   items=seller?['Consulta de produtos e estoque','Cadastro de produtos e lotes','Produtos mais vendidos']:['Estoque e lotes','Produtos mais vendidos','Fornecedores','Compras e recebimentos','Auditoria de estoque','Vitrine de Brindes'];
  }else if(category==='Financeiro'){
-  items=seller?['Pedidos e atendimento','Aniversariantes do dia','Pedidos de resgate','Histórico de clientes']:['Fluxo de caixa','Pedidos e atendimento','Aniversariantes do dia','Pedidos de resgate','Estornar vendas'];
+  items=seller?['Pedidos e atendimento','Aniversariantes do dia','Pedidos de resgate','Histórico de clientes']:['Fluxo de caixa','Pedidos e atendimento','Aniversariantes do dia','Brindes de Aniversário','Pedidos de resgate','Estornar vendas'];
   if(manager)items.push('Cancelar pedido não retirado');
  }else if(category==='Configurações'){
   items=manager?['Histórico de clientes','Redefinição de senha']:['Redefinição de senha','Configurar Pix loja','Histórico de clientes','Cashback e fidelidade'];
@@ -1160,6 +1160,7 @@ async function openModule(m){
  else if(m==='Todas as lojas')html+=ownerDashboardView('Todas as lojas');
  else if(Object.prototype.hasOwnProperty.call(branches,m))html+=ownerDashboardView(m);
  else if(m==='Aniversariantes do dia')html+=await birthdayView();
+ else if(m==='Brindes de Aniversário'){if(!['Gerente','Proprietário'].includes(role)){toast('Acesso exclusivo do Proprietário ou Gerente.');return}html+=await birthdayGiftAdminView();}
  else if(m.includes('Pedidos de resgate'))html+=redemptionOrdersView();
  else if(m.includes('Pedidos'))html+=ordersView()+redemptionOrdersView();
  else if(m.includes('mais vendidos'))html+=bestSellersView();
@@ -1668,6 +1669,35 @@ async function saveRewardEdit(id){
 }
 async function archiveReward(id){if(!confirm('Desativar este brinde da vitrine?'))return;let {error}=await supabaseClient.from('brindes').update({ativo:false}).eq('id',id);if(error){toast(error.message);return}await loadStaffData();openModule('Vitrine de Brindes')}
 
+async function birthdayGiftAdminView(){
+ if(!['Gerente','Proprietário'].includes(role))return '<p class="notice">Acesso exclusivo do Proprietário ou Gerente.</p>';
+ const entries=Object.entries(branches||{}).filter(([,b])=>Number(b.id)>0),defaultEntry=entries.find(([name])=>name===staffBranch)||entries[0];
+ const selectedId=role==='Proprietário'?Number(defaultEntry?.[1]?.id||0):Number(branches[staffBranch]?.id||0);
+ const selector=role==='Proprietário'?'<label>Unidade</label><select id="birthdayGiftBranch" onchange="reloadBirthdayGiftAdmin()">'+entries.map(([name,b])=>'<option value="'+Number(b.id)+'" '+(Number(b.id)===selectedId?'selected':'')+'>'+esc(name)+'</option>').join('')+'</select>':'';
+ return '<h3>Brindes de Aniversário</h3><p class="muted">Autorize aqui os produtos que poderão ser oferecidos aos aniversariantes. Esta autorização é independente do resgate por pontos. Só Proprietário e Gerente podem alterar esta lista.</p>'+selector+'<div id="birthdayGiftAdminList">'+await birthdayGiftAdminListHtml(selectedId)+'</div>';
+}
+async function birthdayGiftAdminListHtml(branchId){
+ const {data,error}=await supabaseClient.functions.invoke('birthday-management',{body:{action:'list_birthday_gifts',branchId:Number(branchId)}});
+ if(error)throw error;if(data?.error)throw new Error(data.error);
+ window.birthdayGiftAdminBranch=Number(branchId);
+ const gifts=data.gifts||[];
+ if(!gifts.length)return '<div class="card"><p>Não há brindes activos cadastrados nesta unidade.</p></div>';
+ return gifts.map(g=>'<article class="card" style="margin:10px 0;display:flex;gap:12px;align-items:center">'+(g.foto_url?'<img src="'+esc(g.foto_url)+'" alt="" style="width:64px;height:64px;object-fit:cover;border-radius:10px">':'')+'<div style="flex:1;min-width:0"><strong>'+esc(g.nome)+'</strong><p class="small muted">Stock: '+Number(g.estoque||0)+' • Resgate por pontos: '+Number(g.pontos_necessarios||0)+' pontos</p><span class="pill">'+(g.autorizado_aniversario?'Autorizado para aniversário':'Não autorizado')+'</span></div><button type="button" class="btn '+(g.autorizado_aniversario?'secondary':'primary')+'" onclick="setBirthdayGiftAuthorization('+Number(g.id)+','+(g.autorizado_aniversario?'false':'true')+')">'+(g.autorizado_aniversario?'Retirar autorização':'Autorizar')+'</button></article>').join('');
+}
+async function reloadBirthdayGiftAdmin(){
+ const id=Number(document.getElementById('birthdayGiftBranch')?.value||window.birthdayGiftAdminBranch||0),box=document.getElementById('birthdayGiftAdminList');
+ if(box)box.innerHTML='<p class="muted">A carregar brindes...</p>';
+ try{const html=await birthdayGiftAdminListHtml(id);if(box)box.innerHTML=html}catch(e){if(box)box.innerHTML='<p class="notice">Não foi possível carregar: '+esc(e.message||'erro')+'</p>'}
+}
+async function setBirthdayGiftAuthorization(giftId,authorized){
+ if(!['Gerente','Proprietário'].includes(role)){toast('Sem autorização para alterar esta lista.');return}
+ try{
+  const {data,error}=await supabaseClient.functions.invoke('birthday-management',{body:{action:'set_birthday_gift',giftId:Number(giftId),authorized:authorized===true,branchId:Number(window.birthdayGiftAdminBranch||0)}});
+  if(error)throw error;if(data?.error)throw new Error(data.error);
+  toast(authorized?'Brinde autorizado para aniversário.':'Autorização de aniversário retirada.');
+  await reloadBirthdayGiftAdmin();
+ }catch(e){toast(e.message||'Não foi possível actualizar a autorização.')}
+}
 async function birthdayView(){
  if(!['Vendedor','Gerente','Proprietário'].includes(role))return '<p class="notice">Você não tem permissão para consultar aniversariantes.</p>';
  const entries=Object.entries(branches||{}).filter(([,b])=>Number(b.id)>0),defaultEntry=entries.find(([name])=>name===staffBranch)||entries[0];
