@@ -820,7 +820,7 @@ async function clientLogin(){
  if(!validCPF(cpf)){toast('Informe um CPF válido.');return}if(!password){toast('Informe sua senha.');return}
  const btn=document.getElementById('clientLoginBtn');btn.disabled=true;btn.textContent='Entrando...';
  try{const {data,error}=await supabaseClient.functions.invoke('customer-access',{body:{action:'login',cpf,password}});if(error)throw error;if(data?.error)throw new Error(data.error);await applyCustomerSession(data)}
- catch(e){console.error('Falha no login do cliente:',e);toast(e?.message?'Não foi possível entrar: '+e.message:'Não foi possível entrar. Confira CPF e senha ou solicite a redefinição.')}
+ catch(e){console.error('Falha no login do cliente:',e);const status=Number(e?.context?.status||e?.status||0);if(status===401){toast('Senha incorreta. Tente novamente. Se esqueceu, use “Esqueci minha senha”.')}else{toast('Não foi possível entrar agora. Verifique sua conexão e tente novamente.')}}
  finally{btn.disabled=false;btn.textContent='Entrar'}
 }
 function isAdultBirthDate(value){const raw=String(value||'');if(!/^\d{4}-\d{2}-\d{2}$/.test(raw))return false;const [y,m,d]=raw.split('-').map(Number),date=new Date(y,m-1,d);if(date.getFullYear()!==y||date.getMonth()!==m-1||date.getDate()!==d)return false;const now=new Date();let age=now.getFullYear()-y;if(now.getMonth()+1<m||(now.getMonth()+1===m&&now.getDate()<d))age--;return age>=18&&date<=now}
